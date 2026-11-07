@@ -31,7 +31,8 @@ export function EditGoalSheet({ goal, open, onClose, onSaved }) {
     amount: goal.target?.amount || 1,
     unit: goal.target?.unit || '',
     minutes: daily && goal.target?.unit === 'min' ? goal.target.amount : 0,
-    deadline: goal.deadline || '',
+    deadline: goal.dueAt || goal.deadline || '',
+    scheduleTime: goal.scheduleTime || '',
   }));
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -46,7 +47,8 @@ export function EditGoalSheet({ goal, open, onClose, onSaved }) {
       const body = { title: f.title, category: f.category, color: f.color, activeDays: f.activeDays };
       if (daily) body.target = f.minutes > 0 ? { amount: f.minutes, unit: 'min' } : { amount: 1, unit: '' };
       else if (goal.kind === 'weekly' || goal.kind === 'count') body.target = { amount: f.amount, unit: f.unit };
-      if (goal.kind === 'project') body.deadline = f.deadline || '';
+      body.dueAt = f.deadline || '';
+      if (goal.kind !== 'project') body.scheduleTime = f.scheduleTime || '';
       const g = await api(`/goals/${goal.id}`, { method: 'PATCH', body });
       afterCheckin(g);
       onSaved?.(g);
@@ -75,9 +77,18 @@ export function EditGoalSheet({ goal, open, onClose, onSaved }) {
           <label className="field">Unidade<input className="input" value={f.unit} maxLength={20} onChange={(e) => set('unit', e.target.value)} placeholder={goal.kind === 'weekly' ? 'treinos' : 'copos'} /></label>
         </div>
       )}
-      {goal.kind === 'project' && (
-        <label className="field">Prazo (opcional)<input type="date" className="input" value={f.deadline} onChange={(e) => set('deadline', e.target.value)} /></label>
-      )}
+      <div className="row-group">
+        <label className="select-row">
+          <span className="grow t-15" style={{ fontWeight: 500 }}>Prazo</span>
+          <input type="date" className="inline-input" style={{ width: 'auto' }} value={f.deadline} onChange={(e) => set('deadline', e.target.value)} aria-label="Prazo" />
+        </label>
+        {goal.kind !== 'project' && !goal.shared && (
+          <label className="select-row">
+            <span className="grow stack" style={{ gap: 1 }}><span className="t-15" style={{ fontWeight: 500 }}>Horário</span><span className="t-13 muted">entra na linha do tempo da Rotina</span></span>
+            <input type="time" className="inline-input" style={{ width: 'auto' }} value={f.scheduleTime} onChange={(e) => set('scheduleTime', e.target.value)} aria-label="Horário" />
+          </label>
+        )}
+      </div>
       {goal.kind !== 'weekly' && (
         <div className="stack gap-8">
           <span className="t-14 strong">Dias que contam</span>

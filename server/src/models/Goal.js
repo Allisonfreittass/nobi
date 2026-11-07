@@ -30,7 +30,11 @@ const goalSchema = new Schema({
     default: null,
   },
   milestones: [{ title: { type: String, maxlength: 80 }, done: { type: Boolean, default: false }, doneAt: String }],
-  deadline: { type: String }, // projetos: 'YYYY-MM-DD'
+  deadline: { type: String }, // legado: use dueAt
+  startsAt: { type: String }, // 'YYYY-MM-DD': início, para o ritmo
+  dueAt: { type: String }, // 'YYYY-MM-DD': prazo (projetos e objetivos com data)
+  scheduleTime: { type: String, default: null, match: /^\d{2}:\d{2}$/ }, // hábito com horário → Rotina
+  tasksMigrated: { type: Boolean, default: false },
   archivedAt: { type: Date },
 }, { timestamps: true });
 

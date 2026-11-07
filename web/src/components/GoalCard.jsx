@@ -9,7 +9,7 @@ import { useToast } from '../lib/toast.jsx';
 
 const singular = (u) => ({ copos: 'copo', treinos: 'treino', lições: 'lição', páginas: 'página', corridas: 'corrida', min: 'min' }[u] || u || 'vez');
 
-function metaLine(g) {
+export function metaLine(g) {
   if (g.shared) {
     const others = g.shared.participants.filter((p) => p.id !== g.meId).map((p) => firstName(p.name));
     const names = others.length > 2 ? `${others.slice(0, 2).join(', ')} e +${others.length - 2}` : others.join(' e ');
@@ -21,7 +21,7 @@ function metaLine(g) {
   return `${KIND_LABEL[g.kind]} · ${posts}`;
 }
 
-function valueLine(g) {
+export function valueLine(g) {
   const st = g.status;
   const u = g.target?.unit;
   if (g.kind === 'project') return [`${Math.round(g.pct * 100)}% concluído`, g.nextMilestone ? `próximo marco: ${g.nextMilestone}` : 'todos os marcos feitos'];
@@ -34,7 +34,7 @@ function valueLine(g) {
   return [st.doneToday ? 'Feito hoje' : st.activeToday ? 'Ainda não hoje' : 'Dia de descanso', g.shared ? `${g.shared.doneTodayCount} de ${g.shared.participants.length} já fizeram` : ''];
 }
 
-function actionFor(g) {
+export function actionFor(g) {
   const st = g.status;
   const u = g.target?.unit;
   if (g.shared?.tasks?.length) return { label: 'Abrir desafio', kind: 'link', to: `/desafios/${g.id}` };

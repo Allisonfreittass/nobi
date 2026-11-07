@@ -85,13 +85,15 @@ function ProjectCard({ goal, onChange }) {
   const navigate = useNavigate();
   async function toggle(m) {
     try {
-      const r = await api(`/goals/${goal.id}/milestones/${m.id}`, { method: 'PATCH', body: { done: !m.done } });
+      if (m.children?.length) { toast('Essa etapa fica feita quando todas as subetapas estiverem feitas.'); return; }
+      const r = await api(`/tasks/${m.id}`, { method: 'PATCH', body: { done: !m.done } });
       onChange(r.goal);
       afterCheckin(r.goal);
       if (r.celebration) navigate('/conquista', { state: { celebration: r.celebration } });
     } catch (e) { toast(e.message); }
   }
-  const nextIdx = goal.milestones.findIndex((m) => !m.done);
+  const steps = goal.tasks || [];
+  const nextIdx = steps.findIndex((m) => !m.done);
   return (
     <section className="card stack gap-14" aria-label={goal.title}>
       <div className="row between gap-12">
@@ -104,7 +106,7 @@ function ProjectCard({ goal, onChange }) {
       <ProgressBar value={goal.pct} color="var(--nobi-goal-ink)" label="Progresso do projeto" />
       <span className="t-13 muted">{goal.deadline ? `prazo ${new Date(`${goal.deadline}T12:00`).toLocaleDateString('pt-BR', { month: 'long' })} · ` : ''}{goal.streak.current} dias seguidos avançando</span>
       <ol className="stack gap-4" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-        {goal.milestones.map((m, i) => (
+        {steps.map((m, i) => (
           <li key={m.id}>
             <button type="button" className="list-row" style={{ minHeight: 48, padding: '6px 4px', borderRadius: 12 }} aria-pressed={m.done} onClick={() => toggle(m)}>
               <span style={{ width: 26, height: 26, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.done ? 'var(--nobi-goal-ink)' : 'var(--nobi-card)', boxShadow: m.done ? 'none' : 'inset 0 0 0 2px var(--nobi-toggle-off)', color: '#FFFFFF' }}>

@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { connectDb, disconnectDb, usingEmbeddedDb } from './db.js';
-import { User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season } from './models/index.js';
+import { User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription } from './models/index.js';
 import { addDays, serverToday, weekStart, weekday } from './lib/dates.js';
 import { currentSeason } from './services/seasons.js';
 import { refreshStreakCache } from './services/progress.js';
@@ -20,7 +20,7 @@ const ago = (n) => addDays(today, -n);
 const minutesAgo = (m) => new Date(Date.now() - m * 60000);
 
 await connectDb();
-await Promise.all([User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season].map((M) => M.deleteMany({})));
+await Promise.all([User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription].map((M) => M.deleteMany({})));
 
 const hash = await bcrypt.hash(PASSWORD, 10);
 const mk = (name, username, extra = {}) => User.create({
@@ -56,21 +56,37 @@ const lastN = (n, from = 1) => Array.from({ length: n }, (_, i) => ago(i + from)
 const created = (n) => new Date(`${ago(n)}T12:00:00Z`);
 
 // Rafa
-const agua = await Goal.create({ ownerId: rafa._id, title: 'Beber 2 L de água', category: 'habito', kind: 'count', target: { amount: 8, unit: 'copos' }, color: '#3B82C4', createdAt: created(40) });
+const agua = await Goal.create({ ownerId: rafa._id, title: 'Beber 2 L de água', category: 'habito', kind: 'count', target: { amount: 8, unit: 'copos' }, color: '#3B82C4', scheduleTime: '08:00', createdAt: created(40) });
 await checkins(agua, rafa, lastN(21), 8);
 await checkins(agua, rafa, [today], 6);
 
-const ler = await Goal.create({ ownerId: rafa._id, title: 'Ler 20 min por dia', category: 'leitura', kind: 'daily', target: { amount: 20, unit: 'min' }, color: '#6C4DFF', createdAt: created(60) });
+const ler = await Goal.create({ ownerId: rafa._id, title: 'Ler 20 min por dia', category: 'leitura', kind: 'daily', target: { amount: 20, unit: 'min' }, color: '#6C4DFF', scheduleTime: '21:30', createdAt: created(60) });
 await checkins(ler, rafa, lastN(6), 25, { minutes: 25, pages: 18 });
 await checkins(ler, rafa, lastN(14, 8), 30, { minutes: 30, pages: 20 });
 
-const ingles = await Goal.create({ ownerId: rafa._id, title: 'Inglês B2 até junho', category: 'estudo', kind: 'daily', target: { amount: 1, unit: 'lições' }, activeDays: [1, 2, 3, 4, 5], color: '#2E9C6A', createdAt: created(50) });
+const ingles = await Goal.create({ ownerId: rafa._id, title: 'Inglês B2 até junho', category: 'estudo', kind: 'daily', target: { amount: 1, unit: 'lições' }, activeDays: [1, 2, 3, 4, 5], color: '#2E9C6A', scheduleTime: '07:00', startsAt: ago(50), dueAt: `${Number(today.slice(0, 4)) + 1}-06-30`, tasksMigrated: true, createdAt: created(50) });
 await checkins(ingles, rafa, [today, ...lastN(20)].filter((d) => [1, 2, 3, 4, 5].includes(weekday(d))).slice(0, 4), 1, { minutes: 25 });
 
 const app = await Goal.create({
-  ownerId: rafa._id, title: 'Lançar o MVP do app', category: 'projeto', kind: 'project', color: '#141218', deadline: `${Number(today.slice(0, 4)) + 1}-03-31`, createdAt: created(70),
-  milestones: [{ title: 'Identidade e mockup', done: true, doneAt: ago(30) }, { title: 'Cadastro e perfil', done: true, doneAt: ago(10) }, { title: 'Feed e check-ins' }, { title: 'Desafios e ranking' }],
+  ownerId: rafa._id, title: 'Lançar o MVP do app', category: 'projeto', kind: 'project', color: '#141218', startsAt: ago(70), dueAt: `${Number(today.slice(0, 4)) + 1}-03-31`, tasksMigrated: true, createdAt: created(70),
 });
+// Etapas do projeto (2 níveis), com datas e marcos
+const step = (title, extra = {}) => Task.create({ userId: rafa._id, goalId: app._id, title, ...extra });
+const s1 = await step('Identidade e mockup', { order: 0, isMilestone: true, dueDate: ago(30), doneAt: new Date(`${ago(30)}T15:00:00Z`), doneDate: ago(30) });
+const s2 = await step('Cadastro e perfil', { order: 1, isMilestone: true, dueDate: ago(10), doneAt: new Date(`${ago(10)}T15:00:00Z`), doneDate: ago(10) });
+const s3 = await step('Feed e check-ins', { order: 2, isMilestone: true, dueDate: addDays(today, 12) });
+await step('Cards de post com métricas', { parentId: s3._id, order: 0, doneAt: new Date(`${ago(2)}T15:00:00Z`), doneDate: ago(2) });
+await step('Revisar telas do feed', { parentId: s3._id, order: 1, dueDate: today, priorityDate: today });
+await step('Reações e comentários', { parentId: s3._id, order: 2, dueDate: addDays(today, 5) });
+const s4 = await step('Desafios e ranking', { order: 3, isMilestone: true, dueDate: addDays(today, 40) });
+await step('Ranking semanal', { parentId: s4._id, order: 0 });
+await step('Checklist do dia', { parentId: s4._id, order: 1 });
+await step('Configurar domínio e e-mail', { order: 4, dueDate: ago(3) });
+void s1; void s2;
+// Inglês: lições como itens com data e uma prioridade de hoje
+await Task.create({ userId: rafa._id, goalId: ingles._id, title: 'Unidade 4: revisão', order: 0, doneAt: new Date(`${ago(4)}T15:00:00Z`), doneDate: ago(4) });
+await Task.create({ userId: rafa._id, goalId: ingles._id, title: 'Lição 35: phrasal verbs', order: 1, dueDate: today, priorityDate: today });
+await Task.create({ userId: rafa._id, goalId: ingles._id, title: 'Simulado B1', order: 2, dueDate: addDays(today, 9), isMilestone: true });
 await checkins(app, rafa, lastN(9), 1);
 
 // Treinar 4x na semana, com Caio e Júlia (Juntos)

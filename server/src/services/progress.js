@@ -3,6 +3,8 @@ import { Goal, Checkin, Post, Streak, User } from '../models/index.js';
 import { computeStreak, computeGroupStreak, todayStatus, streakInDays, needFor } from './streaks.js';
 import { stageFromLevel } from './level.js';
 import { ensureShields, shieldDatesOf } from './shields.js';
+import { Task } from '../models/index.js';
+import { migrateMilestones, taskTree, treeProgress, goalStart, goalDue, pacePct, daysLeft } from './tasks.js';
 import { publicUser } from './social.js';
 import { addDays, range, weekStart, weekday, diffDays } from '../lib/dates.js';
 
@@ -91,23 +93,29 @@ export function serializeGoal(goal) {
     target: goal.target,
     activeDays: goal.activeDays,
     color: goal.color,
-    milestones: (goal.milestones || []).map((m) => ({ id: String(m._id), title: m.title, done: m.done, doneAt: m.doneAt })),
-    deadline: goal.deadline || null,
+    deadline: goalDue(goal),
+    dueAt: goalDue(goal),
+    startsAt: goalStart(goal),
+    scheduleTime: goal.scheduleTime || null,
     createdAt: goal.createdAt,
   };
 }
 
 /** Visão completa de um objetivo para um usuário. */
-export async function goalView(goal, user, today, { all, postsCount } = {}) {
+export async function goalView(goal, user, today, { all, postsCount, tasksByGoal } = {}) {
   const wso = weekStartsOn(user);
   const shields = (await ensureShields(user, today)).shieldDates;
   const allCheckins = all ?? (await Checkin.find({ goalId: goal._id }).lean());
   const mine = allCheckins.filter((c) => String(c.userId) === String(user._id));
   const streak = computeStreak(goal, mine, today, wso, shields);
   const status = todayStatus(goal, mine, today, wso);
-  const ms = goal.milestones || [];
+  // Etapas (tarefas) do objetivo: progresso do projeto e do ritmo
+  await migrateMilestones(goal);
+  const tasks = tasksByGoal ? (tasksByGoal.get(String(goal._id)) || []) : await Task.find({ goalId: goal._id, userId: goal.ownerId }).lean();
+  const tree = taskTree(tasks);
+  const prog = treeProgress(tree);
   let pct;
-  if (goal.kind === 'project') pct = ms.length ? ms.filter((m) => m.done).length / ms.length : 0;
+  if (goal.kind === 'project') pct = prog.pct;
   else if (goal.kind === 'weekly') pct = status.weekValue / status.need;
   else pct = status.todayValue / status.need;
   const view = {
@@ -115,11 +123,20 @@ export async function goalView(goal, user, today, { all, postsCount } = {}) {
     streak,
     status,
     pct: Math.min(1, pct),
-    nextMilestone: ms.find((m) => !m.done)?.title || null,
+    tasks: tree,
+    taskProgress: { done: prog.done, total: prog.total },
+    nextMilestone: tree.flatMap((t) => [t, ...t.children]).find((t) => !t.done)?.title || null,
     // "Isso fecha seu Nº dia seguido": valor da sequência se registrar agora
     wouldBe: status.periodDone ? streak.current : streak.current + 1,
     postsCount: postsCount ?? (await Post.countDocuments({ goalId: goal._id, userId: user._id })),
   };
+  const due = goalDue(goal);
+  if (due && (goal.kind === 'project' || prog.total)) {
+    const done = prog.pct;
+    const pace = pacePct(goalStart(goal), due, today);
+    view.objectivePct = done;
+    view.pace = { pacePct: pace, daysLeft: daysLeft(due, today), onPace: pace == null || Math.round(done * 100) >= pace, gap: pace == null ? 0 : Math.max(0, pace - Math.round(done * 100)) };
+  }
   if (goal.shared) view.shared = await sharedView(goal, user._id, today, wso, allCheckins);
   return view;
 }
@@ -129,14 +146,27 @@ export async function userGoals(user, today) {
   await ensureShields(user, today);
   const goals = await Goal.find(goalsQuery(user._id)).sort({ createdAt: 1 }).lean();
   const ids = goals.map((g) => g._id);
-  const [checkins, counts] = await Promise.all([
+  const [checkins, counts, tasks] = await Promise.all([
     Checkin.find({ goalId: { $in: ids } }).lean(),
     Post.aggregate([{ $match: { userId: user._id, goalId: { $in: ids } } }, { $group: { _id: '$goalId', n: { $sum: 1 } } }]),
+    Task.find({ goalId: { $in: ids }, userId: user._id }).lean(),
   ]);
+  const tasksByGoal = new Map();
+  for (const t of tasks) {
+    const k = String(t.goalId);
+    if (!tasksByGoal.has(k)) tasksByGoal.set(k, []);
+    tasksByGoal.get(k).push(t);
+  }
   const byGoal = new Map(ids.map((id) => [String(id), []]));
   for (const c of checkins) byGoal.get(String(c.goalId))?.push(c);
   const countBy = new Map(counts.map((c) => [String(c._id), c.n]));
-  return Promise.all(goals.map((g) => goalView(g, user, today, { all: byGoal.get(String(g._id)), postsCount: countBy.get(String(g._id)) || 0 })));
+  // Marcos antigos ainda não migrados: deixa goalView buscar as tarefas depois de migrar
+  const pendingMigration = new Set(goals.filter((g) => !g.tasksMigrated && g.milestones?.length).map((g) => String(g._id)));
+  return Promise.all(goals.map((g) => goalView(g, user, today, {
+    all: byGoal.get(String(g._id)),
+    postsCount: countBy.get(String(g._id)) || 0,
+    tasksByGoal: pendingMigration.has(String(g._id)) ? null : tasksByGoal,
+  })));
 }
 
 /** Resumo leve: só as sequências, para anel de amigos e Broto. */

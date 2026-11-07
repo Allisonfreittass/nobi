@@ -10,6 +10,8 @@ import { posts, feed } from './routes/posts.js';
 import { home } from './routes/home.js';
 import { uploads } from './routes/uploads.js';
 import { push, cron } from './routes/push.js';
+import { tasks } from './routes/tasks.js';
+import { metas } from './routes/metas.js';
 import { UPLOAD_DIR } from './services/storage.js';
 
 export function createApp() {
@@ -31,6 +33,8 @@ export function createApp() {
   app.use('/api/uploads', express.static(UPLOAD_DIR, { maxAge: '365d', immutable: true, fallthrough: true }));
   app.use('/api/uploads', requireAuth, uploads);
   app.use('/api/push', requireAuth, push);
+  app.use('/api/tasks', requireAuth, tasks);
+  app.use('/api/metas', requireAuth, metas);
   app.use('/api/cron', cron);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
   app.use(errorHandler);

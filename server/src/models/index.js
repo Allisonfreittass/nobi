@@ -11,3 +11,4 @@ export { XpGrant } from './XpGrant.js';
 export { PushSubscription } from './PushSubscription.js';
 export { PushLog } from './PushLog.js';
 export { ShieldUse } from './ShieldUse.js';
+export { Task } from './Task.js';

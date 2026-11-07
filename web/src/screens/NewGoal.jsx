@@ -54,7 +54,8 @@ export default function NewGoal() {
   const [unit, setUnit] = useState('');
   const [minutes, setMinutes] = useState(0);
   const [deadline, setDeadline] = useState('');
-  const [milestones, setMilestones] = useState(['']);
+  const [steps, setSteps] = useState([{ title: '', isMilestone: false }]);
+  const [scheduleTime, setScheduleTime] = useState('');
   const [mode, setMode] = useState(params.get('amigos') ? 'amigos' : 'pessoal');
   const [style, setStyle] = useState('together');
   const [duration, setDuration] = useState(params.get('amigos') ? '30' : '0');
@@ -98,8 +99,9 @@ export default function NewGoal() {
         : kind === 'project' ? { amount: 1, unit: '' } : { amount, unit: unit.trim() };
       const body = {
         title, category, kind, color, target, activeDays: days,
-        deadline: kind === 'project' ? deadline || undefined : undefined,
-        milestones: kind === 'project' ? milestones.filter((m) => m.trim()) : undefined,
+        dueAt: deadline || undefined,
+        scheduleTime: kind !== 'project' && scheduleTime ? scheduleTime : undefined,
+        tasks: kind === 'project' ? steps.filter((t) => t.title.trim()) : undefined,
         shared: withFriends ? { mode: style, invite: picked, durationDays: Number(duration) } : undefined,
       };
       const g = await api('/goals', { method: 'POST', body });
@@ -214,23 +216,43 @@ export default function NewGoal() {
         </Section>
       )}
       {kind === 'project' && (
-        <Section title="Prazo e marcos">
-          <div className="card stack gap-12">
-            <label className="field">Prazo (opcional)<input type="date" className="input" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></label>
-            <span className="t-14 strong">Marcos</span>
-            {milestones.map((m, i) => (
+        <Section title="Etapas do projeto" hint="Dá para adicionar subetapas, datas e reordenar depois, no projeto.">
+          <div className="card stack gap-10">
+            {steps.map((t, i) => (
               <div key={i} className="row gap-8">
-                <label className="grow"><span className="sr-only">Marco {i + 1}</span>
-                  <input className="input" value={m} maxLength={80} placeholder={`Marco ${i + 1}`} onChange={(e) => setMilestones((l) => l.map((x, j) => (j === i ? e.target.value : x)))} />
+                <label className="grow"><span className="sr-only">Etapa {i + 1}</span>
+                  <input className="input" value={t.title} maxLength={120} placeholder={`Etapa ${i + 1}`} onChange={(e) => setSteps((l) => l.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} />
                 </label>
-                {milestones.length > 1 && <button type="button" className="icon-btn plain" aria-label={`Remover marco ${i + 1}`} onClick={() => setMilestones((l) => l.filter((_, j) => j !== i))}><Icon name="close" /></button>}
+                <button type="button" className="chip sm" aria-pressed={t.isMilestone} onClick={() => setSteps((l) => l.map((x, j) => (j === i ? { ...x, isMilestone: !x.isMilestone } : x)))}><Icon name="flag" size={14} />Marco</button>
+                {steps.length > 1 && <button type="button" className="icon-btn plain" aria-label={`Remover etapa ${i + 1}`} onClick={() => setSteps((l) => l.filter((_, j) => j !== i))}><Icon name="close" /></button>}
               </div>
             ))}
-            <button type="button" className="btn btn-soft sm" onClick={() => setMilestones((l) => [...l, ''])}><Icon name="plus" size={16} /> Adicionar marco</button>
+            <button type="button" className="btn btn-soft sm" onClick={() => setSteps((l) => [...l, { title: '', isMilestone: false }])}><Icon name="plus" size={16} /> Adicionar etapa</button>
           </div>
         </Section>
       )}
 
+      <Section title={kind === 'project' ? 'Prazo' : 'Prazo (opcional)'} hint={kind === 'project' ? 'Com prazo, o app mostra se você está no ritmo.' : 'Para objetivos com data, como "inglês até junho".'}>
+        <div className="row-group card" style={{ padding: '0 16px' }}>
+          <label className="select-row">
+            <span className="grow t-15" style={{ fontWeight: 500 }}>Prazo</span>
+            <input type="date" className="inline-input" style={{ width: 'auto' }} value={deadline} onChange={(e) => setDeadline(e.target.value)} aria-label="Prazo" />
+          </label>
+        </div>
+      </Section>
+
+      {kind !== 'project' && !withFriends && (
+        <Section title="Horário (opcional)" hint="Com horário, o hábito entra na linha do tempo da Rotina.">
+          <div className="row-group card" style={{ padding: '0 16px' }}>
+            <label className="select-row">
+              <span className="grow t-15" style={{ fontWeight: 500 }}>Horário</span>
+              <input type="time" className="inline-input" style={{ width: 'auto' }} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} aria-label="Horário" />
+            </label>
+          </div>
+        </Section>
+      )}
+
+      {kind !== 'project' && (
       <Section title={kind === 'weekly' ? 'Em quais dias você pretende fazer' : 'Dias que contam para a sequência'}>
         <div className="row gap-6" role="group" aria-label="Dias da semana">
           {WEEK.map((w) => {
@@ -244,6 +266,7 @@ export default function NewGoal() {
           })}
         </div>
       </Section>
+      )}
 
       <Section title="Cor">
         <div className="row gap-10 wrap" role="radiogroup" aria-label="Cor">

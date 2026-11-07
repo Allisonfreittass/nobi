@@ -19,7 +19,15 @@ export function afterCheckin(goal) {
     cache.set('/goals', next);
     subscribers.get('/goals')?.forEach((fn) => fn(next));
   }
-  invalidateLoad('/home', '/me/stats', `/goals/${goal?.id}`);
+  // Metas › Hoje: troca o hábito na Rotina das telas abertas
+  const hojeKey = '/metas?view=hoje';
+  if (goal && cache.has(hojeKey)) {
+    const d = cache.get(hojeKey);
+    const next = { ...d, routine: d.routine.map((g) => (g.id === goal.id ? goal : g)) };
+    cache.set(hojeKey, next);
+    subscribers.get(hojeKey)?.forEach((fn) => fn(next));
+  }
+  invalidateLoad('/home', '/me/stats', `/goals/${goal?.id}`, '/metas?view=semana', '/metas?view=mes', '/metas?view=concluidas');
 }
 
 /** Depois de publicar: o Feed e o perfil precisam buscar de novo. */

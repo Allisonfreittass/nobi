@@ -1,28 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
 import GoalCard from '../components/GoalCard.jsx';
 import { PushCard } from '../components/PushPrompt.jsx';
 import { ShieldNotice } from '../components/Shields.jsx';
-import { Avatar, Chip, ErrorNote, RingProgress, Skeleton } from '../components/ui.jsx';
-import { useLoad } from '../lib/useLoad.js';
+import { Avatar, Segmented } from '../components/ui.jsx';
+import Hoje from './metas/Hoje.jsx';
+import { Semana, Mes, Concluidas } from './metas/Periodo.jsx';
+import { useLoad, invalidateLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { longToday } from '../lib/format.js';
 import { useConfirm } from '../lib/confirm.jsx';
-
-const FILTERS = [
-  ['todos', 'Todos', () => true],
-  ['habito', 'Hábitos', (g) => g.category === 'habito'],
-  ['treino', 'Treino', (g) => g.category === 'treino'],
-  ['leitura', 'Leitura', (g) => g.category === 'leitura'],
-  ['estudo', 'Estudo', (g) => g.category === 'estudo'],
-  ['projeto', 'Projetos', (g) => g.kind === 'project'],
-  ['amigos', 'Com amigos', (g) => Boolean(g.shared)],
-  ['pessoais', 'Pessoais', (g) => !g.shared],
-];
 
 function Invites({ onJoined }) {
   const { data, setData } = useLoad('/goals/invites');
@@ -99,66 +90,40 @@ function Archived({ onRestored }) {
   );
 }
 
+const VIEWS = [['hoje', 'Hoje'], ['semana', 'Semana'], ['mes', 'Mês'], ['concluidas', 'Concluídas']];
+
 export default function Goals() {
   const { me } = useSession();
-  const navigate = useNavigate();
-  const { data, error, loading, reload, setData } = useLoad('/goals');
-  const [filter, setFilter] = useState('todos');
-  const list = data || [];
-  const today = list.filter((g) => g.status.activeToday);
-  const doneCount = today.filter((g) => g.status.periodDone || g.status.doneToday).length;
-  const all = today.length > 0 && doneCount === today.length;
-  const shown = list.filter(FILTERS.find((f) => f[0] === filter)[2]);
-  const update = (g, opts) => setData((l) => (opts?.restored || !l.some((x) => x.id === g.id) ? [...l, g] : l.map((x) => (x.id === g.id ? g : x))));
-  const remove = (id) => setData((l) => l.filter((x) => x.id !== id));
-  const filters = FILTERS.filter(([k, , fn]) => k === 'todos' || list.some(fn));
+  const [params, setParams] = useSearchParams();
+  const view = VIEWS.some(([v]) => v === params.get('visao')) ? params.get('visao') : 'hoje';
+  const { reload } = useLoad('/goals');
+  const [round, setRound] = useState(0);
 
   return (
     <div className="screen">
       <header className="screen-head">
         <div className="stack" style={{ gap: 2 }}>
           <span className="t-14 secondary">{longToday()}</span>
-          <h1 className="title t-30">Meus objetivos</h1>
+          <h1 className="title t-30">Metas</h1>
         </div>
         <Link to="/metas/novo" className="btn btn-dark sm"><Icon name="plus" size={18} /> Novo</Link>
       </header>
 
-      <ShieldNotice />
-      <Invites onJoined={reload} />
-      <PushCard />
-      <ErrorNote error={error} onRetry={reload} />
-      {loading && !data && <><Skeleton height={104} /><Skeleton height={180} /><Skeleton height={180} /></>}
+      <Segmented label="Período" className="bg-segment" value={view} options={VIEWS}
+        onChange={(v) => setParams(v === 'hoje' ? {} : { visao: v }, { replace: true })} />
 
-      {data && list.length === 0 && (
-        <div className="card empty">
-          <div className="block-brasa" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={100} stage={me.stage} golden={me.golden} /></div>
-          <h2 className="title t-20">O que você quer construir?</h2>
-          <p className="secondary t-14" style={{ maxWidth: 300 }}>Crie um objetivo e ganhe uma sequência só dele. Pode ser pessoal ou com amigos.</p>
-          <button type="button" className="btn btn-primary" onClick={() => navigate('/metas/novo')}>Criar objetivo</button>
-        </div>
-      )}
-
-      {list.length > 0 && (
+      {view === 'hoje' && (
         <>
-          <section className="card row gap-16" aria-label="Resumo de hoje">
-            <RingProgress value={today.length ? doneCount / today.length : 0}>
-              <span className="num t-18">{doneCount}/{today.length}</span>
-            </RingProgress>
-            <div className="stack gap-4 grow">
-              <h2 className="title t-20">{all ? 'Dia completo!' : today.length ? `${today.length - doneCount === 1 ? "Falta" : "Faltam"} ${today.length - doneCount} hoje` : 'Dia de descanso'}</h2>
-              <p className="t-13 secondary">{all ? 'Todas as sequências seguem vivas. O Broto está orgulhoso.' : 'Cada objetivo tem a sua própria sequência. Não precisa fazer tudo pra não perder as outras.'}</p>
-            </div>
-          </section>
-          <div className="chips" role="group" aria-label="Filtrar por categoria">
-            {filters.map(([k, label]) => <Chip key={k} on={filter === k} onClick={() => setFilter(k)}>{label}</Chip>)}
-          </div>
-          <div className="stack gap-12">
-            {shown.map((g) => <GoalCard key={g.id} goal={g} meId={me.id} onChange={update} onRemove={remove} />)}
-            {shown.length === 0 && <p className="muted t-14 center" style={{ padding: 20 }}>Nada por aqui neste filtro.</p>}
-          </div>
+          <ShieldNotice />
+          <Invites onJoined={reload} />
+          <PushCard />
         </>
       )}
-      <Archived onRestored={(g) => update(g, { restored: true })} />
+      {view === 'hoje' && <Hoje key={round} me={me} />}
+      {view === 'semana' && <Semana me={me} />}
+      {view === 'mes' && <Mes me={me} />}
+      {view === 'concluidas' && <Concluidas />}
+      {view === 'hoje' && <Archived onRestored={() => { invalidateLoad('/metas?view=hoje'); setRound((n) => n + 1); }} />}
     </div>
   );
 }

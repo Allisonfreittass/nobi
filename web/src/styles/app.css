@@ -454,3 +454,41 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .sheet:focus { outline: none; }
 
 .card-list .select-row label > .t-15:first-child { font-weight: 700; }
+
+/* Metas (DESIGN.md 8.1) */
+.check-circle { width: 30px; height: 30px; min-width: 30px; border-radius: 15px; border: none; display: inline-flex; align-items: center; justify-content: center; position: relative; transition: background var(--nobi-dur-fast); }
+.check-circle::before { content: ''; position: absolute; inset: -7px; }
+.task-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 0; }
+.task-list > * + * { border-top: 1px solid var(--nobi-track); }
+.priorities { background: var(--nobi-tinta); color: #FFFFFF; }
+:root[data-theme='dark'] .priorities { background: #2A2630; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+.priorities .task-row + .task-row { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.pace-bar { position: relative; height: 10px; border-radius: 5px; background: var(--nobi-track); }
+.pace-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; transition: width var(--nobi-dur-fill) var(--nobi-ease-out); }
+.pace-mark { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--nobi-text); box-shadow: 0 0 0 2px var(--nobi-card); }
+.routine-row { display: grid; grid-template-columns: 3.2rem 18px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.routine-time { padding-top: 22px; color: var(--nobi-text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
+.routine-line { position: relative; display: flex; justify-content: center; }
+.routine-dot { position: relative; z-index: 1; margin-top: 24px; width: 12px; height: 12px; border-radius: 6px; }
+.routine-stem { position: absolute; top: 36px; bottom: -14px; width: 2px; background: var(--nobi-track); }
+.routine-list { display: flex; flex-direction: column; gap: 8px; }
+.late-card { background: var(--nobi-card); box-shadow: inset 0 0 0 1px var(--nobi-border); }
+.week-bars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; align-items: end; height: 120px; }
+.week-bar { border-radius: 8px; background: var(--nobi-track); position: relative; overflow: hidden; }
+.week-bar > span { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 8px; background: var(--nobi-control-on); transition: height var(--nobi-dur-fill) var(--nobi-ease-out); }
+
+/* Checklist de projeto (DESIGN.md 8.2) */
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.checklist > li + li { border-top: 1px solid var(--nobi-track); }
+.checklist-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; }
+.checklist-row > .check-circle { margin-top: 2px; }
+.drag-handle { width: 28px; min-width: 28px; height: 36px; border: none; background: none; color: var(--nobi-text-muted); cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+.drag-handle:active { cursor: grabbing; color: var(--nobi-text); }
+.sublist { margin-left: 38px; padding-bottom: 6px; }
+.sublist .checklist > li + li { border-top-color: var(--nobi-track); }
+.inline-title-btn { border: none; background: none; padding: 4px 0; text-align: left; font-size: var(--nobi-text-md); font-weight: 600; color: var(--nobi-text); min-height: 32px; cursor: text; }
+.inline-title { border: none; border-bottom: 2px solid var(--nobi-text); background: transparent; font-size: var(--nobi-text-lg); font-weight: 600; padding: 4px 0; min-height: 32px; color: var(--nobi-text); }
+.inline-title:focus { outline: none; }
+.chip[aria-pressed='true'] svg { color: inherit; }
+
+.routine-row .streak-pill { padding: 3px 8px; font-size: var(--nobi-text-xs); border-radius: 10px; }

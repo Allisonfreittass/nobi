@@ -8,6 +8,7 @@ import { useToast } from '../lib/toast.jsx';
 import { useShare } from '../lib/share.jsx';
 import { useCheckin } from '../lib/useCheckin.js';
 import GoalActions from '../components/GoalActions.jsx';
+import ProjectChecklist from '../components/ProjectChecklist.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, KIND_LABEL, unitShort, unitWord, firstName, goalColor } from '../lib/format.js';
 
@@ -20,7 +21,6 @@ export default function GoalDetail() {
   const { data: g, error, setData, reload } = useLoad(`/goals/${id}`);
   const { checkin, undo } = useCheckin((goal) => setData(goal));
   const [menu, setMenu] = useState(false);
-  const [newMs, setNewMs] = useState('');
 
   if (error) return <div className="screen no-nav"><BackButton /><ErrorNote error={error} onRetry={reload} /></div>;
   if (!g) return <div className="screen no-nav"><Skeleton height={200} /><Skeleton height={160} /></div>;
@@ -28,19 +28,6 @@ export default function GoalDetail() {
 
   const cat = CATEGORIES[g.category];
 
-  async function toggleMilestone(m) {
-    try {
-      const r = await api(`/goals/${g.id}/milestones/${m.id}`, { method: 'PATCH', body: { done: !m.done } });
-      setData(r.goal);
-      afterCheckin(r.goal);
-      if (r.celebration) navigate('/conquista', { state: { celebration: r.celebration } });
-    } catch (e) { toast(e.message); }
-  }
-  async function addMilestone(e) {
-    e.preventDefault();
-    if (!newMs.trim()) return;
-    try { setData(await api(`/goals/${g.id}/milestones`, { method: 'POST', body: { title: newMs } })); setNewMs(''); } catch (err) { toast(err.message); }
-  }
   return (
     <div className="screen no-nav">
       <header className="screen-head">
@@ -49,10 +36,10 @@ export default function GoalDetail() {
       </header>
 
       <section className="card stack gap-14" style={{ background: goalColor(g.color), color: g.color === '#141218' || g.color === '#6C4DFF' ? '#FFFFFF' : 'var(--nobi-tinta)' }}>
-        <span className="label-caps t-12">{cat.label} · {KIND_LABEL[g.kind]}</span>
+        <span className="label-caps t-12">{cat.label === KIND_LABEL[g.kind] ? cat.label : `${cat.label} · ${KIND_LABEL[g.kind]}`}</span>
         <h1 className="title t-28">{g.title}</h1>
         <div className="row gap-24">
-          <div className="stack"><span className="num t-40">{g.shared?.groupStreak ? g.shared.groupStreak.current : g.streak.current}</span><span className="t-13 strong">{unitWord(g.streak.unit, g.streak.current)} seguidos{g.shared?.groupStreak ? ' (grupo)' : ''}</span></div>
+          <div className="stack"><span className="num t-40">{g.shared?.groupStreak ? g.shared.groupStreak.current : g.streak.current}</span><span className="t-13 strong">{(() => { const n = g.shared?.groupStreak ? g.shared.groupStreak.current : g.streak.current; return `${unitWord(g.streak.unit, n)} ${n === 1 ? (g.streak.unit === 'weeks' ? 'seguida' : 'seguido') : (g.streak.unit === 'weeks' ? 'seguidas' : 'seguidos')}`; })()}{g.shared?.groupStreak ? ' (grupo)' : ''}</span></div>
           <div className="stack"><span className="num t-40">{g.streak.best}</span><span className="t-13 strong">melhor sequência</span></div>
         </div>
       </section>
@@ -71,23 +58,13 @@ export default function GoalDetail() {
         </div>
       </section>
 
-      {g.kind === 'project' && (
-        <section className="card stack gap-8" aria-label="Marcos">
-          <h2 className="title t-18">Marcos</h2>
-          <ol style={{ listStyle: 'none', margin: 0, padding: 0 }} className="stack gap-4">
-            {g.milestones.map((m) => (
-              <li key={m.id}>
-                <button type="button" className="list-row" style={{ padding: '6px 4px', minHeight: 48, borderRadius: 12 }} aria-pressed={m.done} onClick={() => toggleMilestone(m)}>
-                  <span style={{ width: 26, height: 26, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.done ? goalColor(g.color) : 'var(--nobi-card)', boxShadow: m.done ? 'none' : 'inset 0 0 0 2px var(--nobi-toggle-off)', color: '#FFFFFF' }}>{m.done && <Icon name="check" size={16} stroke={2.6} />}</span>
-                  <span className="grow t-15" style={{ textDecoration: m.done ? 'line-through' : 'none', color: m.done ? 'var(--nobi-text-muted)' : undefined }}>{m.title}</span>
-                </button>
-              </li>
-            ))}
-          </ol>
-          <form className="row gap-8" onSubmit={addMilestone}>
-            <label className="grow"><span className="sr-only">Novo marco</span><input className="input" value={newMs} onChange={(e) => setNewMs(e.target.value)} placeholder="Novo marco" maxLength={80} /></label>
-            <button type="submit" className="btn btn-dark sm" disabled={!newMs.trim()}>Adicionar</button>
-          </form>
+      {(g.kind === 'project' || g.tasks?.length > 0) && <ProjectChecklist goal={g} onGoal={setData} />}
+
+      {g.pace?.pacePct != null && (
+        <section className="card stack gap-8" aria-label="Ritmo">
+          <div className="row between"><h2 className="title t-18">Ritmo</h2><span className="t-13 muted">{g.pace.daysLeft > 0 ? `${g.pace.daysLeft} dias restantes` : g.pace.daysLeft === 0 ? 'vence hoje' : 'prazo passou, sem pressa'}</span></div>
+          <div className="pace-bar"><span className="pace-fill" style={{ width: `${Math.round((g.objectivePct ?? g.pct) * 100)}%`, background: goalColor(g.color) }} /><span className="pace-mark" style={{ left: `${g.pace.pacePct}%` }} /></div>
+          <span className="t-13 strong" style={{ color: g.pace.onPace ? 'var(--nobi-success)' : 'var(--nobi-text-secondary)' }}>{g.pace.onPace ? 'No ritmo' : `Um pouco atrás do ritmo · ${g.pace.gap} pts`}</span>
         </section>
       )}
 

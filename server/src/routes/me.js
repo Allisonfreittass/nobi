@@ -7,7 +7,7 @@ import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
 import { weeklySummary } from '../services/weekly.js';
 import { ensureShields } from '../services/shields.js';
-import { ShieldUse } from '../models/index.js';
+import { ShieldUse, Task } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
@@ -147,6 +147,7 @@ me.post('/notifications/seen', async (req, res) => {
 me.get('/export', async (req, res) => {
   const id = req.user._id;
   const shields = await ShieldUse.find({ userId: id }).lean();
+  const tasks = await Task.find({ userId: id }).lean();
   const [goals, checkins, posts, comments, follows, achievements] = await Promise.all([
     Goal.find({ $or: [{ ownerId: id }, { 'shared.participants': id }] }).lean(),
     Checkin.find({ userId: id }).lean(),
@@ -157,7 +158,7 @@ me.get('/export', async (req, res) => {
   ]);
   const { passwordHash, resetToken, resetTokenExpiresAt, ...profile } = req.user.toObject();
   res.setHeader('Content-Disposition', `attachment; filename="nobi-${req.user.username}.json"`);
-  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements, shieldsUsed: shields.map((s) => s.date) });
+  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements, tasks, shieldsUsed: shields.map((s) => s.date) });
 });
 
 me.delete('/', async (req, res) => {
@@ -187,6 +188,7 @@ me.delete('/', async (req, res) => {
     Achievement.deleteMany({ userId: id }),
     XpGrant.deleteMany({ userId: id }),
     ShieldUse.deleteMany({ userId: id }),
+    Task.deleteMany({ userId: id }),
     User.updateMany({ blocked: id }, { $pull: { blocked: id } }),
   ]);
   // Objetivos com amigos: passa a posse para quem ficou; apaga os que ficaram sem ninguém

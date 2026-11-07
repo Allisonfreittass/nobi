@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { Goal, Checkin, User, Streak, Post, Comment, CATEGORIES, KINDS } from '../models/index.js';
+import { Goal, Checkin, User, Streak, Post, Comment, Task, CATEGORIES, KINDS } from '../models/index.js';
 import { deleteImages } from '../services/storage.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
-import { addDays, weekStart, weekday } from '../lib/dates.js';
+import { addDays, weekStart, weekday, isDateStr } from '../lib/dates.js';
 import { goalView, userGoals, refreshStreakCache, weekStartsOn, goalsQuery, summarize, serializeGoal } from '../services/progress.js';
 import { computeStreak, dayTotals, needFor, CELEBRATE, streakInDays } from '../services/streaks.js';
 import { award, grantXp, ownedCodes } from '../services/achievements.js';
@@ -64,10 +64,10 @@ goals.post('/', async (req, res) => {
     target: { amount: Math.max(1, Math.round(Number(b.target?.amount) || 1)), unit: String(b.target?.unit || '').slice(0, 20) },
     activeDays: parseActiveDays(b.activeDays) ?? [0, 1, 2, 3, 4, 5, 6],
     color: COLORS.includes(b.color) ? b.color : COLORS[2],
-    deadline: b.kind === 'project' && b.deadline ? String(b.deadline).slice(0, 10) : undefined,
-    milestones: b.kind === 'project' && Array.isArray(b.milestones)
-      ? b.milestones.map((t) => String(t).trim()).filter(Boolean).slice(0, 20).map((title) => ({ title }))
-      : [],
+    startsAt: req.today,
+    dueAt: isDateStr(b.dueAt || b.deadline) ? (b.dueAt || b.deadline) : undefined,
+    scheduleTime: b.kind !== 'project' && /^\d{2}:\d{2}$/.test(b.scheduleTime || '') ? b.scheduleTime : null,
+    tasksMigrated: true,
   };
   if (b.shared) {
     const friends = new Set((await friendIds(req.user._id)).map(String));
@@ -85,6 +85,15 @@ goals.post('/', async (req, res) => {
     };
   }
   const g = await Goal.create(doc);
+  // Etapas do projeto (ou itens de qualquer objetivo) já na criação; aceita o formato antigo (milestones)
+  const steps = (Array.isArray(b.tasks) ? b.tasks : Array.isArray(b.milestones) ? b.milestones.map((t) => ({ title: t, isMilestone: true })) : [])
+    .map((t) => (typeof t === 'string' ? { title: t } : t)).filter((t) => String(t?.title || '').trim()).slice(0, 30);
+  if (steps.length) {
+    await Task.insertMany(steps.map((t, i) => ({
+      userId: req.user._id, goalId: g._id, title: String(t.title).trim().slice(0, 120), order: i,
+      isMilestone: Boolean(t.isMilestone), dueDate: isDateStr(t.dueDate) ? t.dueDate : null,
+    })));
+  }
   if (g.shared) {
     await Promise.all(g.shared.invited.map((u) => notify(u, { ...social.invite(req.user.name, g.title, g.shared.mode), url: `/desafios/${g._id}` }, { type: 'challenges', dedupeKey: `ch:inv:${g._id}` })));
   }
@@ -120,7 +129,9 @@ goals.patch('/:id', async (req, res) => {
     if (b.target.amount !== undefined) g.target.amount = Math.max(1, Math.min(100000, Math.round(Number(b.target.amount) || 1)));
     if (b.target.unit !== undefined) g.target.unit = String(b.target.unit).trim().slice(0, 20);
   }
-  if (b.deadline !== undefined && g.kind === 'project') g.deadline = b.deadline ? String(b.deadline).slice(0, 10) : undefined;
+  const due = b.dueAt !== undefined ? b.dueAt : b.deadline;
+  if (due !== undefined) { g.dueAt = isDateStr(due) ? due : undefined; g.deadline = undefined; }
+  if (b.scheduleTime !== undefined && g.kind !== 'project') g.scheduleTime = /^\d{2}:\d{2}$/.test(b.scheduleTime || '') ? b.scheduleTime : null;
   await g.save();
   await refreshStreakCache(g, req.user._id, req.today, weekStartsOn(req.user));
   res.json(await goalView(g.toObject(), req.user, req.today));
@@ -135,6 +146,7 @@ async function destroyGoal(g, userId) {
     Post.deleteMany({ _id: { $in: posts.map((p) => p._id) } }),
     Checkin.deleteMany({ goalId: g._id }),
     Streak.deleteMany({ goalId: g._id }),
+    Task.deleteMany({ goalId: g._id }),
   ]);
   await Goal.deleteOne({ _id: g._id });
 }

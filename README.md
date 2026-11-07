@@ -47,6 +47,11 @@ Conta de demonstração: `rafalima@nobi.dev` / `nobi1234` (também `marina`, `ca
 ### Fotos
 Foto de perfil e foto nos posts ficam no **Vercel Blob** (público), nunca no banco. O app reduz a imagem no aparelho (perfil 256 px, post até 1440 px) e o servidor confere os bytes (só JPG, PNG ou WebP). Em produção basta ligar um Blob Store (público) ao projeto na Vercel: os Blobs novos criam `BLOB_STORE_ID` e autenticam sozinhos (OIDC); os antigos usam `BLOB_READ_WRITE_TOKEN`. Em desenvolvimento, sem nenhum dos dois, as fotos vão para `server/.uploads`.
 
+### Metas (DESIGN.md 8.1 e 8.2)
+- Visões **Hoje · Semana · Mês · Concluídas** (`GET /api/metas?view=`). Hoje: 3 prioridades, Rotina (hábitos por horário), Ficou pra trás (só tarefas vencidas) e Objetivos com ritmo (`pacePct = (hoje − início) / (prazo − início)`).
+- **Tarefas** (`server/src/models/Task.js`) substituem os marcos: etapa → subetapa (2 níveis), data, marco, prioridade do dia (máx. 3). Marcos antigos viram tarefas sozinhos na primeira leitura.
+- Objetivo ganhou `startsAt`, `dueAt` e `scheduleTime` (horário opcional do hábito).
+
 ### Notificações push
 Web Push com service worker (`web/public/sw.js`). Funciona no Android e no computador, e no iPhone (iOS 16.4+) só com o app adicionado à tela de início. Mensagens em `server/src/services/pushMessages.js`: variam com o contexto (sequência, véspera do Broto dourado, amigos que já fizeram, desafio) e nunca culpam. Avisos sociais não saem entre 22h e 8h e são agrupados.
 - Variáveis na Vercel: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`.
