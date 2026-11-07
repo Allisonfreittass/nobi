@@ -52,7 +52,7 @@ function EmptyFeed() {
       <div className="block-brasa" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={96} arms="wave" /></div>
       <h2 className="title t-20">Seu feed começa com amigos</h2>
       <p className="secondary t-14" style={{ maxWidth: 300 }}>Siga quem você conhece e acompanhe a evolução de cada um. Seus registros só aparecem aqui se você escolher postar.</p>
-      <Link to="/explorar" className="btn btn-dark">Encontrar pessoas</Link>
+      <Link to="/comunidade" className="btn btn-dark">Encontrar pessoas e clubes</Link>
     </div>
   );
 }

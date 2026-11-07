@@ -53,6 +53,10 @@ async function sharedView(goal, userId, today, wso, all) {
   const out = {
     mode: goal.shared.mode,
     participants,
+    joined: goal.shared.participants.some((p) => String(p) === String(userId)),
+    public: Boolean(goal.shared.public),
+    clubId: goal.shared.clubId ? String(goal.shared.clubId) : null,
+    description: goal.shared.description || '',
     invitedCount: goal.shared.invited?.length || 0,
     startsAt: goal.shared.startsAt || null,
     endsAt: goal.shared.endsAt || null,

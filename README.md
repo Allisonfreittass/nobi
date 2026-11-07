@@ -57,6 +57,15 @@ Web Push com service worker (`web/public/sw.js`). Funciona no Android e no compu
 - Variáveis na Vercel: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`.
 - Lembrete: o cron-job.org chama `GET /api/cron/reminders` a cada 15 min com `Authorization: Bearer <CRON_SECRET>`.
 
+### Comunidade e clubes (Comunidade.dc.html, Clube.dc.html)
+- **Comunidade** substitui o Explorar: busca (clubes, desafios e pessoas) e **Desafios · Clubes**. "Perto de você" usa a cidade do perfil (opcional) e a região dos clubes daquela cidade.
+- **Clubes** (`clubs`, `memberships`): oficiais e curados pela Equipe Nobi, mais **grupos privados de amigos** (só amizades mútuas). Qualquer pessoa ainda não cria clube aberto.
+- Só posts **Públicos** entram no clube, e só nos clubes da categoria do post em que a pessoa é membro (`posts.clubIds`). Amigos nunca vaza.
+- **Ranking do clube**: minutos postados no clube na semana (seg–dom), zera no domingo.
+- **Moderação**: admin/moderador fixa recado, edita regras, remove post do clube, bane e desbane; admin promove moderador. **Denúncias** (`reports`) de post, pessoa, comentário ou clube; a moderação do clube resolve pelo menu ⋯ do clube.
+- **Desafios abertos**: `shared.public` (comunidade, qualquer pessoa) ou `shared.clubId` (membros do clube) entram sem convite em `POST /api/goals/:id/participate`.
+- Para criar clubes oficiais em produção, por enquanto, insira direto no banco (`clubs` + uma `membership` admin).
+
 ### Ainda não feito
 - Login com Apple (precisa de conta de desenvolvedor Apple). O Google funciona ao preencher `GOOGLE_CLIENT_ID` / `VITE_GOOGLE_CLIENT_ID`.
 - Envio de e-mail para "Esqueci a senha": em desenvolvimento o link aparece no terminal da API.

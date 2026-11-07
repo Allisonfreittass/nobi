@@ -14,7 +14,7 @@ export default function EditProfile() {
   const navigate = useNavigate();
   const toast = useToast();
   const fileRef = useRef(null);
-  const [form, setForm] = useState({ name: me.name, username: me.username, bio: me.bio, interests: me.interests, avatarUrl: me.avatarUrl, stats: me.privacy.stats });
+  const [form, setForm] = useState({ name: me.name, username: me.username, bio: me.bio, city: me.city || '', interests: me.interests, avatarUrl: me.avatarUrl, stats: me.privacy.stats });
   const [check, setCheck] = useState({ state: 'ok' });
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -90,6 +90,11 @@ export default function EditProfile() {
       <div className="field">
         <div className="row between"><label htmlFor="bio">Bio</label><span className="field-hint">{form.bio.length}/120</span></div>
         <textarea id="bio" className="textarea" rows={3} maxLength={120} value={form.bio} onChange={(e) => set('bio', e.target.value)} placeholder="Lendo mais, correndo melhor e terminando o app." />
+      </div>
+      <div className="field">
+        <label htmlFor="city">Cidade</label>
+        <input id="city" className="input" value={form.city} maxLength={60} autoComplete="address-level2" onChange={(e) => set('city', e.target.value)} placeholder="Varginha, MG" />
+        <span className="field-hint">Opcional. Só serve para sugerir clubes perto de você; não aparece no perfil.</span>
       </div>
 
       <section className="stack gap-10">

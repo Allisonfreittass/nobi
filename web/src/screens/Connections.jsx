@@ -60,7 +60,7 @@ export default function Connections() {
       )}
       {list.data && !list.data.hidden && people.length === 0 && (
         <p className="muted t-14 center" style={{ padding: 24 }}>
-          {tab === 'seguidores' ? (mine ? 'Ninguém segue você ainda. Mande seu link de convite!' : 'Ninguém por aqui ainda.') : (mine ? 'Você ainda não segue ninguém. Procure pessoas no Explorar.' : 'Ainda não segue ninguém.')}
+          {tab === 'seguidores' ? (mine ? 'Ninguém segue você ainda. Mande seu link de convite!' : 'Ninguém por aqui ainda.') : (mine ? 'Você ainda não segue ninguém. Procure pessoas na Comunidade.' : 'Ainda não segue ninguém.')}
         </p>
       )}
       {people.length > 0 && (

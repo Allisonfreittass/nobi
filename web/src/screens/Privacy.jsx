@@ -34,15 +34,15 @@ const sections = [
           head={['Tipo', 'O que é']}
           rows={[
             ['Conta', 'Nome, e-mail, @usuário e senha. A senha é guardada de forma irreversível (hash), e ninguém consegue lê-la. Se você entrar com o Google, recebemos do Google seu nome, e-mail e um identificador da conta.'],
-            ['Perfil', 'Foto de perfil (ou avatar do Broto), bio e interesses que você escolher.'],
+            ['Perfil', 'Foto de perfil (ou avatar do Broto), bio, interesses e, se você quiser, sua cidade (digitada por você, usada só para sugerir clubes perto).'],
             ['Uso do app', 'Objetivos, registros (data, tempo, páginas, distância, quantidade e notas), marcos de projetos, sequências, nível, XP e conquistas.'],
-            ['Social', 'Quem você segue e quem segue você, bloqueios, convites, publicações, fotos dos posts, comentários e reações "Boa!".'],
+            ['Social', 'Quem você segue e quem segue você, bloqueios, convites, publicações, fotos dos posts, comentários, reações "Boa!", clubes em que você entrou (e seu papel neles) e denúncias que você fizer.'],
             ['Preferências', 'Tema, início da semana, horário do lembrete, notificações, animações do Broto e escolhas de privacidade.'],
             ['Notificações', 'Se você ativar as notificações no celular, guardamos o endereço técnico que o seu navegador gera para receber avisos e o fuso horário do aparelho (para o lembrete chegar na sua hora). Ao desativar, apagamos esse endereço.'],
             ['Técnicos', 'Data e hora do seu aparelho (para saber qual é o seu "hoje"), e registros técnicos de acesso, como endereço IP, data, hora e navegador, gerados pela nossa hospedagem.'],
           ]}
         />
-        <p><strong>Não coletamos</strong> sua localização, seus contatos, dados de pagamento nem informações para anúncios. Não usamos cookies de rastreamento.</p>
+        <p><strong>Não coletamos</strong> sua localização pelo GPS ou pela rede, seus contatos, dados de pagamento nem informações para anúncios. Não usamos cookies de rastreamento.</p>
         <p>Registros de treino ou de hábitos podem dizer algo sobre a sua rotina. Usamos essas informações só para mostrar a sua evolução a você e a quem você escolher. Evite colocar informações de saúde detalhadas nas notas.</p>
       </>
     ),
@@ -71,6 +71,8 @@ const sections = [
         <li><strong>Bio, interesses, estatísticas e conquistas</strong> seguem a privacidade que você escolher em Configurações.</li>
         <li><strong>Em objetivos com amigos e desafios</strong>, os participantes veem quem já marcou o dia e a pontuação da semana.</li>
         <li><strong>Seu link de convite</strong> mostra seu nome e foto para quem o abrir.</li>
+        <li><strong>Nos clubes</strong>, os membros veem que você faz parte e seus posts Públicos da categoria do clube. Posts para Amigos nunca aparecem em clube. Sua cidade não aparece no perfil.</li>
+        <li><strong>Denúncias</strong> vão para a moderação do clube ou do Nobi. A pessoa denunciada não sabe quem denunciou.</li>
       </ul>
     ),
   },

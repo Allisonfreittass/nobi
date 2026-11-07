@@ -11,7 +11,8 @@ import { useEffect } from 'react';
 const loadResetPassword = () => import('./screens/ResetPassword.jsx');
 const loadTerms = () => import('./screens/Terms.jsx');
 const loadPrivacy = () => import('./screens/Privacy.jsx');
-const loadExplore = () => import('./screens/Explore.jsx');
+const loadCommunity = () => import('./screens/community/Community.jsx');
+const loadClub = () => import('./screens/community/Club.jsx');
 const loadAchievement = () => import('./screens/Achievement.jsx');
 const loadNewGoal = () => import('./screens/NewGoal.jsx');
 const loadGoalDetail = () => import('./screens/GoalDetail.jsx');
@@ -28,7 +29,8 @@ const loadWeekly = () => import('./screens/Weekly.jsx');
 const ResetPassword = lazy(loadResetPassword);
 const Terms = lazy(loadTerms);
 const Privacy = lazy(loadPrivacy);
-const Explore = lazy(loadExplore);
+const Community = lazy(loadCommunity);
+const Club = lazy(loadClub);
 const Achievement = lazy(loadAchievement);
 const NewGoal = lazy(loadNewGoal);
 const GoalDetail = lazy(loadGoalDetail);
@@ -42,7 +44,7 @@ const Invite = lazy(loadInvite);
 const Started = lazy(loadStarted);
 const Connections = lazy(loadConnections);
 const Weekly = lazy(loadWeekly);
-const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy, loadConnections, loadWeekly];
+const LAZY = [loadResetPassword, loadTerms, loadCommunity, loadClub, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy, loadConnections, loadWeekly];
 function usePrefetch() {
   useEffect(() => {
     const go = () => LAZY.forEach((l) => l().catch(() => {}));
@@ -130,7 +132,9 @@ export default function App() {
       {/* Com menu lateral no PC e barra inferior no celular */}
       <Route element={<Private><Layout /></Private>}>
         <Route index element={<Feed />} />
-        <Route path="/explorar" element={<Explore />} />
+        <Route path="/comunidade" element={<Community />} />
+        <Route path="/clubes/:slug" element={<Club />} />
+        <Route path="/explorar" element={<Navigate to="/comunidade" replace />} />
         <Route path="/metas" element={<Goals />} />
         <Route path="/perfil" element={<Profile />} />
         <Route path="/u/:username" element={<Profile />} />

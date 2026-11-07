@@ -3,7 +3,7 @@ import { Avatar } from './ui.jsx';
 import { api } from '../lib/api.js';
 import { useToast } from '../lib/toast.jsx';
 
-/** Pessoa numa lista (Explorar, seguidores, seguindo), com o botão de seguir certo para a relação. */
+/** Pessoa numa lista (Comunidade, seguidores, seguindo, membros de clube), com o botão de seguir certo para a relação. */
 export default function PersonRow({ u, onRelation, extra }) {
   const toast = useToast();
   const rel = u.relation;

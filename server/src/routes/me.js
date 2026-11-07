@@ -177,6 +177,9 @@ me.delete('/', async (req, res) => {
     throw new HttpError(503, 'Não deu para apagar suas fotos agora. Tente de novo em instantes.');
   }
   const posts = await Post.find({ userId: id }, { _id: 1 }).lean();
+  // Comentários da pessoa em posts de outros somem: desconta da contagem desses posts
+  const mine = await Comment.aggregate([{ $match: { userId: id } }, { $group: { _id: '$postId', n: { $sum: 1 } } }]);
+  if (mine.length) await Post.bulkWrite(mine.map((c) => ({ updateOne: { filter: { _id: c._id }, update: { $inc: { commentsCount: -c.n } } } })));
   await Promise.all([
     Goal.deleteMany({ ownerId: id, shared: null }),
     Goal.updateMany({ 'shared.participants': id }, { $pull: { 'shared.participants': id, 'shared.invited': id } }),

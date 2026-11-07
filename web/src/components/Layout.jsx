@@ -7,7 +7,7 @@ import { useLoad } from '../lib/useLoad.js';
 
 const NAV = [
   { to: '/', label: 'Feed', icon: 'home', end: true },
-  { to: '/explorar', label: 'Explorar', icon: 'compass' },
+  { to: '/comunidade', label: 'Comunidade', icon: 'users' },
   { to: '/metas', label: 'Metas', icon: 'target' },
   { to: '/perfil', label: 'Perfil', icon: 'user' },
 ];
@@ -102,7 +102,7 @@ function FocusSession() {
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const links = [NAV[0], NAV[2], { to: '/desafios', label: 'Desafios', icon: 'trophy' }, NAV[1], NAV[3]];
+  const links = [NAV[0], NAV[1], NAV[2], { to: '/desafios', label: 'Desafios', icon: 'trophy' }, NAV[3]];
   return (
     <aside className="sidebar" aria-label="Menu">
       <div style={{ padding: '0 8px 18px' }}><Logo size={34} /></div>

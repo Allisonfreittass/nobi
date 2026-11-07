@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { connectDb, disconnectDb, usingEmbeddedDb } from './db.js';
-import { User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription } from './models/index.js';
+import { User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription, Club, Membership, Report } from './models/index.js';
 import { addDays, serverToday, weekStart, weekday } from './lib/dates.js';
 import { currentSeason } from './services/seasons.js';
 import { refreshStreakCache } from './services/progress.js';
@@ -20,13 +20,13 @@ const ago = (n) => addDays(today, -n);
 const minutesAgo = (m) => new Date(Date.now() - m * 60000);
 
 await connectDb();
-await Promise.all([User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription].map((M) => M.deleteMany({})));
+await Promise.all([User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription, Club, Membership, Report].map((M) => M.deleteMany({})));
 
 const hash = await bcrypt.hash(PASSWORD, 10);
 const mk = (name, username, extra = {}) => User.create({
   name, username, email: `${username}@nobi.dev`, passwordHash: hash, demo: true, privacy: { profile: 'public', stats: 'friends', approveFollowers: false }, ...extra,
 });
-const rafa = await mk('Rafa Lima', 'rafalima', { bio: 'Lendo mais, correndo melhor e terminando o app.', interests: ['Leitura', 'Corrida', 'Inglês', 'Projeto pessoal'], avatarColor: '#FFF1E4', xp: 1340, level: levelFromXp(1340) });
+const rafa = await mk('Rafa Lima', 'rafalima', { bio: 'Lendo mais, correndo melhor e terminando o app.', interests: ['Leitura', 'Corrida', 'Inglês', 'Projeto pessoal'], avatarColor: '#FFF1E4', xp: 1340, level: levelFromXp(1340), city: 'Varginha, MG' });
 const marina = await mk('Marina Alves', 'marina', { bio: 'Clube do livro às quintas.', interests: ['Leitura', 'Meditação'], avatarColor: '#FFD8C7', xp: 2210, level: 23 });
 const caio = await mk('Caio Nunes', 'caionunes', { bio: 'Correndo atrás dos 10 km.', interests: ['Corrida', 'Musculação'], avatarColor: '#D9D1FF', xp: 980, level: 10 });
 const julia = await mk('Júlia Prado', 'juliaprado', { bio: 'Treino, café e planilha.', interests: ['Musculação', 'Carreira'], avatarColor: '#CDEBDD', xp: 2650, level: 27 });
@@ -174,6 +174,59 @@ const marinaPost = await Post.findOne({ userId: marina._id });
 await Comment.create({ postId: marinaPost._id, userId: julia._id, text: 'Qual o próximo do clube?' });
 await Comment.create({ postId: marinaPost._id, userId: caio._id, text: 'Boa demais!' });
 await Comment.create({ postId: caioPost._id, userId: julia._id, text: 'Voando!' });
+
+// Comunidade: clubes oficiais (curados pela Equipe Nobi), membros, posts públicos e desafios abertos
+const equipe = await mk('Equipe Nobi', 'equipenobi', { bio: 'Clubes oficiais do Nobi.', avatarColor: '#FFF1E4' });
+const paula = await mk('Paula Rezende', 'paularezende', { avatarColor: '#FFE9A8', interests: ['Leitura'] });
+const ana = await mk('Ana Costa', 'anacosta', { avatarColor: '#E9E5DC', interests: ['Leitura'] });
+const club = (name, slug, category, interest, city, region, extra = {}) => Club.create({ name, slug, category, interest, city, region, kind: 'official', createdBy: equipe._id, ...extra });
+const leitores = await club('Leitores de BH', 'leitores-de-bh', 'leitura', 'Leitura', 'Belo Horizonte', 'Minas Gerais', {
+  description: 'Leitura de todo dia, conversa sem spoiler e um livro do mês.',
+  pinned: 'Livro de novembro é "O Avesso da Pele". Spoilers só com aviso.',
+  rules: 'Respeito acima de tudo.\nSpoiler só com aviso no começo do post.\nSem propaganda de loja ou curso.',
+});
+const corridaSul = await club('Corrida Sul de Minas', 'corrida-sul-de-minas', 'treino', 'Corrida', 'Varginha, MG', 'Sul de Minas', { description: 'Treinos, provas e pace sem julgamento.' });
+const ingl = await club('Inglês do zero', 'ingles-do-zero', 'estudo', 'Idiomas', 'Online · Brasil', null, { description: 'Uma lição por dia, junto.' });
+const madrug = await club('Madrugadores 5h', 'madrugadores-5h', 'habito', 'Hábitos', 'Três Corações, MG', 'Sul de Minas', { description: 'Acordar cedo e começar o dia antes do mundo.' });
+const projetos = await club('Projetos de fim de semana', 'projetos-de-fim-de-semana', 'projeto', 'Carreira', 'Lavras, MG', 'Sul de Minas', { description: 'Projeto pessoal avançando um pouco por semana.' });
+const devs = await club('Devs que treinam', 'devs-que-treinam', 'treino', 'Corrida', 'Online · Brasil', null, { description: 'Código de dia, treino à noite.' });
+await club('Devocional da manhã', 'devocional-da-manha', 'objetivo', 'Fé e devocional', 'Online · Brasil', null, { description: 'Leitura e oração para começar o dia.' });
+const member = (c, u, role = 'member', status = 'active') => Membership.create({ clubId: c._id, userId: u._id, role, status, lastSeenAt: minutesAgo(600) });
+for (const c of await Club.find()) await member(c, equipe, 'admin');
+await member(leitores, ana, 'moderator');
+for (const u of [rafa, marina, julia, paula, ...extras.slice(0, 1)]) await member(leitores, u);
+for (const u of [rafa, julia, caio]) await member(devs, u);
+for (const u of [caio, extras[1]]) await member(corridaSul, u);
+await member(ingl, julia);
+await member(madrug, teo);
+await member(projetos, extras[2]);
+
+const lerPaula = await Goal.create({ ownerId: paula._id, title: 'Ler 1 hora', category: 'leitura', kind: 'daily', target: { amount: 60, unit: 'min' }, color: '#6C4DFF', createdAt: created(20) });
+await checkins(lerPaula, paula, [today, ...lastN(5)], 55, { minutes: 55, pages: 64 });
+const lerJulia = await Goal.create({ ownerId: julia._id, title: '12 livros no ano', category: 'leitura', kind: 'daily', target: { amount: 20, unit: 'min' }, color: '#6C4DFF', createdAt: created(200) });
+await checkins(lerJulia, julia, lastN(4, 0), 40, { minutes: 40 });
+const pub = (u, goal, extra) => Post.create({ userId: u._id, goalId: goal._id, audience: 'public', category: goal.category, clubIds: [leitores._id], date: today, kind: 'checkin', ...extra });
+const paulaPost = await pub(paula, lerPaula, { metrics: { minutes: 55, pages: 64 }, text: 'Capítulo 6 me pegou de jeito. Alguém mais terminou a parte dois?', reactions: [marina, julia].map((u) => ({ userId: u._id, at: minutesAgo(20) })), commentsCount: 1, createdAt: minutesAgo(25) });
+await Comment.create({ postId: paulaPost._id, userId: marina._id, text: 'Terminei ontem! Vamos marcar o encontro no fim do mês?' });
+await pub(julia, lerJulia, { kind: 'milestone', title: '10º livro', metrics: { minutes: 40 }, text: 'Bati a meta de 10 livros no ano. Faltam 2 pra fechar!', createdAt: minutesAgo(120) });
+await pub(marina, lerMarina, { metrics: { minutes: 42, pages: 38 }, text: 'Leitura da manhã no ônibus.', date: ago(1), createdAt: minutesAgo(1500) });
+await Post.updateOne({ _id: caioPost._id }, { clubIds: [corridaSul._id, devs._id] });
+
+// Desafio do clube (membros entram sem convite) e desafio da comunidade (qualquer pessoa)
+const clubeDoLivro = await Goal.create({
+  ownerId: equipe._id, title: 'Clube do livro de novembro', category: 'leitura', kind: 'daily', target: { amount: 20, unit: 'min' }, color: '#6C4DFF', createdAt: created(6),
+  shared: { mode: 'versus', participants: [equipe._id, paula._id, julia._id, marina._id], startsAt: ago(6), endsAt: addDays(today, 23), clubId: leitores._id, description: 'Ler "O Avesso da Pele" até o fim do mês, 20 min por dia.' },
+});
+await checkins(clubeDoLivro, paula, lastN(5), 30, { minutes: 30 });
+await checkins(clubeDoLivro, julia, lastN(3), 25, { minutes: 25 });
+await Goal.create({
+  ownerId: equipe._id, title: 'Novembro sem tela depois das 22h', category: 'habito', kind: 'daily', target: { amount: 1, unit: '' }, color: '#6C4DFF', createdAt: created(6),
+  shared: { mode: 'together', participants: [equipe._id, ana._id, paula._id], startsAt: ago(6), endsAt: addDays(today, 23), public: true, seasonId: season?._id, description: 'Celular longe depois das 22h. Marque o dia de manhã.' },
+});
+await Goal.create({
+  ownerId: equipe._id, title: '100 km em 30 dias', category: 'treino', kind: 'weekly', target: { amount: 25, unit: 'km' }, color: '#FF5B2E', createdAt: created(3),
+  shared: { mode: 'versus', participants: [equipe._id, caio._id], startsAt: ago(3), endsAt: addDays(today, 27), clubId: corridaSul._id, description: 'Some 100 km no mês.' },
+});
 
 for (const code of ['primeiro-passo', 'sequencia-7', 'semana-fechada', 'quatro-semanas', 'marco', 'primeiro-post', 'juntos', 'desafio', 'nivel-10']) {
   await Achievement.create({ userId: rafa._id, code, earnedAt: minutesAgo(Math.floor(rand() * 40000)) });

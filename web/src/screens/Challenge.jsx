@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, ErrorNote, Skeleton } from '../components/ui.jsx';
-import { useLoad, afterCheckin } from '../lib/useLoad.js';
+import { useLoad, afterCheckin, invalidateLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useCheckin } from '../lib/useCheckin.js';
@@ -159,6 +159,14 @@ export default function Challenge() {
       else { await api(`/goals/${g.id}/decline`, { method: 'POST' }); navigate('/metas', { replace: true }); }
     } catch (e) { toast(e.message); }
   }
+  const outside = !g.invited && !g.shared.joined;
+  async function participate() {
+    try {
+      setData(await api(`/goals/${g.id}/participate`, { method: 'POST' }));
+      invalidateLoad('/home', '/goals', '/home/challenges', '/community/challenges');
+      toast('Você está dentro. Bora!');
+    } catch (e) { toast(e.message); }
+  }
   async function leave() {
     if (!(await confirm({ title: 'Sair do desafio?', message: 'Seus registros ficam no seu histórico, e o grupo continua sem você.', confirmLabel: 'Sair do desafio', danger: true }))) return;
     await api(`/goals/${g.id}`, { method: 'DELETE' });
@@ -175,10 +183,17 @@ export default function Challenge() {
             <div className="row gap-8"><button type="button" className="btn btn-orbita grow" onClick={() => answer(true)}>Topar</button><button type="button" className="btn btn-ghost" onClick={() => answer(false)}>Agora não</button></div>
           </div>
         )}
-        {!g.invited && g.shared.tasks.length > 0 && <Tasks g={g} onGoal={setData} />}
-        {!g.invited && <Together g={g} meId={me.id} onGoal={setData} />}
+        {outside && (
+          <div className="card stack gap-10" style={{ boxShadow: 'inset 0 0 0 2px var(--nobi-orbita)' }}>
+            {g.shared.description && <p className="t-15">{g.shared.description}</p>}
+            <span className="t-14 secondary">{g.shared.public ? 'Desafio aberto da comunidade.' : 'Desafio do clube.'} Seus registros nele contam no ranking.</span>
+            <button type="button" className="btn btn-orbita block" onClick={participate}>Participar</button>
+          </div>
+        )}
+        {!g.invited && !outside && g.shared.tasks.length > 0 && <Tasks g={g} onGoal={setData} />}
+        {!g.invited && !outside && <Together g={g} meId={me.id} onGoal={setData} />}
         {g.shared.ranking && <Ranking ranking={g.shared.ranking} />}
-        {!g.invited && <button type="button" className="btn btn-danger block" onClick={leave}><Icon name="logout" size={18} /> Sair do desafio</button>}
+        {!g.invited && !outside && <button type="button" className="btn btn-danger block" onClick={leave}><Icon name="logout" size={18} /> Sair do desafio</button>}
       </div>
     </div>
   );

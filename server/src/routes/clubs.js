@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { Club, Membership, Post, User, Goal, Report } from '../models/index.js';
 import { bad, notFound, forbidden, HttpError } from '../lib/http.js';
 import { friendIds, publicUser, blockedIds, relation } from '../services/social.js';
-import { clubSummary, membershipOf, canModerate, visibleClubFilter, clubRanking, openChallengeFilter, isCategory, CATEGORY_LABEL } from '../services/clubs.js';
+import { clubSummary, membershipOf, canModerate, visibleClubFilter, clubRanking, openChallengeFilter, isCategory, CATEGORY_LABEL, INTEREST_ORDER } from '../services/clubs.js';
 import { hydratePosts } from './posts.js';
 import { goalView } from '../services/progress.js';
 import { award } from '../services/achievements.js';
@@ -67,7 +67,9 @@ community.get('/', async (req, res) => {
     myClubs: myCards,
     nearby,
     needsCity: !me.city,
-    interests: interests.map((i) => ({ interest: i._id.interest || CATEGORY_LABEL[i._id.category], category: i._id.category, count: i.n })),
+    interests: interests
+      .map((i) => ({ interest: i._id.interest || CATEGORY_LABEL[i._id.category], category: i._id.category, count: i.n }))
+      .sort((a, b) => INTEREST_ORDER.indexOf(a.category) - INTEREST_ORDER.indexOf(b.category) || b.count - a.count || a.interest.localeCompare(b.interest)),
   });
 });
 

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from './Icon.jsx';
-import { Avatar, StreakPill } from './ui.jsx';
+import { Avatar, Sheet, StreakPill } from './ui.jsx';
+import ReportSheet from './ReportSheet.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, timeAgo, fmtNum, signed, unitShort } from '../lib/format.js';
 import { useToast } from '../lib/toast.jsx';
 import { useConfirm } from '../lib/confirm.jsx';
+import { patchCachedPost } from '../lib/useLoad.js';
 
 function Metric({ value, unit, caption }) {
   return (
@@ -49,6 +51,7 @@ function Comments({ post, onCount }) {
           <Avatar user={c.user} size={30} />
           <div className="grow t-14" style={{ background: 'var(--nobi-bg)', borderRadius: 14, padding: '8px 12px' }}>
             <Link to={`/u/${c.user.username}`} className="strong">{c.user.name.split(' ')[0]}</Link> {c.text}
+            <span className="t-12 muted" style={{ display: 'block', marginTop: 2 }}>{timeAgo(c.createdAt)}</span>
           </div>
           {(c.mine || post.mine) && (
             <button type="button" className="icon-btn plain" aria-label="Apagar comentário" onClick={() => remove(c)}><Icon name="trash" size={16} /></button>
@@ -64,9 +67,23 @@ function Comments({ post, onCount }) {
   );
 }
 
-export default function PostCard({ post: initial, compact = false, onDelete }) {
-  const [post, setPost] = useState(initial);
+/**
+ * club = { slug, canModerate } quando o post aparece num clube; note = texto extra na linha de cima
+ * ("fora dos seus amigos"). O ⋯ junta apagar (meu), denunciar (dos outros) e remover do clube (moderação).
+ */
+export default function PostCard({ post: initial, compact = false, onDelete, club, note, onRemoved }) {
+  const [post, setPostState] = useState(initial);
+  // Dados novos do servidor (feed recarregado) substituem a cópia local
+  useEffect(() => { setPostState(initial); }, [initial]);
+  // Mudança local (reação, comentário) vai também para as listas guardadas
+  const setPost = (next) => setPostState((prev) => {
+    const v = typeof next === 'function' ? next(prev) : next;
+    queueMicrotask(() => patchCachedPost(v));
+    return v;
+  });
   const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [report, setReport] = useState(false);
   const [pop, setPop] = useState(false);
   const confirm = useConfirm();
   const toast = useToast();
@@ -84,6 +101,19 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
     await api(`/posts/${post.id}`, { method: 'DELETE' });
     onDelete?.(post.id);
   }
+  async function removeFromClub() {
+    setMenu(false);
+    if (!(await confirm({ title: 'Remover do clube?', message: 'O post sai do feed do clube. Continua no perfil da pessoa.', confirmLabel: 'Remover', danger: true }))) return;
+    try {
+      await api(`/clubs/${club.slug}/posts/${post.id}/remove`, { method: 'POST' });
+      toast('Post removido do clube.');
+      onRemoved?.(post.id);
+    } catch (e) { toast(e.message); }
+  }
+  const canDelete = post.mine && onDelete;
+  const canReport = !post.mine;
+  const canRemove = club?.canModerate;
+  const hasMenu = canDelete || canReport || canRemove;
 
   const metrics = [];
   if (m.km) metrics.push(<Metric key="km" value={fmtNum(m.km)} unit="km" caption={m.minutes ? `${m.minutes} min` : undefined} />);
@@ -106,10 +136,11 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
             {post.kind === 'weekly' ? 'Resumo da semana' : cat.label}<span aria-hidden="true">·</span>{timeAgo(post.createdAt)}
             {post.audience === 'public' ? <Icon name="globe" size={13} /> : <Icon name="users" size={13} />}
             <span className="sr-only">{post.audience === 'public' ? 'Público' : 'Amigos'}</span>
+            {note && <><span aria-hidden="true">·</span>{note}</>}
           </span>
         </div>
         {m.streak > 1 && <StreakPill value={m.streak} unit={unitShort(m.streakUnit, m.streak)} active />}
-        {post.mine && onDelete && <button type="button" className="icon-btn plain" aria-label="Apagar post" onClick={remove}><Icon name="trash" size={18} /></button>}
+        {hasMenu && <button type="button" className="icon-btn plain" aria-label="Mais opções do post" onClick={() => setMenu(true)} style={{ width: 36 }}><Icon name="more" size={20} /></button>}
       </header>
 
       {post.title && (
@@ -144,6 +175,16 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
         {reactors && !compact && <span className="t-13 muted grow" style={{ textAlign: 'right' }}>{reactors}</span>}
       </footer>
       {open && <Comments post={post} onCount={(d) => setPost((p) => ({ ...p, commentsCount: p.commentsCount + d }))} />}
+      {hasMenu && (
+        <Sheet open={menu} onClose={() => setMenu(false)} title="Post">
+          <div className="card flush card-list">
+            {canDelete && <button type="button" className="list-row" onClick={() => { setMenu(false); remove(); }}><Icon name="trash" size={20} /><span className="t-15 strong grow">Apagar post</span></button>}
+            {canRemove && !post.mine && <button type="button" className="list-row" onClick={removeFromClub}><Icon name="close" size={20} /><span className="grow stack" style={{ gap: 1 }}><span className="t-15 strong">Remover do clube</span><span className="t-13 muted">moderação</span></span></button>}
+            {canReport && <button type="button" className="list-row" style={{ color: 'var(--nobi-danger)' }} onClick={() => { setMenu(false); setReport(true); }}><Icon name="flag" size={20} /><span className="t-15 strong grow">Denunciar</span></button>}
+          </div>
+        </Sheet>
+      )}
+      {canReport && <ReportSheet open={report} onClose={() => setReport(false)} targetType="post" targetId={post.id} clubSlug={club?.slug} />}
     </article>
   );
 }

@@ -31,8 +31,9 @@ export default function Register() {
   const [pages, setPages] = useState('');
   const [km, setKm] = useState('');
   const [note, setNote] = useState('');
-  const [share, setShare] = useState(false);
-  const [aud, setAud] = useState('friends');
+  const preset = state?.preset;
+  const [share, setShare] = useState(Boolean(preset?.share));
+  const [aud, setAud] = useState(preset?.audience || 'friends');
   const [photo, setPhoto] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -40,7 +41,9 @@ export default function Register() {
   // Começa na categoria do objetivo indicado ou do primeiro que ainda falta hoje
   useEffect(() => {
     if (!goals.length || cat) return;
-    const start = goals.find((g) => g.id === state?.goalId) || goals.find((g) => g.kind !== 'project' && !g.status.periodDone && g.status.activeToday) || goals[0];
+    const start = goals.find((g) => g.id === state?.goalId)
+      || (preset?.category && (goals.find((g) => g.category === preset.category && !g.status.periodDone) || goals.find((g) => g.category === preset.category)))
+      || goals.find((g) => g.kind !== 'project' && !g.status.periodDone && g.status.activeToday) || goals[0];
     setCat(start.category);
     setGoalId(start.id);
   }, [goals, cat, state]);

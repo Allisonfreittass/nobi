@@ -30,6 +30,17 @@ export function afterCheckin(goal) {
   invalidateLoad('/home', '/me/stats', `/goals/${goal?.id}`, '/metas?view=semana', '/metas?view=mes', '/metas?view=concluidas');
 }
 
+/** Troca um post em todas as listas guardadas (feed, perfil, clube), para não voltar ao número antigo. */
+export function patchCachedPost(post) {
+  const swap = (list) => list.map((p) => (p && p.id === post.id ? { ...p, ...post } : p));
+  for (const [key, d] of cache) {
+    let next = null;
+    if (Array.isArray(d) && d.some((p) => p?.id === post.id)) next = swap(d);
+    else if (Array.isArray(d?.posts) && d.posts.some((p) => p?.id === post.id)) next = { ...d, posts: swap(d.posts) };
+    if (next) { cache.set(key, next); subscribers.get(key)?.forEach((fn) => fn(next)); }
+  }
+}
+
 /** Depois de publicar: o Feed e o perfil precisam buscar de novo. */
 export function afterPost() {
   for (const key of [...cache.keys()]) if (key.startsWith('/feed') || key.startsWith('/users/')) cache.delete(key);

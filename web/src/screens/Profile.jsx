@@ -10,6 +10,7 @@ import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { capitalize, monthName, signed, weekOrder } from '../lib/format.js';
+import ReportSheet from '../components/ReportSheet.jsx';
 import { useConfirm } from '../lib/confirm.jsx';
 
 const STAGE_NAME = { broto: 'Broto', muda: 'Muda', botao: 'Botão', flor: 'Flor' };
@@ -91,6 +92,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { me } = useSession();
   const toast = useToast();
+  const [report, setReport] = useState(false);
   const username = params.username || me.username;
   const isMe = username === me.username;
   const { data: p, error, reload, setData } = useLoad(`/users/${username}`);
@@ -126,7 +128,9 @@ export default function Profile() {
           ) : (
             <>
               <FollowButton profile={p} onChange={(relation) => { setData({ ...p, relation }); reload(); posts.reload(); }} />
+              <button type="button" className="icon-btn" aria-label="Denunciar conta" onClick={() => setReport(true)}><Icon name="flag" /></button>
               <button type="button" className="icon-btn" aria-label="Bloquear conta" onClick={block}><Icon name="ban" /></button>
+              <ReportSheet open={report} onClose={() => setReport(false)} targetType="user" targetId={p.id} />
             </>
           )}
         </div>

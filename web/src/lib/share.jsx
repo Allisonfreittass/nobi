@@ -52,7 +52,7 @@ export function ShareProvider({ children }) {
       <Sheet open={Boolean(payload)} onClose={() => setPayload(null)} title="Compartilhar no feed">
         {payload?.title && <p className="secondary t-14">{payload.title}</p>}
         <div className="row-group">
-          <SelectRow label="Para quem" hint={audience === 'public' ? 'aparece no seu perfil e no Explorar' : 'só seus amigos veem e podem reagir'} value={audience} onChange={setAudience} options={[['friends', 'Amigos'], ['public', 'Público']]} />
+          <SelectRow label="Para quem" hint={audience === 'public' ? 'aparece no seu perfil e nos seus clubes' : 'só seus amigos veem e podem reagir'} value={audience} onChange={setAudience} options={[['friends', 'Amigos'], ['public', 'Público']]} />
         </div>
         <label className="field">
           Legenda (opcional)

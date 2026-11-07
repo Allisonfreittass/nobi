@@ -183,7 +183,8 @@ posts.post('/:id/react', async (req, res) => {
 
 posts.get('/:id/comments', async (req, res) => {
   const p = await visiblePost(req.params.id, req.user._id);
-  const list = await Comment.find({ postId: p._id }).sort({ createdAt: 1 }).limit(100).lean();
+  const blocked = await blockedIds(req.user._id);
+  const list = await Comment.find({ postId: p._id, userId: { $nin: blocked } }).sort({ createdAt: 1 }).limit(100).lean();
   const people = await User.find({ _id: { $in: list.map((c) => c.userId) } }).lean();
   const by = new Map(people.map((u) => [String(u._id), u]));
   res.json(list.map((c) => ({ id: String(c._id), text: c.text, createdAt: c.createdAt, user: publicUser(by.get(String(c.userId))), mine: String(c.userId) === String(req.user._id) })).filter((c) => c.user));

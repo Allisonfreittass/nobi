@@ -4,6 +4,14 @@ import { addDays, weekStart } from '../lib/dates.js';
 
 export const CATEGORY_LABEL = { treino: 'Treino', leitura: 'Leitura', estudo: 'Estudo', habito: 'Hábito', objetivo: 'Objetivo', projeto: 'Projeto' };
 export const isCategory = (c) => CATEGORIES.includes(c);
+const plain = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+/** "Corrida · Treino", mas sem repetir quando o interesse já é a categoria ("Hábitos", não "Hábitos · Hábito"). */
+export function clubTags(club) {
+  const cat = CATEGORY_LABEL[club.category];
+  const interest = club.interest || cat;
+  return plain(interest).startsWith(plain(cat)) ? interest : `${interest} · ${cat}`;
+}
+export const INTEREST_ORDER = ['leitura', 'treino', 'estudo', 'projeto', 'habito', 'objetivo'];
 
 export async function membershipOf(clubId, userId) {
   return Membership.findOne({ clubId, userId }).lean();
@@ -28,7 +36,7 @@ export async function clubSummary(club, { userId, friends = [] } = {}) {
     name: club.name,
     category: club.category,
     interest: club.interest || CATEGORY_LABEL[club.category],
-    tags: [club.interest || CATEGORY_LABEL[club.category], CATEGORY_LABEL[club.category]].filter((v, i, a) => a.indexOf(v) === i).join(' · '),
+    tags: clubTags(club),
     city: club.city,
     region: club.region,
     kind: club.kind,

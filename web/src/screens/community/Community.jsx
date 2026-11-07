@@ -1,0 +1,272 @@
+// Comunidade (substitui o Explorar): busca + Desafios · Clubes.
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import Icon from '../../components/Icon.jsx';
+import PersonRow from '../../components/PersonRow.jsx';
+import { Chip, ErrorNote, Sheet, Skeleton } from '../../components/ui.jsx';
+import { api } from '../../lib/api.js';
+import { useLoad, invalidateLoad } from '../../lib/useLoad.js';
+import { useSession } from '../../lib/session.jsx';
+import { useToast } from '../../lib/toast.jsx';
+import { CATEGORIES, CATEGORY_ORDER, goalColor } from '../../lib/format.js';
+import { ClubGridCard, ClubTile, ChallengeRow, people } from './parts.jsx';
+
+function MyClubCard({ club }) {
+  const sub = club.newPosts ? `${club.newPosts} ${club.newPosts === 1 ? 'post novo' : 'posts novos'}` : club.activeChallenge ? 'desafio ativo' : `${people(club.membersCount)} membros`;
+  return (
+    <Link to={`/clubes/${club.slug}`} className="card row gap-10" style={{ padding: 12, borderRadius: 20, minWidth: 0 }}>
+      <ClubTile club={club} size={44} icon />
+      <span className="stack" style={{ gap: 2, minWidth: 0 }}>
+        <span className="strong t-14" style={{ lineHeight: 1.25, overflowWrap: 'anywhere' }}>{club.name}</span>
+        <span className="t-12 secondary">{club.kind === 'private' ? `Grupo privado · ${sub}` : sub}</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Grupo privado de amigos: nome, categoria e amigos (só quem é amizade dos dois lados). */
+function NewGroupSheet({ open, onClose, onCreated }) {
+  const { me } = useSession();
+  const toast = useToast();
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('treino');
+  const [picked, setPicked] = useState([]);
+  const [friends, setFriends] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    if (!open || friends) return;
+    api(`/users/${me.username}/following`).then((r) => setFriends(r.people.filter((p) => p.relation?.friends))).catch(() => setFriends([]));
+  }, [open, friends, me.username]);
+  const flip = (id) => setPicked((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
+  async function create() {
+    setBusy(true);
+    setError(null);
+    try {
+      const c = await api('/clubs', { method: 'POST', body: { name, category, invite: picked } });
+      invalidateLoad('/community');
+      toast('Grupo criado.');
+      onCreated(c);
+    } catch (e) { setError(e); } finally { setBusy(false); }
+  }
+  return (
+    <Sheet open={open} onClose={onClose} title="Grupo de amigos">
+      <p className="t-14 secondary">Um clube só de vocês: feed, ranking da semana e desafios. Ninguém de fora vê.</p>
+      <label className="field">Nome<input className="input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Corredores do prédio" /></label>
+      <div className="stack gap-8">
+        <span className="t-14 strong">Categoria</span>
+        <div className="chips" role="group" aria-label="Categoria">
+          {CATEGORY_ORDER.map((c) => (
+            <Chip key={c} small on={category === c} onClick={() => setCategory(c)}>
+              <span style={{ width: 9, height: 9, borderRadius: 3, background: CATEGORIES[c].color }} aria-hidden="true" />{CATEGORIES[c].label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+      <div className="stack gap-8">
+        <span className="t-14 strong">Amigos {picked.length > 0 && <span className="muted">· {picked.length}</span>}</span>
+        {!friends && <Skeleton height={60} />}
+        {friends?.length === 0 && <p className="t-14 muted">Grupos são entre amigos (vocês se seguem). Convide alguém primeiro.</p>}
+        {friends?.length > 0 && (
+          <div className="card flush card-list">
+            {friends.map((f) => (
+              <label key={f.id} className="list-row" style={{ cursor: 'pointer', minHeight: 52 }}>
+                <input type="checkbox" checked={picked.includes(f.id)} onChange={() => flip(f.id)} style={{ width: 20, height: 20, accentColor: 'var(--nobi-tinta)' }} />
+                <span className="t-15 strong grow ellipsis">{f.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+      <ErrorNote error={error} />
+      <button type="button" className="btn btn-dark block" disabled={busy || !name.trim() || !picked.length} onClick={create}>{busy ? 'Criando…' : 'Criar grupo'}</button>
+    </Sheet>
+  );
+}
+
+function Suggestions() {
+  const { data, setData } = useLoad('/users/suggestions');
+  if (!data?.length) return null;
+  return (
+    <section className="stack gap-10" aria-label="Pessoas para seguir">
+      <h2 className="title t-20">Pessoas para seguir</h2>
+      <div className="card flush card-list">
+        {data.slice(0, 5).map((u) => <PersonRow key={u.id} u={u} onRelation={(relation) => setData(data.map((x) => (x.id === u.id ? { ...x, relation } : x)))} />)}
+      </div>
+    </section>
+  );
+}
+
+function Clubs() {
+  const { data, error, reload, setData } = useLoad('/community');
+  const [interest, setInterest] = useState(null);
+  const [byInterest, setByInterest] = useState(null);
+  const [group, setGroup] = useState(false);
+  useEffect(() => {
+    if (!interest) { setByInterest(null); return; }
+    setByInterest(null);
+    api(`/clubs?interest=${encodeURIComponent(interest)}`).then(setByInterest).catch(() => setByInterest([]));
+  }, [interest]);
+
+  if (error) return <ErrorNote error={error} onRetry={reload} />;
+  if (!data) return <><Skeleton height={80} /><Skeleton height={260} /></>;
+
+  const joined = (c) => {
+    const mark = (list) => list.map((x) => (x.id === c.id ? { ...x, ...c } : x));
+    setData({ ...data, myClubs: [...data.myClubs, { ...c, newPosts: 0 }], nearby: { ...data.nearby, clubs: mark(data.nearby.clubs) } });
+    setByInterest((l) => (l ? mark(l) : l));
+  };
+
+  return (
+    <>
+      <section className="stack gap-10" aria-label="Seus clubes">
+        <div className="row between">
+          <h2 className="title t-20">Seus clubes</h2>
+          <button type="button" className="btn btn-ghost sm" onClick={() => setGroup(true)}><Icon name="plus" size={16} /> Grupo de amigos</button>
+        </div>
+        {data.myClubs.length > 0
+          ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>{data.myClubs.map((c) => <MyClubCard key={c.id} club={c} />)}</div>
+          : <p className="t-14 secondary">Você ainda não entrou em nenhum clube. Clubes juntam gente com o mesmo objetivo: seus posts Públicos da categoria aparecem lá.</p>}
+      </section>
+
+      <section className="stack gap-10" aria-label="Perto de você">
+        <div className="row gap-8">
+          <Icon name="globe" size={18} />
+          <h2 className="title t-20">Perto de você</h2>
+          {data.nearby.label && <span className="t-13 secondary">{data.nearby.label}</span>}
+        </div>
+        {data.needsCity && (
+          <Link to="/perfil/editar" className="card row gap-12 tap" style={{ padding: 14 }}>
+            <span className="grow t-14">Diga sua cidade para ver os clubes da sua região.</span>
+            <span className="btn sm btn-dark">Adicionar</span>
+          </Link>
+        )}
+        {!data.needsCity && data.nearby.clubs.length === 0 && <p className="t-14 secondary">Ainda não tem clube na sua região. Veja por interesse abaixo.</p>}
+        {data.nearby.clubs.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+            {data.nearby.clubs.map((c) => <ClubGridCard key={c.id} club={c} onJoined={joined} />)}
+          </div>
+        )}
+      </section>
+
+      <section className="stack gap-10" aria-label="Por interesse">
+        <h2 className="title t-20">Por interesse</h2>
+        <div className="row gap-8 wrap">
+          {data.interests.map((i) => (
+            <Chip key={i.interest} on={interest === i.interest} onClick={() => setInterest(interest === i.interest ? null : i.interest)}>
+              <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 4, background: goalColor(CATEGORIES[i.category]?.color) }} />{i.interest}
+            </Chip>
+          ))}
+        </div>
+        {interest && !byInterest && <Skeleton height={200} />}
+        {byInterest?.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+            {byInterest.map((c) => <ClubGridCard key={c.id} club={c} onJoined={joined} />)}
+          </div>
+        )}
+      </section>
+      <Suggestions />
+      <NewGroupSheet open={group} onClose={() => setGroup(false)} onCreated={(c) => { setGroup(false); joined(c); }} />
+    </>
+  );
+}
+
+function Challenges() {
+  const { data, error, reload, setData } = useLoad('/community/challenges');
+  if (error) return <ErrorNote error={error} onRetry={reload} />;
+  if (!data) return <><Skeleton height={170} /><Skeleton height={80} /></>;
+  const onJoined = (id) => setData({
+    featured: data.featured?.id === id ? { ...data.featured, joined: true, participants: data.featured.participants + 1 } : data.featured,
+    list: data.list.map((c) => (c.id === id ? { ...c, joined: true, participants: c.participants + 1 } : c)),
+  });
+  const f = data.featured;
+  return (
+    <>
+      {f && (
+        <Link to={`/desafios/${f.id}`} className="block-orbita stack gap-8" style={{ padding: 18, borderRadius: 24 }}>
+          <span className="label-caps t-12">Desafio da comunidade</span>
+          <span className="title" style={{ fontSize: 'var(--nobi-text-3xl, 1.5rem)', fontWeight: 800, lineHeight: 1.1 }}>{f.title}</span>
+          <span className="t-14">{people(f.participants)} participando{f.daysLeft != null ? ` · termina em ${f.daysLeft} ${f.daysLeft === 1 ? 'dia' : 'dias'}` : ''}</span>
+          <span className="btn sm" style={{ alignSelf: 'flex-start', marginTop: 4, background: '#FFFFFF', color: '#141218' }}>{f.joined ? 'Você está dentro ✓' : 'Ver desafio'}</span>
+        </Link>
+      )}
+      {data.list.map((ch) => <ChallengeRow key={ch.id} ch={ch} canJoin={!ch.club || ch.club.member} onJoined={onJoined} />)}
+      {!f && data.list.length === 0 && <p className="t-14 secondary">Nenhum desafio aberto agora. Entre em clubes para ver os desafios deles.</p>}
+      <Link to="/desafios" className="card row gap-12 tap" style={{ padding: '14px 16px' }}>
+        <Icon name="users" size={20} />
+        <span className="grow stack" style={{ gap: 1 }}><span className="strong t-15">Seus desafios com amigos</span><span className="t-13 muted">criados por você ou para os quais te convidaram</span></span>
+        <Icon name="chevron" size={18} />
+      </Link>
+    </>
+  );
+}
+
+function SearchResults({ q }) {
+  const [r, setR] = useState(null);
+  useEffect(() => {
+    setR(null);
+    const t = setTimeout(() => api(`/community/search?q=${encodeURIComponent(q)}`).then(setR).catch(() => setR({ clubs: [], challenges: [], people: [] })), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+  if (!r) return <Skeleton height={160} />;
+  const none = !r.clubs.length && !r.challenges.length && !r.people.length;
+  return (
+    <section className="stack gap-14" aria-label="Resultados">
+      {none && <p className="muted t-14">Nada encontrado para “{q}”.</p>}
+      {r.clubs.length > 0 && (
+        <div className="stack gap-10"><h2 className="title t-18">Clubes</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+            {r.clubs.map((c) => <ClubGridCard key={c.id} club={c} onJoined={(x) => setR({ ...r, clubs: r.clubs.map((y) => (y.id === x.id ? x : y)) })} />)}
+          </div>
+        </div>
+      )}
+      {r.challenges.length > 0 && (
+        <div className="stack gap-10"><h2 className="title t-18">Desafios</h2>
+          {r.challenges.map((ch) => <ChallengeRow key={ch.id} ch={ch} canJoin={!ch.clubId} onJoined={() => setR({ ...r, challenges: r.challenges.map((y) => (y.id === ch.id ? { ...y, joined: true } : y)) })} />)}
+        </div>
+      )}
+      {r.people.length > 0 && (
+        <div className="stack gap-10"><h2 className="title t-18">Pessoas</h2>
+          <div className="card flush card-list">
+            {r.people.map((u) => <PersonRow key={u.id} u={u} onRelation={(relation) => setR({ ...r, people: r.people.map((x) => (x.id === u.id ? { ...x, relation } : x)) })} />)}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default function Community() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('aba') === 'desafios' ? 'desafios' : 'clubes';
+  const [searching, setSearching] = useState(false);
+  const [q, setQ] = useState('');
+  const setTab = (t) => setParams(t === 'clubes' ? {} : { aba: t }, { replace: true });
+  return (
+    <div className="screen">
+      <header className="screen-head">
+        <h1 className="title t-30">Comunidade</h1>
+        <button type="button" className="icon-btn" aria-label={searching ? 'Fechar busca' : 'Buscar clubes, desafios e pessoas'} aria-expanded={searching} onClick={() => { setSearching((s) => !s); setQ(''); }}>
+          <Icon name={searching ? 'close' : 'search'} />
+        </button>
+      </header>
+      {searching && (
+        <label className="input-prefix" style={{ display: 'block' }}>
+          <span aria-hidden="true" style={{ display: 'flex' }}><Icon name="search" size={18} /></span>
+          <span className="sr-only">Buscar</span>
+          <input className="input" type="search" autoFocus style={{ paddingLeft: 44 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Clubes, desafios, pessoas ou @" />
+        </label>
+      )}
+      {searching && q.trim().length >= 2 ? <SearchResults q={q.trim()} /> : (
+        <>
+          <div role="tablist" aria-label="Seção" className="segmented bg-segment">
+            {[['desafios', 'Desafios'], ['clubes', 'Clubes']].map(([v, label]) => (
+              <button key={v} type="button" role="tab" aria-selected={tab === v} aria-pressed={tab === v} onClick={() => setTab(v)}>{label}</button>
+            ))}
+          </div>
+          {tab === 'clubes' ? <Clubs /> : <Challenges />}
+        </>
+      )}
+    </div>
+  );
+}
