@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, ErrorNote, Skeleton } from '../components/ui.jsx';
-import { useLoad } from '../lib/useLoad.js';
+import { useLoad, afterCheckin } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useCheckin } from '../lib/useCheckin.js';
@@ -51,6 +51,7 @@ function Tasks({ g, onGoal }) {
       } else {
         const r = await api(`/goals/${g.id}/checkins`, { method: 'POST', body: { taskKey: t.key } });
         onGoal(r.goal);
+        afterCheckin(r.goal);
       }
     } catch (e) { toast(e.message); } finally { setBusy(null); }
   }

@@ -56,7 +56,7 @@ export default function GoalCard({ goal, meId, onChange, compact }) {
   const cat = CATEGORIES[g.category];
   const [value, hint] = valueLine(g);
   const act = actionFor(g);
-  const streakActive = g.status.periodDone || (g.kind !== 'weekly' && g.status.doneToday);
+  const streakActive = g.status.periodDone || g.status.doneToday;
   const streakValue = g.shared?.mode === 'together' ? g.shared.groupStreak.current : g.streak.current;
 
   async function run() {
@@ -80,7 +80,7 @@ export default function GoalCard({ goal, meId, onChange, compact }) {
           <h3 className="t-16 strong" style={{ lineHeight: 1.25 }}>{title}</h3>
           <span className="t-13 muted ellipsis">{metaLine(g)}</span>
         </div>
-        <StreakPill value={streakValue} unit={unitShort(g.streak.unit)} active={streakActive} bump />
+        <StreakPill value={streakValue} unit={unitShort(g.streak.unit, streakValue)} active={streakActive} bump />
       </div>
       {!compact && (
         <>

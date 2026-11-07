@@ -31,18 +31,19 @@ export function Chip({ on, onClick, children, small, className = '', ...rest }) 
 /** Pílula de sequência: chama + número. "bump" faz o pulo de 420 ms quando o número muda. */
 export function StreakPill({ value, unit = 'dias', active, bump }) {
   const [anim, setAnim] = useState(false);
-  const prev = useRef(value);
+  const [lit, setLit] = useState(false);
+  const prev = useRef({ value, active });
   useEffect(() => {
-    if (bump && value > prev.current) {
-      setAnim(true);
-      const t = setTimeout(() => setAnim(false), 450);
-      prev.current = value;
-      return () => clearTimeout(t);
-    }
-    prev.current = value;
-  }, [value, bump]);
+    const was = prev.current;
+    prev.current = { value, active };
+    if (!bump) return undefined;
+    const timers = [];
+    if (value > was.value) { setAnim(true); timers.push(setTimeout(() => setAnim(false), 450)); }
+    if (active && !was.active) { setLit(true); timers.push(setTimeout(() => setLit(false), 700)); }
+    return () => timers.forEach(clearTimeout);
+  }, [value, active, bump]);
   return (
-    <span className={`streak-pill ${active ? 'active' : ''} ${anim ? 'nobi-bump' : ''}`} aria-label={`Sequência: ${value} ${unit}`}>
+    <span className={`streak-pill ${active ? 'active' : ''} ${anim ? 'nobi-bump' : ''} ${lit ? 'nobi-ignite' : ''}`} aria-label={`Sequência: ${value} ${unit}${active ? ', feita hoje' : ''}`}>
       <Icon name="flame" size={15} stroke={2.2} className="flame" />
       <span aria-hidden="true">{value} {unit}</span>
     </span>

@@ -6,6 +6,7 @@ import { useSession, useMascotMotion } from '../lib/session.jsx';
 import { useShare } from '../lib/share.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
+import { afterPost } from '../lib/useLoad.js';
 import { CATEGORIES, WEEK, weekOrder } from '../lib/format.js';
 
 const CONFETTI = [
@@ -56,6 +57,7 @@ export default function Achievement() {
       setBusy(true);
       try {
         await api('/posts', { method: 'POST', body: { ...body, audience: state.audience, text: state.text || '', photo: state.photo } });
+        afterPost();
         toast('Compartilhado no feed.');
         done();
       } catch (e) { toast(e.message); setBusy(false); }

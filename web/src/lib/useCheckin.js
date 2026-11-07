@@ -4,6 +4,7 @@ import { useToast } from './toast.jsx';
 import { useShare } from './share.jsx';
 import { useSession } from './session.jsx';
 import { unitWord } from './format.js';
+import { afterCheckin } from './useLoad.js';
 
 /** O que o servidor deve responder, aplicado já no toque. O servidor corrige se algo for diferente. */
 export function optimisticCheckin(goal, body = {}) {
@@ -50,6 +51,7 @@ export function useCheckin(onGoal) {
       throw e;
     }
     onGoal?.(r.goal);
+    afterCheckin(r.goal);
     patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
     if (r.celebration) {
       navigate('/conquista', { state: { celebration: r.celebration } });
@@ -70,6 +72,7 @@ export function useCheckin(onGoal) {
   async function undo(goal, taskKey) {
     const r = await api(`/goals/${goal.id}/checkins/today${taskKey ? `?taskKey=${encodeURIComponent(taskKey)}` : ''}`, { method: 'DELETE' });
     onGoal?.(r.goal);
+    afterCheckin(r.goal);
     toast('Registro de hoje desfeito.');
     return r;
   }

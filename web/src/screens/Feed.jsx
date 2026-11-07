@@ -10,7 +10,7 @@ import InstallCard from '../components/InstallPrompt.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { Avatar, ErrorNote, Skeleton, ProgressBar } from '../components/ui.jsx';
 import { useUnread } from '../components/Layout.jsx';
-import { useLoad, useDesktop } from '../lib/useLoad.js';
+import { useLoad, useDesktop, afterCheckin } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { api } from '../lib/api.js';
 import { firstName, greeting, longToday, signed } from '../lib/format.js';
@@ -83,6 +83,7 @@ function ProjectCard({ goal, onChange }) {
     try {
       const r = await api(`/goals/${goal.id}/milestones/${m.id}`, { method: 'PATCH', body: { done: !m.done } });
       onChange(r.goal);
+      afterCheckin(r.goal);
       if (r.celebration) navigate('/conquista', { state: { celebration: r.celebration } });
     } catch (e) { toast(e.message); }
   }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import { Avatar, BackButton, ErrorNote, ProgressBar, Skeleton, StreakPill, WeekDots } from '../components/ui.jsx';
-import { useLoad } from '../lib/useLoad.js';
+import { useLoad, afterCheckin } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useShare } from '../lib/share.jsx';
@@ -33,6 +33,7 @@ export default function GoalDetail() {
     try {
       const r = await api(`/goals/${g.id}/milestones/${m.id}`, { method: 'PATCH', body: { done: !m.done } });
       setData(r.goal);
+      afterCheckin(r.goal);
       if (r.celebration) navigate('/conquista', { state: { celebration: r.celebration } });
     } catch (e) { toast(e.message); }
   }
@@ -92,7 +93,7 @@ export default function GoalDetail() {
       )}
 
       <section className="card stack gap-12">
-        <div className="row between"><h2 className="title t-18">Últimos 7 dias</h2><StreakPill value={g.streak.current} unit={unitShort(g.streak.unit)} active={g.status.periodDone} bump /></div>
+        <div className="row between"><h2 className="title t-18">Últimos 7 dias</h2><StreakPill value={g.streak.current} unit={unitShort(g.streak.unit, g.streak.current)} active={g.status.periodDone || g.status.doneToday} bump /></div>
         <WeekDots days={g.status.last7} color={goalColor(g.color)} />
         {g.kind === 'project' && <ProgressBar value={g.pct} color={goalColor(g.color)} label="Progresso do projeto" />}
         <div className="row gap-8 wrap">

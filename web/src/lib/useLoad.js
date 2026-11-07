@@ -5,6 +5,27 @@ import { api } from './api.js';
 // Fica só na memória da aba (some ao fechar) e é limpa ao entrar ou sair da conta.
 const cache = new Map();
 export const clearLoadCache = () => cache.clear();
+const subscribers = new Map(); // path -> Set(setState) para atualizar telas abertas
+
+/** Esquece telas que mudaram, para a próxima abertura buscar de novo. */
+export function invalidateLoad(...paths) {
+  for (const p of paths) cache.delete(p);
+}
+
+/** Depois de um registro: troca o objetivo na lista e marca as telas que dependem dele. */
+export function afterCheckin(goal) {
+  if (goal && cache.has('/goals')) {
+    const next = cache.get('/goals').map((g) => (g.id === goal.id ? goal : g));
+    cache.set('/goals', next);
+    subscribers.get('/goals')?.forEach((fn) => fn(next));
+  }
+  invalidateLoad('/home', '/me/stats', `/goals/${goal?.id}`);
+}
+
+/** Depois de publicar: o Feed e o perfil precisam buscar de novo. */
+export function afterPost() {
+  for (const key of [...cache.keys()]) if (key.startsWith('/feed') || key.startsWith('/users/')) cache.delete(key);
+}
 
 /** Carrega um endpoint e expõe { data, error, loading, reload, setData }. */
 export function useLoad(path, { skip = false } = {}) {
@@ -36,8 +57,11 @@ export function useLoad(path, { skip = false } = {}) {
   useEffect(() => {
     alive.current = true;
     reload();
-    return () => { alive.current = false; };
-  }, [reload]);
+    if (!path) return () => { alive.current = false; };
+    if (!subscribers.has(path)) subscribers.set(path, new Set());
+    subscribers.get(path).add(setDataState);
+    return () => { alive.current = false; subscribers.get(path)?.delete(setDataState); };
+  }, [reload, path]);
   return { data, error, loading, reload, setData };
 }
 

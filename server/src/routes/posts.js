@@ -99,7 +99,12 @@ posts.post('/', async (req, res) => {
     }
     metrics.deltaVsLastMonth = await deltaVsLastMonth(goal._id, req.user._id, req.today);
   }
-  if (b.celebration?.kind === 'streak') {
+  if (b.start) {
+    // "Fulano começou a meditar": só com o objetivo recém-criado e uma vez
+    kind = 'start';
+    title = `Começou: ${goal.title}`;
+    if (await Post.exists({ goalId: goal._id, userId: req.user._id, kind: 'start' })) throw bad('Você já contou que começou.');
+  } else if (b.celebration?.kind === 'streak') {
     kind = 'milestone';
     const n = Number(b.celebration.count) || streak.current;
     title = `${n} ${streak.unit === 'weeks' ? 'semanas' : 'dias'} seguidos de ${UNIT_WORD[goal.category]}`;

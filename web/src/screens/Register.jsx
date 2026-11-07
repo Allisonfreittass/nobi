@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { Chip, Segmented, Toggle, ErrorNote, Skeleton } from '../components/ui.jsx';
-import { useLoad } from '../lib/useLoad.js';
+import { useLoad, afterCheckin, afterPost } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
@@ -78,6 +78,7 @@ export default function Register() {
       if (note.trim()) body.note = note.trim();
       const r = await api(`/goals/${goal.id}/checkins`, { method: 'POST', body });
       patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
+      afterCheckin(r.goal);
       if (r.celebration) {
         // Fechou um marco: a Conquista oferece postar (com a escolha de público já feita aqui, se houver)
         const sent = share ? await sendPostPhoto(photo) : undefined;
@@ -86,6 +87,7 @@ export default function Register() {
       }
       if (share) {
         await api('/posts', { method: 'POST', body: { checkinId: r.checkin.id, audience: aud, text: note.trim(), photo: await sendPostPhoto(photo) } });
+        afterPost();
         toast(aud === 'public' ? 'Registrado e publicado para todo mundo.' : 'Registrado e publicado para seus amigos.');
       } else {
         toast(r.me.leveledUp ? `Registrado. Subiu para o nível ${r.me.level}!` : 'Registrado. Conta nas suas sequências.');

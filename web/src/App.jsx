@@ -21,6 +21,7 @@ const loadChallenge = () => import('./screens/Challenge.jsx');
 const loadChallenges = () => import('./screens/Challenges.jsx');
 const loadNotifications = () => import('./screens/Notifications.jsx');
 const loadInvite = () => import('./screens/Invite.jsx');
+const loadStarted = () => import('./screens/Started.jsx');
 const ResetPassword = lazy(loadResetPassword);
 const Terms = lazy(loadTerms);
 const Explore = lazy(loadExplore);
@@ -34,7 +35,8 @@ const Challenge = lazy(loadChallenge);
 const Challenges = lazy(loadChallenges);
 const Notifications = lazy(loadNotifications);
 const Invite = lazy(loadInvite);
-const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite];
+const Started = lazy(loadStarted);
+const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted];
 function usePrefetch() {
   useEffect(() => {
     const go = () => LAZY.forEach((l) => l().catch(() => {}));
@@ -107,6 +109,7 @@ export default function App() {
       {/* Telas cheias, sem menu */}
       <Route path="/registrar" element={<Private><Register /></Private>} />
       <Route path="/conquista" element={<Private><Achievement /></Private>} />
+      <Route path="/comecou/:id" element={<Private><Started /></Private>} />
 
       {/* Com menu lateral no PC e barra inferior no celular */}
       <Route element={<Private><Layout /></Private>}>

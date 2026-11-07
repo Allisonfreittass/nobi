@@ -96,11 +96,15 @@ Barra inferior (celular): **Feed · Explorar · [+] Registrar · Metas · Perfil
 | Perfil | `Perfil.dc.html` | Editar/Configurações no topo, avatar com nível, selo de temporada, interesses, sequência/consistência/desafios, mapa do mês, conquistas |
 | Metas | `Objetivos.dc.html` | Resumo do dia (anel), filtros por categoria, cards com sequência própria, progresso, 7 dias e ação por tipo |
 | Criar objetivo | `NovoObjetivo.dc.html` | Nome, **Pessoal / Com amigos**, convidar amigos + Juntos/Disputa, tipo, dias, cor |
+| Parabéns — novo hábito | `NovoHabito.dc.html` | Aparece logo após criar um objetivo. "Novo hábito plantado", Broto comemorando ao lado de um vaso com broto que cresce, "Começou!", card do objetivo com a semana (hoje destacado, dias de descanso explicados), toggle opcional "Contar para os amigos" (desligado por padrão), "Fazer o 1º check-in agora" / "Começar [próximo dia ativo]" |
 | Editar perfil | `EditarPerfil.dc.html` | Foto, nome, @usuário (checagem), bio 120, interesses, estatísticas Amigos/Público |
 | Configurações | `Configuracoes.dc.html` | Notificações, privacidade, tema, semana, animações do Broto, conta, sair, excluir |
 | Desktop | `Desktop.dc.html` | Menu lateral, objetivos do dia, projeto com marcos, consistência 12 semanas, amigos e ranking |
 
 Fluxo principal: Feed → [+] → Registrar → (se fechou marco) Conquista → Feed.
+Fluxo de novo objetivo: Metas → Novo → Criar objetivo → **Parabéns — novo hábito** → (check-in agora ou depois) → Metas.
+
+Regras da tela de parabéns: aparece **toda vez** que um objetivo é criado (é o pico de motivação); o texto e o card usam os dados reais do objetivo; se hoje não é dia ativo, o botão secundário diz "Começar [próximo dia ativo]"; nada é postado se o toggle ficar desligado; com amigos, mostrar quem foi convidado.
 
 ## 8. Regras de produto (não negociáveis)
 

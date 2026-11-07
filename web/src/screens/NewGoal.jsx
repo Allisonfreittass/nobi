@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, BackButton, Chip, ErrorNote, Segmented } from '../components/ui.jsx';
-import { useLoad } from '../lib/useLoad.js';
+import { useLoad, invalidateLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, CATEGORY_ORDER, GOAL_COLORS, WEEK, firstName } from '../lib/format.js';
@@ -103,7 +103,9 @@ export default function NewGoal() {
         shared: withFriends ? { mode: style, invite: picked, durationDays: Number(duration) } : undefined,
       };
       const g = await api('/goals', { method: 'POST', body });
-      navigate(g.shared?.endsAt ? `/desafios/${g.id}` : '/metas', { replace: true });
+      invalidateLoad('/goals', '/home');
+      if (g.shared) navigate(g.shared.endsAt ? `/desafios/${g.id}` : '/metas', { replace: true });
+      else navigate(`/comecou/${g.id}`, { replace: true, state: { goal: g } }); // tela "Começou!"
     } catch (e) {
       setError(e);
       setBusy(false);

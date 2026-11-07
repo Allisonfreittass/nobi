@@ -183,9 +183,13 @@ h1, h2, h3, p { margin: 0; }
   display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 14px;
   font-size: 13px; font-weight: 700; white-space: nowrap; background: var(--nobi-bg); color: var(--nobi-text-secondary);
 }
-.streak-pill.active { background: var(--nobi-soft); color: var(--nobi-text-streak); }
-.streak-pill .flame { color: var(--nobi-text-muted); transition: color var(--nobi-dur-toggle); }
-.streak-pill.active .flame { color: var(--nobi-brasa); }
+.streak-pill.active { background: var(--nobi-soft); color: var(--nobi-text-streak); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--nobi-brasa) 35%, transparent); }
+.streak-pill .flame { color: var(--nobi-text-muted); transition: color var(--nobi-dur-toggle), fill var(--nobi-dur-toggle); }
+.streak-pill.active .flame { color: var(--nobi-brasa); fill: var(--nobi-brasa); }
+/* Chama acendendo: brilho brasa que se espalha uma vez */
+@keyframes nobi-ignite { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--nobi-brasa) 55%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
+.nobi-ignite { animation: nobi-ignite 700ms var(--nobi-ease-out); }
+:root[data-theme='dark'] .streak-pill.active { background: color-mix(in srgb, var(--nobi-brasa) 22%, transparent); color: #FFB08F; }
 
 /* Campos */
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
@@ -302,7 +306,10 @@ h1, h2, h3, p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }
-.no-mascot-motion .nobi-hop, .no-mascot-motion .nobi-bump, .no-mascot-motion .nobi-pop { animation: none; }
+.no-mascot-motion .nobi-hop, .no-mascot-motion .nobi-bump, .no-mascot-motion .nobi-pop, .no-mascot-motion .nobi-ignite { animation: none; }
+@keyframes nobi-grow { 0% { transform: scale(0.2); opacity: 0; } 60% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
+.nobi-grow { animation: nobi-grow 900ms var(--nobi-ease-spring) 250ms both; transform-origin: 50% 100%; transform-box: fill-box; }
+@media (prefers-reduced-motion: reduce) { .nobi-grow { animation: none; } }
 
 /* Esqueleto de carregamento */
 .skeleton { border-radius: var(--nobi-radius-card); background: linear-gradient(90deg, var(--nobi-track), var(--nobi-card), var(--nobi-track)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }

@@ -106,7 +106,7 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
             <span className="sr-only">{post.audience === 'public' ? 'Público' : 'Amigos'}</span>
           </span>
         </div>
-        {m.streak > 1 && <StreakPill value={m.streak} unit={unitShort(m.streakUnit)} active />}
+        {m.streak > 1 && <StreakPill value={m.streak} unit={unitShort(m.streakUnit, m.streak)} active />}
         {post.mine && onDelete && <button type="button" className="icon-btn plain" aria-label="Apagar post" onClick={remove}><Icon name="trash" size={18} /></button>}
       </header>
 
@@ -114,6 +114,7 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
         <span className="row gap-8 title t-18" style={{ alignSelf: 'flex-start' }}>
           {post.kind === 'record' && <span className="block-brasa t-12 strong" style={{ padding: '4px 9px', borderRadius: 9, fontFamily: 'var(--nobi-font-body)', letterSpacing: 0 }}>Recorde</span>}
           {post.kind === 'milestone' && <Icon name="medal" size={20} style={{ color: 'var(--nobi-orbita)' }} />}
+          {post.kind === 'start' && <Icon name="sprout" size={20} style={{ color: '#2E9C6A' }} />}
           {post.kind !== 'record' && post.title}
         </span>
       )}

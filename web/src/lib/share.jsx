@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 import { Sheet, Segmented, ErrorNote } from '../components/ui.jsx';
 import { api } from './api.js';
+import { afterPost } from './useLoad.js';
 import { useToast } from './toast.jsx';
 import PhotoPicker, { sendPostPhoto } from '../components/PhotoPicker.jsx';
 
@@ -35,6 +36,7 @@ export function ShareProvider({ children }) {
       const { title, audience: _a, ...body } = payload;
       const r = await api('/posts', { method: 'POST', body: { ...body, audience, text, photo: await sendPostPhoto(photo) } });
       setPayload(null);
+      afterPost();
       toast(audience === 'public' ? 'Publicado para todo mundo.' : 'Publicado para seus amigos.');
       onDone?.(r.post);
     } catch (e) {

@@ -63,5 +63,5 @@ export function greeting(d = new Date()) {
 export const firstName = (name = '') => name.split(' ')[0];
 export const fmtNum = (n, digits = 1) => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: digits });
 export const unitWord = (unit, n) => (unit === 'weeks' ? (n === 1 ? 'semana' : 'semanas') : n === 1 ? 'dia' : 'dias');
-export const unitShort = (unit) => (unit === 'weeks' ? 'sem.' : 'dias');
+export const unitShort = (unit, n) => (unit === 'weeks' ? 'sem.' : n === 1 ? 'dia' : 'dias');
 export const signed = (n) => `${n > 0 ? '+' : ''}${n}%`;
