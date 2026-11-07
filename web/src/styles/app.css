@@ -492,3 +492,11 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .chip[aria-pressed='true'] svg { color: inherit; }
 
 .routine-row .streak-pill { padding: 3px 8px; font-size: var(--nobi-text-xs); border-radius: 10px; }
+
+/* Faixa atrás da barra de status do iPhone (app instalado, viewport-fit=cover) */
+.statusbar-shield {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 30; pointer-events: none;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--nobi-statusbar, var(--nobi-bg));
+  transition: background var(--nobi-dur-fill);
+}

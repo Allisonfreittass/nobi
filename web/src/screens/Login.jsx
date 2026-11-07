@@ -5,6 +5,7 @@ import { Field, ErrorNote } from '../components/ui.jsx';
 import { api } from '../lib/api.js';
 import { useSession } from '../lib/session.jsx';
 import { APP_NAME, BRAND_LINE, GOOGLE_CLIENT_ID } from '../config.js';
+import { useStatusBar } from '../lib/statusBar.js';
 
 function GoogleButton({ onCredential, text = 'continue_with' }) {
   const ref = useRef(null);
@@ -32,6 +33,7 @@ function GoogleButton({ onCredential, text = 'continue_with' }) {
 }
 
 export default function Login() {
+  useStatusBar('#FF5B2E'); // topo colorido: faixa do relógio na mesma cor
   const { signIn } = useSession();
   const navigate = useNavigate();
   const [params] = useSearchParams();

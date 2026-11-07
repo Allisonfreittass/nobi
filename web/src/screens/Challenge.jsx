@@ -11,6 +11,7 @@ import { useCelebrate, closedTheDay } from '../lib/celebrate.jsx';
 import { api } from '../lib/api.js';
 import { firstName, unitWord } from '../lib/format.js';
 import { useConfirm } from '../lib/confirm.jsx';
+import { useStatusBar } from '../lib/statusBar.js';
 
 function Header({ g, seasonName }) {
   const s = g.shared;
@@ -140,6 +141,7 @@ function Together({ g, meId, onGoal }) {
 }
 
 export default function Challenge() {
+  useStatusBar('#6C4DFF'); // topo colorido: faixa do relógio na mesma cor
   const { id } = useParams();
   const { me } = useSession();
   const navigate = useNavigate();

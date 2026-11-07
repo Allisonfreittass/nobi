@@ -9,8 +9,10 @@ import { useToast } from '../lib/toast.jsx';
 import { savePendingInvite } from '../lib/invite.js';
 import { APP_NAME, BRAND_LINE } from '../config.js';
 import { firstName } from '../lib/format.js';
+import { useStatusBar } from '../lib/statusBar.js';
 
 export default function Invite() {
+  useStatusBar('#FF5B2E'); // topo colorido: faixa do relógio na mesma cor
   const { username } = useParams();
   const { me } = useSession();
   const navigate = useNavigate();

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, getToken, setToken } from './api.js';
 import { clearLoadCache } from './useLoad.js';
+import { refreshStatusBar } from './statusBar.js';
 
 const SessionCtx = createContext(null);
 
@@ -11,6 +12,7 @@ function applyPrefs(prefs) {
   root.dataset.theme = dark ? 'dark' : 'light';
   root.classList.toggle('no-mascot-motion', prefs?.mascotMotion === false);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#141218' : '#F7F5F0');
+  refreshStatusBar();
 }
 
 export function SessionProvider({ children }) {

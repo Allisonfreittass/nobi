@@ -8,6 +8,7 @@ import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { afterPost } from '../lib/useLoad.js';
 import { CATEGORIES, WEEK, weekOrder } from '../lib/format.js';
+import { useStatusBar } from '../lib/statusBar.js';
 
 const CONFETTI = [
   { left: 40, top: 120, w: 14, h: 14, r: 4, c: 'var(--nobi-creme)', rot: 20 },
@@ -36,6 +37,7 @@ function texts(c) {
 }
 
 export default function Achievement() {
+  useStatusBar('#FF5B2E'); // topo colorido: faixa do relógio na mesma cor
   const { state } = useLocation();
   const navigate = useNavigate();
   const { me } = useSession();
