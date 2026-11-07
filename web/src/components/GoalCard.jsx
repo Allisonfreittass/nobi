@@ -4,6 +4,7 @@ import Icon from './Icon.jsx';
 import { ProgressBar, StreakPill, WeekDots } from './ui.jsx';
 import { CATEGORIES, KIND_LABEL, firstName, unitShort, goalColor } from '../lib/format.js';
 import { useCheckin } from '../lib/useCheckin.js';
+import GoalActions from './GoalActions.jsx';
 import { useToast } from '../lib/toast.jsx';
 
 const singular = (u) => ({ copos: 'copo', treinos: 'treino', lições: 'lição', páginas: 'página', corridas: 'corrida', min: 'min' }[u] || u || 'vez');
@@ -47,11 +48,12 @@ function actionFor(g) {
   return { label: 'Check-in', kind: 'add', body: u === 'min' ? { minutes: st.need } : { value: Math.max(1, st.need - st.todayValue) } };
 }
 
-export default function GoalCard({ goal, meId, onChange, compact }) {
+export default function GoalCard({ goal, meId, onChange, onRemove, compact }) {
   const navigate = useNavigate();
   const toast = useToast();
   const { checkin, undo } = useCheckin(onChange);
   const [busy, setBusy] = useState(false);
+  const [menu, setMenu] = useState(false);
   const g = { ...goal, meId, color: goalColor(goal.color) };
   const cat = CATEGORIES[g.category];
   const [value, hint] = valueLine(g);
@@ -81,6 +83,9 @@ export default function GoalCard({ goal, meId, onChange, compact }) {
           <span className="t-13 muted ellipsis">{metaLine(g)}</span>
         </div>
         <StreakPill value={streakValue} unit={unitShort(g.streak.unit, streakValue)} active={streakActive} bump />
+        <button type="button" className="icon-btn plain" aria-label={`Opções de ${g.title}`} onClick={() => setMenu(true)} style={{ width: 36, height: 36, marginRight: -8, marginTop: -2 }}>
+          <Icon name="more" size={20} />
+        </button>
       </div>
       {!compact && (
         <>
@@ -98,6 +103,7 @@ export default function GoalCard({ goal, meId, onChange, compact }) {
           {act.label}
         </button>
       </div>
+      {menu && <GoalActions goal={goal} meId={meId} open onClose={() => setMenu(false)} onRemoved={onRemove} onChanged={(ng) => onChange?.(ng)} />}
     </article>
   );
 }

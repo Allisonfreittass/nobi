@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { Goal, Checkin, User, Streak, CATEGORIES, KINDS } from '../models/index.js';
+import { Goal, Checkin, User, Streak, Post, Comment, CATEGORIES, KINDS } from '../models/index.js';
+import { deleteImages } from '../services/storage.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
 import { addDays, weekStart, weekday } from '../lib/dates.js';
-import { goalView, userGoals, refreshStreakCache, weekStartsOn, goalsQuery, summarize } from '../services/progress.js';
+import { goalView, userGoals, refreshStreakCache, weekStartsOn, goalsQuery, summarize, serializeGoal } from '../services/progress.js';
 import { computeStreak, dayTotals, needFor, CELEBRATE, streakInDays } from '../services/streaks.js';
 import { award, grantXp, ownedCodes } from '../services/achievements.js';
 import { XP } from '../services/level.js';
@@ -33,6 +34,11 @@ function parseActiveDays(v) {
 }
 
 goals.get('/', async (req, res) => res.json(await userGoals(req.user, req.today)));
+
+goals.get('/archived', async (req, res) => {
+  const list = await Goal.find({ ownerId: req.user._id, shared: null, archivedAt: { $ne: null } }).sort({ archivedAt: -1 }).lean();
+  res.json(list.map((g) => ({ ...serializeGoal(g), archivedAt: g.archivedAt })));
+});
 
 goals.get('/invites', async (req, res) => {
   const list = await Goal.find({ 'shared.invited': req.user._id, archivedAt: null }).lean();
@@ -101,28 +107,65 @@ goals.patch('/:id', async (req, res) => {
     if (!String(b.title).trim()) throw bad('Dê um nome ao objetivo.');
     g.title = String(b.title).trim().slice(0, 80);
   }
+  if (b.category !== undefined) {
+    if (!CATEGORIES.includes(b.category)) throw bad('Categoria inválida.');
+    g.category = b.category;
+  }
   const days = parseActiveDays(b.activeDays);
   if (days) g.activeDays = days;
   if (COLORS.includes(b.color)) g.color = b.color;
-  if (b.target?.amount) g.target.amount = Math.max(1, Math.round(Number(b.target.amount)));
-  if (b.deadline !== undefined && g.kind === 'project') g.deadline = b.deadline || undefined;
+  // O tipo não muda (mudaria como a sequência é contada); a meta muda
+  if (b.target && g.kind !== 'project' && !g.shared?.tasks?.length) {
+    if (b.target.amount !== undefined) g.target.amount = Math.max(1, Math.min(100000, Math.round(Number(b.target.amount) || 1)));
+    if (b.target.unit !== undefined) g.target.unit = String(b.target.unit).trim().slice(0, 20);
+  }
+  if (b.deadline !== undefined && g.kind === 'project') g.deadline = b.deadline ? String(b.deadline).slice(0, 10) : undefined;
   await g.save();
+  await refreshStreakCache(g, req.user._id, req.today, weekStartsOn(req.user));
   res.json(await goalView(g.toObject(), req.user, req.today));
 });
 
-// Pessoal: arquiva. Compartilhado: sai do grupo (a posse passa para outra pessoa).
+/** Apaga de vez um objetivo pessoal: registros, sequência e os posts sobre ele (com fotos e comentários). */
+async function destroyGoal(g, userId) {
+  const posts = await Post.find({ goalId: g._id, userId }, { _id: 1, photo: 1 }).lean();
+  await deleteImages(posts.map((p) => p.photo?.url).filter(Boolean));
+  await Promise.all([
+    Comment.deleteMany({ postId: { $in: posts.map((p) => p._id) } }),
+    Post.deleteMany({ _id: { $in: posts.map((p) => p._id) } }),
+    Checkin.deleteMany({ goalId: g._id }),
+    Streak.deleteMany({ goalId: g._id }),
+  ]);
+  await Goal.deleteOne({ _id: g._id });
+}
+
+// Pessoal: arquiva (padrão) ou exclui de vez (?modo=excluir). Compartilhado: sai do grupo (a posse passa para outra pessoa).
 goals.delete('/:id', async (req, res) => {
-  const g = await loadGoal(req.params.id, req.user);
+  const g = await Goal.findById(req.params.id);
+  if (!g || !isMember(g, req.user._id)) throw notFound('Objetivo não encontrado.');
   if (!g.shared) {
+    if (req.query.modo === 'excluir') {
+      await destroyGoal(g, req.user._id);
+      return res.json({ ok: true, deleted: true });
+    }
+    if (g.archivedAt) throw notFound('Objetivo não encontrado.');
     g.archivedAt = new Date();
     await g.save();
-    return res.json({ ok: true });
+    return res.json({ ok: true, archived: true });
   }
+  if (g.archivedAt) throw notFound('Objetivo não encontrado.');
   g.shared.participants = g.shared.participants.filter((p) => String(p) !== String(req.user._id));
   if (!g.shared.participants.length) g.archivedAt = new Date();
   else if (String(g.ownerId) === String(req.user._id)) g.ownerId = g.shared.participants[0];
   await g.save();
-  res.json({ ok: true });
+  res.json({ ok: true, left: true });
+});
+
+goals.post('/:id/restore', async (req, res) => {
+  const g = await Goal.findOne({ _id: req.params.id, ownerId: req.user._id, shared: null, archivedAt: { $ne: null } });
+  if (!g) throw notFound('Objetivo não encontrado.');
+  g.archivedAt = undefined;
+  await g.save();
+  res.json(await goalView(g.toObject(), req.user, req.today));
 });
 
 goals.post('/:id/join', async (req, res) => {

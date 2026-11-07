@@ -7,8 +7,9 @@ import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useShare } from '../lib/share.jsx';
 import { useCheckin } from '../lib/useCheckin.js';
+import GoalActions from '../components/GoalActions.jsx';
 import { api } from '../lib/api.js';
-import { CATEGORIES, GOAL_COLORS, KIND_LABEL, WEEK, unitShort, unitWord, firstName, goalColor } from '../lib/format.js';
+import { CATEGORIES, KIND_LABEL, unitShort, unitWord, firstName, goalColor } from '../lib/format.js';
 
 export default function GoalDetail() {
   const { id } = useParams();
@@ -18,8 +19,7 @@ export default function GoalDetail() {
   const share = useShare();
   const { data: g, error, setData, reload } = useLoad(`/goals/${id}`);
   const { checkin, undo } = useCheckin((goal) => setData(goal));
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(null);
+  const [menu, setMenu] = useState(false);
   const [newMs, setNewMs] = useState('');
 
   if (error) return <div className="screen no-nav"><BackButton /><ErrorNote error={error} onRetry={reload} /></div>;
@@ -27,7 +27,6 @@ export default function GoalDetail() {
   if (g.shared?.endsAt) return <Navigate to={`/desafios/${g.id}`} replace />;
 
   const cat = CATEGORIES[g.category];
-  const owner = g.ownerId === me.id;
 
   async function toggleMilestone(m) {
     try {
@@ -42,27 +41,11 @@ export default function GoalDetail() {
     if (!newMs.trim()) return;
     try { setData(await api(`/goals/${g.id}/milestones`, { method: 'POST', body: { title: newMs } })); setNewMs(''); } catch (err) { toast(err.message); }
   }
-  async function save() {
-    try {
-      setData(await api(`/goals/${g.id}`, { method: 'PATCH', body: draft }));
-      setEditing(false);
-    } catch (e) { toast(e.message); }
-  }
-  async function remove() {
-    const msg = g.shared ? 'Sair deste objetivo com amigos? Seus registros ficam no seu histórico.' : 'Arquivar este objetivo? Ele some das suas metas, mas o nível e as conquistas ficam.';
-    if (!window.confirm(msg)) return;
-    await api(`/goals/${g.id}`, { method: 'DELETE' });
-    toast(g.shared ? 'Você saiu do objetivo.' : 'Objetivo arquivado.');
-    navigate('/metas', { replace: true });
-  }
-
   return (
     <div className="screen no-nav">
       <header className="screen-head">
         <BackButton />
-        {owner && !editing && (
-          <button type="button" className="icon-btn" aria-label="Editar objetivo" onClick={() => { setDraft({ title: g.title, activeDays: g.activeDays, color: g.color }); setEditing(true); }}><Icon name="edit" /></button>
-        )}
+        <button type="button" className="icon-btn" aria-label="Opções do objetivo" onClick={() => setMenu(true)}><Icon name="more" /></button>
       </header>
 
       <section className="card stack gap-14" style={{ background: goalColor(g.color), color: g.color === '#141218' || g.color === '#6C4DFF' ? '#FFFFFF' : 'var(--nobi-tinta)' }}>
@@ -73,24 +56,6 @@ export default function GoalDetail() {
           <div className="stack"><span className="num t-40">{g.streak.best}</span><span className="t-13 strong">melhor sequência</span></div>
         </div>
       </section>
-
-      {editing && draft && (
-        <section className="card stack gap-12" aria-label="Editar objetivo">
-          <label className="field">Nome<input className="input" value={draft.title} maxLength={80} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></label>
-          <span className="t-14 strong">Dias que contam</span>
-          <div className="row gap-6" role="group" aria-label="Dias">
-            {WEEK.map((w) => {
-              const on = draft.activeDays.includes(w.d);
-              return <button key={w.d} type="button" aria-pressed={on} aria-label={w.full} onClick={() => setDraft({ ...draft, activeDays: on ? draft.activeDays.filter((x) => x !== w.d) : [...draft.activeDays, w.d] })}
-                style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', fontWeight: 700, background: on ? draft.color : 'var(--nobi-bg)', color: on ? '#FFFFFF' : 'var(--nobi-text-secondary)' }}>{w.short}</button>;
-            })}
-          </div>
-          <div className="row gap-10 wrap" role="radiogroup" aria-label="Cor">
-            {GOAL_COLORS.map(([hex, name]) => <button key={hex} type="button" role="radio" aria-checked={draft.color === hex} aria-label={name} onClick={() => setDraft({ ...draft, color: hex })} style={{ width: 44, height: 44, borderRadius: 16, border: 'none', background: hex, boxShadow: draft.color === hex ? `0 0 0 3px var(--nobi-card), 0 0 0 5px ${hex}` : 'none' }} />)}
-          </div>
-          <div className="row gap-8"><button type="button" className="btn btn-primary grow" onClick={save}>Salvar</button><button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>Cancelar</button></div>
-        </section>
-      )}
 
       <section className="card stack gap-12">
         <div className="row between"><h2 className="title t-18">Últimos 7 dias</h2><StreakPill value={g.streak.current} unit={unitShort(g.streak.unit, g.streak.current)} active={g.status.periodDone || g.status.doneToday} bump /></div>
@@ -140,7 +105,7 @@ export default function GoalDetail() {
         </section>
       )}
 
-      <button type="button" className="btn btn-danger block" onClick={remove}><Icon name={g.shared ? 'logout' : 'trash'} size={18} /> {g.shared ? 'Sair do objetivo' : 'Arquivar objetivo'}</button>
+      {menu && <GoalActions goal={g} meId={me.id} open showDetails={false} onClose={() => setMenu(false)} onRemoved={() => navigate('/metas', { replace: true })} onChanged={(ng) => setData(ng)} />}
     </div>
   );
 }

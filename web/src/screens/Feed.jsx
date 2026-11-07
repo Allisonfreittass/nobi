@@ -192,7 +192,7 @@ function DesktopFeed() {
         <ErrorNote error={goals.error} onRetry={goals.reload} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
           {goals.loading && !goals.data && [1, 2, 3].map((i) => <Skeleton key={i} height={170} />)}
-          {daily.map((g) => <GoalCard key={g.id} goal={g} meId={me.id} onChange={update} />)}
+          {daily.map((g) => <GoalCard key={g.id} goal={g} meId={me.id} onChange={update} onRemove={(id) => goals.setData((l) => l.filter((x) => x.id !== id))} />)}
         </div>
         {project && <ProjectCard goal={project} onChange={update} />}
         {stats.data && <Consistency12 stats={stats.data} />}

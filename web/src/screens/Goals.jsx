@@ -54,6 +54,48 @@ function Invites({ onJoined }) {
   );
 }
 
+function Archived({ onRestored }) {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const { data, setData } = useLoad('/goals/archived');
+  if (!data?.length) return null;
+  async function restore(g) {
+    try {
+      const fresh = await api(`/goals/${g.id}/restore`, { method: 'POST' });
+      setData((l) => l.filter((x) => x.id !== g.id));
+      onRestored(fresh);
+      toast('Objetivo de volta.');
+    } catch (e) { toast(e.message); }
+  }
+  async function destroy(g) {
+    if (!window.confirm(`Excluir “${g.title}” de vez? Apaga os registros e os posts dele. Não dá para desfazer.`)) return;
+    try {
+      await api(`/goals/${g.id}?modo=excluir`, { method: 'DELETE' });
+      setData((l) => l.filter((x) => x.id !== g.id));
+      toast('Objetivo excluído.');
+    } catch (e) { toast(e.message); }
+  }
+  return (
+    <section className="stack gap-8" aria-label="Arquivados">
+      <button type="button" className="btn btn-ghost" aria-expanded={open} onClick={() => setOpen((v) => !v)} style={{ alignSelf: 'center' }}>
+        Arquivados ({data.length}) <Icon name="chevron" size={16} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform var(--nobi-dur-fast)' }} />
+      </button>
+      {open && (
+        <div className="card flush card-list">
+          {data.map((g) => (
+            <div key={g.id} className="list-row">
+              <span style={{ width: 10, height: 10, borderRadius: 4, background: g.color, flexShrink: 0 }} aria-hidden="true" />
+              <span className="grow t-15 strong ellipsis">{g.title}</span>
+              <button type="button" className="btn btn-outline sm" onClick={() => restore(g)}>Restaurar</button>
+              <button type="button" className="icon-btn plain" aria-label={`Excluir ${g.title} de vez`} onClick={() => destroy(g)}><Icon name="trash" size={18} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Goals() {
   const { me } = useSession();
   const navigate = useNavigate();
@@ -64,7 +106,8 @@ export default function Goals() {
   const doneCount = today.filter((g) => g.status.periodDone || g.status.doneToday).length;
   const all = today.length > 0 && doneCount === today.length;
   const shown = list.filter(FILTERS.find((f) => f[0] === filter)[2]);
-  const update = (g) => setData((l) => l.map((x) => (x.id === g.id ? g : x)));
+  const update = (g, opts) => setData((l) => (opts?.restored || !l.some((x) => x.id === g.id) ? [...l, g] : l.map((x) => (x.id === g.id ? g : x))));
+  const remove = (id) => setData((l) => l.filter((x) => x.id !== id));
   const filters = FILTERS.filter(([k, , fn]) => k === 'todos' || list.some(fn));
 
   return (
@@ -106,11 +149,12 @@ export default function Goals() {
             {filters.map(([k, label]) => <Chip key={k} on={filter === k} onClick={() => setFilter(k)}>{label}</Chip>)}
           </div>
           <div className="stack gap-12">
-            {shown.map((g) => <GoalCard key={g.id} goal={g} meId={me.id} onChange={update} />)}
+            {shown.map((g) => <GoalCard key={g.id} goal={g} meId={me.id} onChange={update} onRemove={remove} />)}
             {shown.length === 0 && <p className="muted t-14 center" style={{ padding: 20 }}>Nada por aqui neste filtro.</p>}
           </div>
         </>
       )}
+      <Archived onRestored={(g) => update(g, { restored: true })} />
     </div>
   );
 }
