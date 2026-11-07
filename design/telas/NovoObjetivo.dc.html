@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Nobi — Criar objetivo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#141218;text-decoration:none}a:hover{color:#141218}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5F0; color: #141218; font-family: Inter, sans-serif; display: flex; flex-direction: column">
+  <div style="flex: 1; overflow-y: auto; padding: 52px 20px 16px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <a href="Objetivos.dc.html" aria-label="Fechar" style="width: 44px; height: 44px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></a>
+      <span style="font-size: 14px; font-weight: 600; color: #4A4752">Novo objetivo</span>
+      <span style="width: 44px"></span>
+    </div>
+
+    <label style="display: flex; flex-direction: column; gap: 8px">
+      <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.02em">O que você quer construir?</span>
+      <input type="text" value="Meditar 10 minutos" style="height: 52px; border-radius: 16px; border: none; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; padding: 0 16px; font: 600 16px Inter, sans-serif; color: #141218"></input>
+    </label>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 14px; font-weight: 600">Com quem</span>
+      <div style="display: flex; padding: 4px; border-radius: 18px; background: #EEEAE2">
+        <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+          <button onClick="{{m.pick}}" aria-pressed="{{m.on}}" style="{{m.s}}">{{m.label}}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{withFriends}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 14px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+          <div style="display: flex; gap: 8px">
+            <sc-for list="{{friends}}" as="f" hint-placeholder-count="4">
+              <button onClick="{{f.flip}}" aria-pressed="{{f.on}}" style="display: flex; flex-direction: column; align-items: center; gap: 5px; border: none; background: transparent; padding: 0; width: 60px; font: 500 12px Inter, sans-serif; color: #4A4752">
+                <span style="{{f.av}}">{{f.i}}
+                  <sc-if value="{{f.on}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 10px; background: #141218; box-shadow: 0 0 0 2px #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></span></sc-if>
+                </span>
+                {{f.name}}
+              </button>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{styles}}" as="st" hint-placeholder-count="2">
+              <button onClick="{{st.pick}}" aria-pressed="{{st.on}}" style="{{st.s}}">
+                <span style="font: 700 14px Inter, sans-serif">{{st.label}}</span>
+                <span style="font: 400 12px Inter, sans-serif; color: #4A4752; line-height: 1.35">{{st.desc}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 14px; font-weight: 600">Tipo</span>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{types}}" as="t" hint-placeholder-count="4">
+          <button onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="{{t.s}}">
+            <span style="font: 700 15px Inter, sans-serif">{{t.label}}</span>
+            <span style="font: 400 12px Inter, sans-serif; color: #4A4752; line-height: 1.35">{{t.desc}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 14px; font-weight: 600">{{daysTitle}}</span>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+          <button onClick="{{d.flip}}" aria-pressed="{{d.on}}" aria-label="{{d.full}}" style="{{d.s}}">{{d.l}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 14px; font-weight: 600">Cor</span>
+      <div style="display: flex; gap: 10px">
+        <sc-for list="{{colors}}" as="c" hint-placeholder-count="6">
+          <button onClick="{{c.pick}}" aria-label="{{c.name}}" aria-pressed="{{c.on}}" style="{{c.s}}"></button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 20px; background: #FFF1E4">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B83A12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 1px"><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path></svg>
+      <div style="display: flex; flex-direction: column; gap: 3px">
+        <span style="font-weight: 700; font-size: 14px; color: #141218">Você decide o que posta</span>
+        <span style="font-size: 13px; line-height: 1.45; color: #4A4752">Nada vai pro feed sozinho. A cada registro ou marco batido, você escolhe se posta ou não.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+      <div style="{{preview}}"><svg viewBox="0 0 120 120" width="44" height="44" aria-hidden="true"><path d="M60 32 V14" stroke="#FFF1E4" stroke-width="8" stroke-linecap="round"></path><path d="M60 19 C52 7 40 8 37 14 C45 21 54 21 60 19Z" fill="#FFF1E4"></path><path d="M60 17 C66 3 80 2 84 8 C77 16 68 19 60 17Z" fill="#FFF1E4"></path><rect x="46" y="98" width="11" height="15" rx="5.5" fill="#FFF1E4"></rect><rect x="63" y="98" width="11" height="15" rx="5.5" fill="#FFF1E4"></rect><path d="M41 114.5 C41 110 45 108.5 50 108.5 C54.5 108.5 57 110.5 57 113 C57 115.5 55 116.5 51 116.5 L43.5 116.5 C42 116.5 41 115.8 41 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="4" stroke-linejoin="round"></path><path d="M79 114.5 C79 110 75 108.5 70 108.5 C65.5 108.5 63 110.5 63 113 C63 115.5 65 116.5 69 116.5 L76.5 116.5 C78 116.5 79 115.8 79 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="4" stroke-linejoin="round"></path><path d="M27 70 C17 68 13 77 18 82 C22 85 27 81 28 78Z" fill="#FFF1E4"></path><path d="M93 70 C103 68 107 77 102 82 C98 85 93 81 92 78Z" fill="#FFF1E4"></path><path d="M60 30 C84 30 96 52 96 74 C96 93 81 104 60 104 C39 104 24 93 24 74 C24 52 36 30 60 30Z" fill="#FFF1E4"></path><ellipse cx="48" cy="58" rx="10" ry="13" fill="#141218"></ellipse><ellipse cx="72" cy="58" rx="10" ry="13" fill="#141218"></ellipse></svg></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex: 1">
+        <span style="font-weight: 600; font-size: 14px">{{previewTitle}}</span>
+        <span style="font-size: 12px; color: #6B6872">{{streakHint}}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 12px 20px 32px; background: #F7F5F0; box-shadow: 0 -1px 0 #E9E5DC">
+    <a href="Objetivos.dc.html" style="height: 58px; border-radius: 20px; background: #FF5B2E; display: flex; align-items: center; justify-content: center; font: 700 17px Inter, sans-serif; color: #141218; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.12)">{{cta}}</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { type: 'diario', color: '#2E9C6A', vis: 'amigos', days: [true, true, true, true, true, false, false], mode: 'amigos', style: 'juntos', picked: { m: true, c: true, j: false, t: false } };
+  }
+  renderVals() {
+    const s = this.state;
+    const typeDefs = [
+      { id: 'diario', label: 'Hábito', desc: 'Sequência em dias. Ex.: meditar, ler.' },
+      { id: 'semanal', label: 'Meta semanal', desc: 'Sequência em semanas. Ex.: treinar 4x.' },
+      { id: 'contagem', label: 'Contagem', desc: 'Some ao longo do dia. Ex.: copos de água.' },
+      { id: 'projeto', label: 'Projeto', desc: 'Prazo e marcos. Ex.: lançar um app.' }
+    ];
+    const types = typeDefs.map((t) => {
+      const on = s.type === t.id;
+      return { label: t.label, desc: t.desc, on: on, pick: () => this.setState({ type: t.id }),
+        s: 'min-height: 84px; border-radius: 18px; border: none; padding: 12px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; color: #141218; background: #FFFFFF; transition: box-shadow 140ms; ' + (on ? 'box-shadow: inset 0 0 0 2.5px #141218;' : 'box-shadow: inset 0 0 0 1px #E9E5DC;') };
+    });
+    const L = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+    const F = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+    const days = L.map((l, i) => {
+      const on = s.days[i];
+      return { l: l, full: F[i], on: on,
+        flip: () => { const d = s.days.slice(); d[i] = !d[i]; this.setState({ days: d }); },
+        s: 'flex: 1; height: 44px; border-radius: 14px; border: none; font: 700 14px Inter, sans-serif; transition: background 140ms; ' + (on ? 'background: ' + s.color + '; color: #FFFFFF;' : 'background: #FFFFFF; color: #4A4752; box-shadow: inset 0 0 0 1px #E9E5DC;') };
+    });
+    const colorDefs = [['#FF5B2E', 'Brasa'], ['#6C4DFF', 'Órbita'], ['#2E9C6A', 'Verde'], ['#3B82C4', 'Azul'], ['#E0457B', 'Rosa'], ['#141218', 'Tinta']];
+    const colors = colorDefs.map((c) => {
+      const on = s.color === c[0];
+      return { name: c[1], on: on, pick: () => this.setState({ color: c[0] }),
+        s: 'width: 44px; height: 44px; border-radius: 16px; border: none; background: ' + c[0] + '; ' + (on ? 'box-shadow: 0 0 0 3px #F7F5F0, 0 0 0 5px ' + c[0] + ';' : '') };
+    });
+    const visDefs = [['privado', 'Só eu'], ['amigos', 'Amigos'], ['publico', 'Público']];
+    const vis = visDefs.map((v) => {
+      const on = s.vis === v[0];
+      return { label: v[1], on: on, pick: () => this.setState({ vis: v[0] }),
+        s: 'flex: 1; height: 40px; border-radius: 14px; border: none; font: 600 14px Inter, sans-serif; color: #141218; ' + (on ? 'background: #FFFFFF; box-shadow: 0 1px 3px rgba(20,18,24,0.12);' : 'background: transparent;') };
+    });
+    const visHints = {
+      privado: 'Ninguém vê este objetivo. A sequência conta só para você.',
+      amigos: 'Amigos veem os check-ins no feed e podem reagir.',
+      publico: 'Aparece no seu perfil e pode inspirar outras pessoas.'
+    };
+    const withF = s.mode === 'amigos';
+    const modes = [['pessoal', 'Pessoal'], ['amigos', 'Com amigos']].map((m) => {
+      const on = s.mode === m[0];
+      return { label: m[1], on: on, pick: () => this.setState({ mode: m[0] }),
+        s: 'flex: 1; height: 40px; border-radius: 14px; border: none; font: 600 14px Inter, sans-serif; color: #141218; ' + (on ? 'background: #FFFFFF; box-shadow: 0 1px 3px rgba(20,18,24,0.12);' : 'background: transparent;') };
+    });
+    const fr = [['m', 'Marina', '#FFD8C7'], ['c', 'Caio', '#D9D1FF'], ['j', 'Júlia', '#CDEBDD'], ['t', 'Téo', '#FFE9A8']];
+    const friends = fr.map((f) => {
+      const on = !!s.picked[f[0]];
+      return { name: f[1], i: f[1][0], on: on,
+        flip: () => this.setState({ picked: Object.assign({}, s.picked, { [f[0]]: !on }) }),
+        av: 'position: relative; width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; font: 700 17px Inter, sans-serif; color: #141218; background: ' + f[2] + '; ' + (on ? '' : 'opacity: 0.45;') };
+    });
+    const styles = [
+      ['juntos', 'Juntos', 'Ninguém compete. O grupo mantém uma sequência só.'],
+      ['disputa', 'Disputa', 'Ranking semanal de quem foi mais consistente.']
+    ].map((x) => {
+      const on = s.style === x[0];
+      return { label: x[1], desc: x[2], on: on, pick: () => this.setState({ style: x[0] }),
+        s: 'min-height: 76px; border-radius: 16px; border: none; padding: 10px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; color: #141218; background: #F7F5F0; ' + (on ? 'box-shadow: inset 0 0 0 2.5px #141218;' : '') };
+    });
+    const count = fr.filter((f) => s.picked[f[0]]).length;
+    const n = s.days.filter(Boolean).length;
+    const unit = s.type === 'semanal' ? 'semanas' : 'dias';
+    return {
+      types: types, days: days, colors: colors, vis: vis,
+      visHint: visHints[s.vis],
+      daysTitle: s.type === 'semanal' ? 'Em quais dias você pretende fazer' : 'Dias que contam para a sequência',
+      modes: modes, withFriends: withF, friends: friends, styles: styles,
+      previewTitle: withF ? 'Cada um registra no próprio app' : 'Sua sequência começa hoje',
+      cta: withF ? (count > 0 ? 'Criar e convidar ' + count : 'Escolha pelo menos 1 amigo') : 'Criar objetivo',
+      streakHint: withF ? (s.style === 'juntos' ? 'Você vê quem já fez hoje. A sequência do grupo vale enquanto todos marcam.' : 'Você vê quem já fez hoje. Pontos zeram toda semana.') : s.type === 'projeto' ? 'Conta os dias em que você avança no projeto.' : (n + ' dias por semana · conta em ' + unit + ' · descanso não quebra'),
+      preview: 'width: 48px; height: 48px; border-radius: 16px; flex-shrink: 0; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; background: ' + s.color
+    };
+  }
+}
+</script>
+</body>
+</html>

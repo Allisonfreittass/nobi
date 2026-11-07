@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Nobi — 7 dias seguidos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#141218;text-decoration:none}a:hover{color:#141218}
+@keyframes rumoHop{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-18px) rotate(-3deg)}60%{transform:translateY(-18px) rotate(3deg)}}
+@keyframes rumoPop{0%{transform:scale(0.6);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+.rumo-hop{animation:rumoHop 1.6s cubic-bezier(.3,.7,.4,1) infinite;transform-origin:50% 100%}
+.rumo-pop{animation:rumoPop 600ms cubic-bezier(.3,.7,.4,1.4) both}
+@media (prefers-reduced-motion: reduce){.rumo-hop,.rumo-pop{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #FF5B2E; color: #141218; font-family: Inter, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 72px 24px 36px; box-sizing: border-box">
+  <div aria-hidden="true" style="position: absolute; left: 40px; top: 120px; width: 14px; height: 14px; border-radius: 4px; background: #FFF1E4; transform: rotate(20deg)"></div>
+  <div aria-hidden="true" style="position: absolute; right: 52px; top: 96px; width: 18px; height: 18px; border-radius: 9px; background: #6C4DFF"></div>
+  <div aria-hidden="true" style="position: absolute; right: 36px; top: 250px; width: 10px; height: 22px; border-radius: 5px; background: #141218; transform: rotate(-30deg)"></div>
+  <div aria-hidden="true" style="position: absolute; left: 30px; top: 300px; width: 12px; height: 12px; border-radius: 6px; background: #FFB224"></div>
+  <div aria-hidden="true" style="position: absolute; left: 100px; top: 70px; width: 8px; height: 18px; border-radius: 4px; background: #6C4DFF; transform: rotate(40deg)"></div>
+
+  <div style="padding: 7px 14px; border-radius: 16px; background: rgba(20,18,24,0.12); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase">Nova conquista</div>
+
+  <div class="rumo-hop" style="margin-top: 28px; width: 240px; height: 240px">
+    <svg viewBox="0 0 120 120" width="240" height="240" aria-hidden="true"><path d="M60 32 V16" stroke="#141218" stroke-width="5" stroke-linecap="round"></path><path d="M60 19 C52 7 40 8 37 14 C45 21 54 21 60 19Z" fill="#FFB224" stroke="#141218" stroke-width="3" stroke-linejoin="round"></path><path d="M60 17 C66 3 80 2 84 8 C77 16 68 19 60 17Z" fill="#FFB224" stroke="#141218" stroke-width="3" stroke-linejoin="round"></path><rect x="47" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4"></rect><rect x="64" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4"></rect><path d="M41 114.5 C41 110 45 108.5 50 108.5 C54.5 108.5 57 110.5 57 113 C57 115.5 55 116.5 51 116.5 L43.5 116.5 C42 116.5 41 115.8 41 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="2" stroke-linejoin="round"></path><path d="M79 114.5 C79 110 75 108.5 70 108.5 C65.5 108.5 63 110.5 63 113 C63 115.5 65 116.5 69 116.5 L76.5 116.5 C78 116.5 79 115.8 79 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="2" stroke-linejoin="round"></path><path d="M30 64 C18 58 12 46 18 42 C23 40 28 50 33 58Z" fill="#FFF1E4"></path><path d="M90 64 C102 58 108 46 102 42 C97 40 92 50 87 58Z" fill="#FFF1E4"></path><path d="M60 30 C84 30 96 52 96 74 C96 93 81 104 60 104 C39 104 24 93 24 74 C24 52 36 30 60 30Z" fill="#FFF1E4"></path><ellipse cx="60" cy="88" rx="20" ry="12" fill="#FFFFFF" opacity="0.75"></ellipse><path d="M40 60 Q48 50 56 60" stroke="#141218" stroke-width="4.5" fill="none" stroke-linecap="round"></path><path d="M64 60 Q72 50 80 60" stroke="#141218" stroke-width="4.5" fill="none" stroke-linecap="round"></path><ellipse cx="36" cy="70" rx="5.5" ry="3.5" fill="#FF8A66"></ellipse><ellipse cx="84" cy="70" rx="5.5" ry="3.5" fill="#FF8A66"></ellipse><path d="M51 70 Q60 86 69 70 Z" fill="#141218"></path></svg>
+  </div>
+  <div aria-hidden="true" style="width: 150px; height: 14px; border-radius: 50%; background: rgba(20,18,24,0.18); margin-top: 6px"></div>
+
+  <h1 class="rumo-pop" style="margin: 28px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 64px; font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; text-align: center">7 dias<br>seguidos!</h1>
+  <p style="margin: 14px 0 0; font-size: 17px; line-height: 1.45; text-align: center; max-width: 300px">Você leu todos os dias desta semana e seu Broto ficou dourado. Mantenha a sequência pra ele continuar assim.</p>
+
+  <div style="display: flex; gap: 8px; margin-top: 24px">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 38px; height: 38px; border-radius: 13px; background: #141218; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF1E4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></div><span style="font-size: 12px; font-weight: 600">Seg</span></div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 38px; height: 38px; border-radius: 13px; background: #141218; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF1E4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></div><span style="font-size: 12px; font-weight: 600">Ter</span></div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 38px; height: 38px; border-radius: 13px; background: #141218; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF1E4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></div><span style="font-size: 12px; font-weight: 600">Qua</span></div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 38px; height: 38px; border-radius: 13px; background: #141218; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF1E4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></div><span style="font-size: 12px; font-weight: 600">Qui</span></div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 38px; height: 38px; border-radius: 13px; background: #141218; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF1E4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></div><span style="font-size: 12px; font-weight: 600">Sex</span></div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 38px; height: 38px; border-radius: 13px; background: #141218; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF1E4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></div><span style="font-size: 12px; font-weight: 600">Sáb</span></div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div class="rumo-pop" style="width: 38px; height: 38px; border-radius: 13px; background: #FFF1E4; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 3px #141218"><svg width="18" height="18" viewBox="0 0 24 24" fill="#FF5B2E" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z"></path></svg></div><span style="font-size: 12px; font-weight: 700">Dom</span></div>
+  </div>
+
+  <div style="flex: 1"></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; width: 100%">
+    <a href="Feed.dc.html" style="height: 58px; border-radius: 20px; background: #141218; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font: 700 17px Inter, sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path></svg>Compartilhar no feed</a>
+    <a href="Feed.dc.html" style="height: 52px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font: 700 16px Inter, sans-serif; color: #141218">Agora não</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+/* Nobi — design tokens. Gerado a partir de design/tokens.json. */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Marca */
+  --nobi-brasa: #FF5B2E;
+  --nobi-orbita: #6C4DFF;
+  --nobi-tinta: #141218;
+  --nobi-creme: #FFF1E4;
+  --nobi-papel: #F7F5F0;
+  --nobi-branco: #FFFFFF;
+
+  /* Sequência — exclusivo */
+  --nobi-dourado: #FFB224;
+
+  /* Categorias (sempre com rótulo) */
+  --nobi-cat-treino: #FF5B2E;
+  --nobi-cat-leitura: #6C4DFF;
+  --nobi-cat-estudo: #2E9C6A;
+  --nobi-cat-habito: #3B82C4;
+  --nobi-cat-objetivo: #E0457B;
+  --nobi-cat-projeto: #141218;
+
+  /* Texto */
+  --nobi-text: #141218;
+  --nobi-text-secondary: #4A4752;
+  --nobi-text-muted: #6B6872;
+  --nobi-text-on-brasa: #141218;   /* nunca branco sobre brasa */
+  --nobi-text-on-orbita: #FFFFFF;
+  --nobi-text-streak: #B83A12;
+  --nobi-danger: #A3261B;
+  --nobi-success: #2E7A54;
+
+  /* Superfícies */
+  --nobi-bg: #F7F5F0;
+  --nobi-card: #FFFFFF;
+  --nobi-soft: #FFF1E4;
+  --nobi-track: #EEEAE2;
+  --nobi-border: #E9E5DC;
+  --nobi-border-strong: #E4DDD0;
+  --nobi-toggle-off: #D8D2C6;
+
+  /* Mascote */
+  --nobi-mascot-body: #FFF1E4;
+  --nobi-mascot-cheek: #FF8A66;
+  --nobi-mascot-outline: #D8D2C6;
+
+  /* Tipografia */
+  --nobi-font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --nobi-font-body: Inter, system-ui, sans-serif;
+  --nobi-tracking-display: -0.04em;
+  --nobi-tracking-title: -0.02em;
+  --nobi-tracking-label: 0.06em;
+
+  /* Espaço */
+  --nobi-space-1: 4px;  --nobi-space-2: 8px;  --nobi-space-3: 12px; --nobi-space-4: 16px;
+  --nobi-space-5: 20px; --nobi-space-6: 24px; --nobi-space-8: 32px; --nobi-space-10: 40px;
+
+  /* Raios */
+  --nobi-radius-sm: 11px; --nobi-radius-md: 14px; --nobi-radius-lg: 18px;
+  --nobi-radius-xl: 22px; --nobi-radius-card: 24px; --nobi-radius-sheet: 32px;
+  --nobi-radius-pill: 999px;
+
+  /* Sombras */
+  --nobi-shadow-card: 0 1px 0 #E9E5DC;
+  --nobi-shadow-segment: 0 1px 3px rgba(20, 18, 24, 0.12);
+  --nobi-shadow-primary: inset 0 -4px 0 rgba(0, 0, 0, 0.12);
+  --nobi-shadow-fab: 0 10px 20px -8px rgba(255, 91, 46, 0.7);
+
+  /* Tamanhos */
+  --nobi-touch-min: 44px;
+  --nobi-button-h: 56px;
+
+  /* Movimento */
+  --nobi-dur-fast: 140ms;
+  --nobi-dur-toggle: 160ms;
+  --nobi-dur-fill: 300ms;
+  --nobi-dur-bump: 420ms;
+  --nobi-dur-pop: 600ms;
+  --nobi-ease-out: cubic-bezier(.3, .7, .4, 1);
+  --nobi-ease-spring: cubic-bezier(.3, .7, .4, 1.4);
+}
+
+body {
+  margin: 0;
+  background: var(--nobi-bg);
+  color: var(--nobi-text);
+  font-family: var(--nobi-font-body);
+}
+
+@keyframes nobi-bump { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes nobi-hop  { 0%, 100% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-18px) rotate(-3deg); } 60% { transform: translateY(-18px) rotate(3deg); } }
+@keyframes nobi-pop  { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+
+.nobi-bump { animation: nobi-bump var(--nobi-dur-bump) var(--nobi-ease-spring); }
+.nobi-hop  { animation: nobi-hop 1.6s var(--nobi-ease-out) infinite; transform-origin: 50% 100%; }
+.nobi-pop  { animation: nobi-pop var(--nobi-dur-pop) var(--nobi-ease-spring) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nobi-bump, .nobi-hop, .nobi-pop { animation: none; }
+}

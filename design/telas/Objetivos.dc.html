@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Nobi — Meus objetivos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#141218;text-decoration:none}a:hover{color:#FF5B2E}
+@keyframes rumoBump{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+.rumo-bump{animation:rumoBump 420ms cubic-bezier(.3,.7,.4,1.4)}
+@media (prefers-reduced-motion: reduce){.rumo-bump{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5F0; color: #141218; font-family: Inter, sans-serif">
+  <div style="height: 760px; overflow-y: auto; padding: 56px 20px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 13px; color: #6B6872">Sexta, 6 de novembro</span>
+        <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.02em">Meus objetivos</h1>
+      </div>
+      <a href="NovoObjetivo.dc.html" style="height: 44px; padding: 0 16px; border-radius: 22px; background: #141218; color: #FFFFFF; display: flex; align-items: center; gap: 6px; font: 700 14px Inter, sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Novo</a>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC; position: relative; overflow: hidden">
+      <div style="{{ring}}">
+        <div style="width: 60px; height: 60px; border-radius: 30px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-direction: column">
+          <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800; line-height: 1">{{doneCount}}/{{total}}</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; flex: 1">
+        <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 700">{{headline}}</span>
+        <span style="font-size: 13px; color: #4A4752; line-height: 1.4">{{subline}}</span>
+      </div>
+      <sc-if value="{{allDone}}" hint-placeholder-val="{{ false }}">
+        <svg class="rumo-bump" viewBox="0 0 120 120" width="68" height="68" aria-hidden="true" style="margin: -8px -6px -12px 0; align-self: flex-end; flex-shrink: 0"><path d="M60 32 V16" stroke="#141218" stroke-width="5" stroke-linecap="round"></path><path d="M60 19 C52 7 40 8 37 14 C45 21 54 21 60 19Z" fill="#141218"></path><path d="M60 17 C66 3 80 2 84 8 C77 16 68 19 60 17Z" fill="#141218"></path><rect x="47" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></rect><rect x="64" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></rect><path d="M41 114.5 C41 110 45 108.5 50 108.5 C54.5 108.5 57 110.5 57 113 C57 115.5 55 116.5 51 116.5 L43.5 116.5 C42 116.5 41 115.8 41 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="3" stroke-linejoin="round"></path><path d="M79 114.5 C79 110 75 108.5 70 108.5 C65.5 108.5 63 110.5 63 113 C63 115.5 65 116.5 69 116.5 L76.5 116.5 C78 116.5 79 115.8 79 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="3" stroke-linejoin="round"></path><path d="M30 64 C18 58 12 46 18 42 C23 40 28 50 33 58Z" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></path><path d="M90 64 C102 58 108 46 102 42 C97 40 92 50 87 58Z" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></path><path d="M60 30 C84 30 96 52 96 74 C96 93 81 104 60 104 C39 104 24 93 24 74 C24 52 36 30 60 30Z" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></path><path d="M40 60 Q48 50 56 60" stroke="#141218" stroke-width="5" fill="none" stroke-linecap="round"></path><path d="M64 60 Q72 50 80 60" stroke="#141218" stroke-width="5" fill="none" stroke-linecap="round"></path><path d="M51 70 Q60 86 69 70 Z" fill="#141218"></path></svg>
+      </sc-if>
+      <sc-if value="{{notAllDone}}" hint-placeholder-val="{{ true }}">
+        <svg viewBox="0 0 120 120" width="68" height="68" aria-hidden="true" style="margin: -8px -6px -12px 0; align-self: flex-end; flex-shrink: 0"><path d="M60 32 V16" stroke="#141218" stroke-width="5" stroke-linecap="round"></path><path d="M60 19 C52 7 40 8 37 14 C45 21 54 21 60 19Z" fill="#141218"></path><path d="M60 17 C66 3 80 2 84 8 C77 16 68 19 60 17Z" fill="#141218"></path><rect x="47" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></rect><rect x="64" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></rect><path d="M41 114.5 C41 110 45 108.5 50 108.5 C54.5 108.5 57 110.5 57 113 C57 115.5 55 116.5 51 116.5 L43.5 116.5 C42 116.5 41 115.8 41 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="3" stroke-linejoin="round"></path><path d="M79 114.5 C79 110 75 108.5 70 108.5 C65.5 108.5 63 110.5 63 113 C63 115.5 65 116.5 69 116.5 L76.5 116.5 C78 116.5 79 115.8 79 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="3" stroke-linejoin="round"></path><path d="M27 70 C17 68 13 77 18 82 C22 85 27 81 28 78Z" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></path><path d="M93 70 C103 68 107 77 102 82 C98 85 93 81 92 78Z" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></path><path d="M60 30 C84 30 96 52 96 74 C96 93 81 104 60 104 C39 104 24 93 24 74 C24 52 36 30 60 30Z" fill="#FFF1E4" stroke="#D8D2C6" stroke-width="2.5"></path><ellipse cx="48" cy="58" rx="9" ry="12" fill="#141218"></ellipse><ellipse cx="72" cy="58" rx="9" ry="12" fill="#141218"></ellipse><circle cx="51" cy="53" r="3.6" fill="#FFFFFF"></circle><circle cx="75" cy="53" r="3.6" fill="#FFFFFF"></circle></svg>
+      </sc-if>
+    </div>
+
+    <div style="display: flex; gap: 8px; overflow-x: auto; margin: 0 -20px; padding: 0 20px">
+      <sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+        <button onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="{{c.s}}">{{c.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-for list="{{goals}}" as="g" hint-placeholder-count="4">
+      <article style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <div style="{{g.iconBox}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{g.icon}}"></path></svg></div>
+          <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+            <span style="font-weight: 600; font-size: 15px">{{g.title}}</span>
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; color: #6B6872">
+              {{g.meta}}
+            </span>
+          </div>
+          <span class="{{g.bump}}" style="{{g.streakPill}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="{{g.flame}}" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z"></path></svg>{{g.streak}} {{g.streakUnit}}</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; align-items: baseline; justify-content: space-between">
+            <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 700">{{g.value}}</span>
+            <span style="font-size: 12px; color: #6B6872">{{g.hint}}</span>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: #EEEAE2; overflow: hidden"><div style="{{g.bar}}"></div></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px">
+          <div style="display: flex; gap: 4px; flex: 1" aria-label="Últimos 7 dias">
+            <sc-for list="{{g.week}}" as="w" hint-placeholder-count="7">
+              <span style="{{w.s}}"></span>
+            </sc-for>
+          </div>
+          <button onClick="{{g.act}}" style="{{g.btn}}">{{g.btnLabel}}</button>
+        </div>
+      </article>
+    </sc-for>
+  </div>
+
+  <nav aria-label="Navegação principal" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #FFFFFF; box-shadow: 0 -1px 0 #E9E5DC; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; box-sizing: border-box">
+    <a href="Feed.dc.html" aria-label="Feed" style="width: 56px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #6B6872; font-size: 11px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6872" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Feed</a>
+    <a href="Desafio.dc.html" aria-label="Explorar" style="width: 56px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #6B6872; font-size: 11px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6872" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Explorar</a>
+    <a href="Registrar.dc.html" aria-label="Registrar atividade" style="width: 56px; height: 56px; margin-top: -14px; border-radius: 20px; background: #FF5B2E; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px -8px rgba(255,91,46,0.7)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a>
+    <a href="Objetivos.dc.html" aria-label="Objetivos" style="width: 56px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #141218; font-size: 11px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1.5" fill="#141218"></circle></svg>Metas</a>
+    <a href="Perfil.dc.html" aria-label="Perfil" style="width: 56px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #6B6872; font-size: 11px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6872" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>Perfil</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { filter: 'todos', agua: 6, ler: false, treino: 2, app: 62, ingles: true, bumped: null };
+  }
+  renderVals() {
+    const s = this.state;
+    const set = (patch, id) => this.setState(Object.assign({}, patch, { bumped: id + ':' + Date.now() }));
+    const defs = [
+      { id: 'agua', cat: 'habitos', title: 'Beber 2 L de água', meta: 'Hábito diário · 2 posts', private: true, color: '#3B82C4',
+        icon: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
+        done: s.agua >= 8, base: 12, unit: 'dias',
+        value: s.agua + ' de 8 copos', hint: '250 ml cada', pct: s.agua / 8,
+        label: s.agua >= 8 ? 'Meta batida' : '+1 copo',
+        act: () => set({ agua: Math.min(8, s.agua + 1) }, 'agua') },
+      { id: 'ler', cat: 'estudo', title: 'Ler 20 min por dia', meta: 'Hábito diário · 9 posts', private: false, color: '#6C4DFF',
+        icon: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5',
+        done: s.ler, base: 20, unit: 'dias',
+        value: s.ler ? '20 de 20 min' : '0 de 20 min', hint: 'Livro: 64% lido', pct: s.ler ? 1 : 0,
+        label: s.ler ? 'Feito hoje' : 'Check-in',
+        act: () => set({ ler: !s.ler }, 'ler') },
+      { id: 'treino', cat: 'treino', title: 'Treinar 4x na semana', meta: 'Com Caio e Júlia · juntos', private: false, color: '#FF5B2E',
+        icon: 'M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12',
+        done: s.treino >= 4, base: 6, unit: 'sem.',
+        value: s.treino + ' de 4 treinos', hint: 'Caio 3/4 · Júlia 4/4', pct: s.treino / 4,
+        label: s.treino >= 4 ? 'Semana fechada' : 'Registrar treino',
+        act: () => set({ treino: Math.min(4, s.treino + 1) }, 'treino') },
+      { id: 'app', cat: 'projetos', title: 'Lançar o MVP do app', meta: 'Projeto · até março · nenhum post ainda', private: true, color: '#141218',
+        icon: 'M5 19 19 5M9 5h10v10',
+        done: s.app > 62, base: 9, unit: 'dias',
+        value: s.app + '% concluído', hint: 'próximo marco: feed', pct: s.app / 100,
+        label: s.app > 62 ? 'Avançou hoje' : 'Atualizar',
+        act: () => set({ app: Math.min(100, s.app + 4) }, 'app') },
+      { id: 'ingles', cat: 'estudo', title: 'Inglês B2 até junho', meta: 'Estudo · 3 posts', private: false, color: '#2E9C6A',
+        icon: 'M4 6h16M4 12h10M4 18h7',
+        done: s.ingles, base: 4, unit: 'dias',
+        value: '34 de 80 lições', hint: '43% do caminho', pct: 34 / 80,
+        label: s.ingles ? 'Feito hoje' : 'Check-in',
+        act: () => set({ ingles: !s.ingles }, 'ingles') }
+    ];
+    const pastWeek = [true, true, false, true, true, true];
+    const goals = defs
+      .filter((d) => s.filter === 'todos' || (s.filter === 'privados' ? d.private : d.cat === s.filter))
+      .map((d) => {
+        const streak = d.base + (d.done ? 1 : 0);
+        const week = pastWeek.map((v) => ({ s: 'width: 14px; height: 14px; border-radius: 5px; background: ' + (v ? d.color : '#EEEAE2') + '; opacity: ' + (v ? '0.35' : '1') }))
+          .concat([{ s: 'width: 14px; height: 14px; border-radius: 5px; transition: background 200ms; ' + (d.done ? 'background: ' + d.color + ';' : 'background: #FFFFFF; box-shadow: inset 0 0 0 2px ' + d.color + ';') }]);
+        const bumped = s.bumped && s.bumped.split(':')[0] === d.id && d.done;
+        return {
+          title: d.title, meta: d.meta, private: d.private, icon: d.icon,
+          value: d.value, hint: d.hint, streak: streak, streakUnit: d.unit, week: week,
+          btnLabel: d.label, act: d.act,
+          bump: bumped ? 'rumo-bump' : '',
+          flame: d.done ? '#FF5B2E' : '#B9B6C0',
+          iconBox: 'width: 40px; height: 40px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: ' + d.color,
+          streakPill: 'display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 14px; font-size: 13px; font-weight: 700; white-space: nowrap; ' + (d.done ? 'background: #FFF1E4; color: #B83A12;' : 'background: #F7F5F0; color: #4A4752;'),
+          bar: 'height: 100%; border-radius: 4px; transition: width 300ms cubic-bezier(.3,.7,.4,1); width: ' + Math.round(d.pct * 100) + '%; background: ' + d.color,
+          btn: 'height: 44px; padding: 0 16px; border-radius: 16px; border: none; font: 700 14px Inter, sans-serif; white-space: nowrap; transition: background 160ms, transform 120ms; ' + (d.done ? 'background: #F7F5F0; color: #141218;' : 'background: #141218; color: #FFFFFF;')
+        };
+      });
+    const doneCount = defs.filter((d) => d.done).length;
+    const pct = Math.round(doneCount / defs.length * 100);
+    const chipDefs = [['todos', 'Todos'], ['habitos', 'Hábitos'], ['treino', 'Treino'], ['estudo', 'Estudo'], ['projetos', 'Projetos']];
+    const chips = chipDefs.map((c) => {
+      const on = s.filter === c[0];
+      return { label: c[1], on: on, pick: () => this.setState({ filter: c[0] }),
+        s: 'height: 44px; padding: 0 16px; border-radius: 22px; border: none; white-space: nowrap; font: 600 13px Inter, sans-serif; ' + (on ? 'background: #141218; color: #FFFFFF;' : 'background: #FFFFFF; color: #141218; box-shadow: inset 0 0 0 1px #E9E5DC;') };
+    });
+    const all = doneCount === defs.length;
+    return {
+      goals: goals, chips: chips, doneCount: doneCount, total: defs.length,
+      allDone: all, notAllDone: !all,
+      headline: all ? 'Dia completo!' : 'Faltam ' + (defs.length - doneCount) + ' hoje',
+      subline: all ? 'Todas as sequências seguem vivas. O Broto está orgulhoso.' : 'Cada objetivo tem a sua própria sequência. Não precisa fazer tudo pra não perder as outras.',
+      ring: 'width: 72px; height: 72px; border-radius: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: conic-gradient(#FF5B2E ' + pct + '%, #EEEAE2 0)'
+    };
+  }
+}
+</script>
+</body>
+</html>

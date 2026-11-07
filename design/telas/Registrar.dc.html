@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Nobi — Registrar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#141218;text-decoration:none}a:hover{color:#141218}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #2A2730; font-family: Inter, sans-serif; color: #141218">
+  <div style="position: absolute; left: 0; right: 0; top: 0; height: 120px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden">
+    <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true" style="margin-bottom: -46px"><path d="M60 32 V16" stroke="#FFF1E4" stroke-width="5" stroke-linecap="round"></path><path d="M60 19 C52 7 40 8 37 14 C45 21 54 21 60 19Z" fill="#FFF1E4"></path><path d="M60 17 C66 3 80 2 84 8 C77 16 68 19 60 17Z" fill="#FFF1E4"></path><path d="M30 64 C18 58 12 46 18 42 C23 40 28 50 33 58Z" fill="#FFF1E4"></path><path d="M90 64 C102 58 108 46 102 42 C97 40 92 50 87 58Z" fill="#FFF1E4"></path><path d="M60 30 C84 30 96 52 96 74 C96 93 81 104 60 104 C39 104 24 93 24 74 C24 52 36 30 60 30Z" fill="#FFF1E4"></path><ellipse cx="48" cy="56" rx="9" ry="12" fill="#141218"></ellipse><ellipse cx="72" cy="56" rx="9" ry="12" fill="#141218"></ellipse><circle cx="50" cy="60" r="3.6" fill="#FFFFFF"></circle><circle cx="74" cy="60" r="3.6" fill="#FFFFFF"></circle></svg>
+  </div>
+  <div style="position: absolute; left: 0; right: 0; top: 104px; bottom: 0; border-radius: 32px 32px 0 0; background: #F7F5F0; display: flex; flex-direction: column; gap: 20px; padding: 14px 20px 32px; box-sizing: border-box">
+    <div style="width: 40px; height: 5px; border-radius: 3px; background: #D8D2C6; align-self: center"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.02em">O que você fez hoje?</h1>
+      <a href="Feed.dc.html" aria-label="Fechar" style="width: 44px; height: 44px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+      <sc-for list="{{cats}}" as="c" hint-placeholder-count="6">
+        <button onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="{{c.box}}">
+          <span style="{{c.dot}}"></span>
+          <span style="font: 600 14px Inter, sans-serif">{{c.label}}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <span style="font-size: 14px; font-weight: 600">Tempo</span>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <button onClick="{{less}}" aria-label="Diminuir 5 minutos" style="width: 44px; height: 44px; border-radius: 22px; border: none; background: #F7F5F0; font: 700 20px Inter, sans-serif; color: #141218">−</button>
+          <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 800; min-width: 84px; text-align: center">{{mins}}<span style="font-size: 15px; font-weight: 600; color: #6B6872"> min</span></span>
+          <button onClick="{{more}}" aria-label="Aumentar 5 minutos" style="width: 44px; height: 44px; border-radius: 22px; border: none; background: #141218; font: 700 20px Inter, sans-serif; color: #FFFFFF">+</button>
+        </div>
+      </div>
+      <div style="height: 1px; background: #EEEAE2"></div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">Nota (opcional)
+        <input type="text" placeholder="Capítulo 7, finalmente!" style="height: 44px; border-radius: 14px; border: none; background: #F7F5F0; padding: 0 14px; font: 400 15px Inter, sans-serif; color: #141218"></input>
+      </label>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 16px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+      <button onClick="{{toggle}}" aria-pressed="{{share}}" style="display: flex; align-items: center; justify-content: space-between; height: 52px; border: none; background: transparent; padding: 0; font: 600 15px Inter, sans-serif; color: #141218">
+        <span>Publicar no feed</span>
+        <span style="{{track}}"><span style="{{knob}}"></span></span>
+      </button>
+      <sc-if value="{{share}}" hint-placeholder-val="{{ true }}">
+        <div style="height: 1px; background: #EEEAE2"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 52px">
+          <span style="font-size: 15px; font-weight: 600">Para quem</span>
+          <div style="display: flex; padding: 3px; border-radius: 14px; background: #F7F5F0">
+            <sc-for list="{{aud}}" as="a" hint-placeholder-count="2">
+              <button onClick="{{a.pick}}" aria-pressed="{{a.on}}" style="{{a.s}}">{{a.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{noShare}}" hint-placeholder-val="{{ false }}">
+        <div style="height: 1px; background: #EEEAE2"></div>
+        <p style="margin: 0; padding: 12px 0; font-size: 13px; line-height: 1.45; color: #4A4752">Não vai pro feed. Conta normalmente nas suas sequências e estatísticas.</p>
+      </sc-if>
+    </div>
+
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4A4752; justify-content: center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#FF5B2E" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z"></path></svg>
+      Isso fecha seu 7º dia seguido de {{current}}
+    </div>
+    <a href="Conquista.dc.html" style="height: 58px; border-radius: 20px; background: #FF5B2E; display: flex; align-items: center; justify-content: center; font: 700 17px Inter, sans-serif; color: #141218; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.12)">Registrar</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { cat: 'leitura', mins: 30, share: true, aud: 'amigos' }; }
+  renderVals() {
+    const list = [
+      { id: 'treino', label: 'Treino', c: '#FF5B2E' },
+      { id: 'leitura', label: 'Leitura', c: '#6C4DFF' },
+      { id: 'estudo', label: 'Estudo', c: '#2E9C6A' },
+      { id: 'habito', label: 'Hábito', c: '#3B82C4' },
+      { id: 'projeto', label: 'Projeto', c: '#141218' },
+      { id: 'meta', label: 'Objetivo', c: '#E0457B' }
+    ];
+    const cats = list.map((x) => {
+      const on = this.state.cat === x.id;
+      return {
+        label: x.label, on: on,
+        pick: () => this.setState({ cat: x.id }),
+        box: 'height: 84px; border-radius: 20px; border: none; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 14px; color: #141218; ' + (on ? 'background: #FFFFFF; box-shadow: inset 0 0 0 2.5px #141218;' : 'background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC;'),
+        dot: 'width: 22px; height: 22px; border-radius: 8px; background: ' + x.c
+      };
+    });
+    const cur = list.find((x) => x.id === this.state.cat);
+    const share = this.state.share;
+    return {
+      cats: cats,
+      current: cur.label.toLowerCase(),
+      mins: this.state.mins,
+      less: () => this.setState({ mins: Math.max(5, this.state.mins - 5) }),
+      more: () => this.setState({ mins: this.state.mins + 5 }),
+      share: share,
+      noShare: !share,
+      aud: [['amigos', 'Amigos'], ['publico', 'Público']].map((a) => {
+        const on = this.state.aud === a[0];
+        return { label: a[1], on: on, pick: () => this.setState({ aud: a[0] }),
+          s: 'height: 36px; padding: 0 12px; border-radius: 11px; border: none; font: 600 13px Inter, sans-serif; color: #141218; ' + (on ? 'background: #FFFFFF; box-shadow: 0 1px 3px rgba(20,18,24,0.12);' : 'background: transparent;') };
+      }),
+      toggle: () => this.setState({ share: !this.state.share }),
+      track: 'width: 50px; height: 30px; border-radius: 15px; display: flex; align-items: center; padding: 3px; box-sizing: border-box; transition: background 160ms; ' + (share ? 'background: #FF5B2E; justify-content: flex-end;' : 'background: #D8D2C6; justify-content: flex-start;'),
+      knob: 'width: 24px; height: 24px; border-radius: 12px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2)'
+    };
+  }
+}
+</script>
+</body>
+</html>

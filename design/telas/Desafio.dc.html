@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Nobi — Desafio Foco Total</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#FFFFFF;text-decoration:none}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5F0; color: #141218; font-family: Inter, sans-serif">
+  <div style="background: #6C4DFF; color: #FFFFFF; padding: 52px 20px 0; height: 262px; box-sizing: border-box; position: relative; overflow: hidden">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <a href="Feed.dc.html" aria-label="Voltar" style="width: 44px; height: 44px; border-radius: 22px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+      <span style="padding: 7px 12px; border-radius: 16px; background: rgba(255,255,255,0.16); font-size: 13px; font-weight: 600">8 participantes</span>
+    </div>
+    <div style="margin-top: 18px; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #FFFFFF">Desafio de 30 dias · Temporada Primavera</div>
+    <h1 style="margin: 6px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; max-width: 220px">Foco Total</h1>
+    <div style="margin-top: 16px; width: 210px; display: flex; flex-direction: column; gap: 6px">
+      <div style="height: 10px; border-radius: 5px; background: rgba(255,255,255,0.2); overflow: hidden"><div style="width: 40%; height: 100%; border-radius: 5px; background: #FFF1E4"></div></div>
+      <span style="font-size: 13px; color: #FFFFFF">Dia 12 de 30 · termina em 18 dias</span>
+    </div>
+    <svg viewBox="0 0 120 120" width="150" height="150" aria-hidden="true" style="position: absolute; right: 0px; bottom: 4px"><path d="M60 32 V16" stroke="#141218" stroke-width="5" stroke-linecap="round"></path><path d="M60 19 C52 7 40 8 37 14 C45 21 54 21 60 19Z" fill="#141218"></path><path d="M60 17 C66 3 80 2 84 8 C77 16 68 19 60 17Z" fill="#141218"></path><ellipse cx="60" cy="117.5" rx="26" ry="2.8" fill="#141218" opacity="0.25"></ellipse><rect x="47" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4"></rect><rect x="64" y="98" width="9" height="15" rx="4.5" fill="#FFF1E4"></rect><path d="M41 114.5 C41 110 45 108.5 50 108.5 C54.5 108.5 57 110.5 57 113 C57 115.5 55 116.5 51 116.5 L43.5 116.5 C42 116.5 41 115.8 41 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="2" stroke-linejoin="round"></path><path d="M79 114.5 C79 110 75 108.5 70 108.5 C65.5 108.5 63 110.5 63 113 C63 115.5 65 116.5 69 116.5 L76.5 116.5 C78 116.5 79 115.8 79 114.5Z" fill="#FFF1E4" stroke="#141218" stroke-width="2" stroke-linejoin="round"></path><path d="M27 70 C17 68 13 77 18 82 C22 85 27 81 28 78Z" fill="#FFF1E4"></path><path d="M90 64 C102 58 108 46 102 42 C97 40 92 50 87 58Z" fill="#FFF1E4"></path><path d="M60 30 C84 30 96 52 96 74 C96 93 81 104 60 104 C39 104 24 93 24 74 C24 52 36 30 60 30Z" fill="#FFF1E4"></path><ellipse cx="60" cy="86" rx="20" ry="13" fill="#FFFFFF" opacity="0.6"></ellipse><path d="M41 45 Q48 42.5 55 45" stroke="#141218" stroke-width="3.6" fill="none" stroke-linecap="round"></path><path d="M65 45 Q72 42.5 79 45" stroke="#141218" stroke-width="3.6" fill="none" stroke-linecap="round"></path><ellipse cx="48" cy="60" rx="8.5" ry="10.5" fill="#141218"></ellipse><ellipse cx="72" cy="60" rx="8.5" ry="10.5" fill="#141218"></ellipse><circle cx="50.5" cy="56" r="3.2" fill="#FFFFFF"></circle><circle cx="74.5" cy="56" r="3.2" fill="#FFFFFF"></circle><path d="M53 75 Q60 80 67 75" stroke="#141218" stroke-width="3.6" fill="none" stroke-linecap="round"></path></svg>
+  </div>
+
+  <div style="padding: 18px 20px 0; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between">
+        <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 21px; font-weight: 700">Hoje</h2>
+        <span style="font-size: 14px; font-weight: 600; color: #4A4752">{{doneCount}} de 5</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+        <sc-for list="{{tasks}}" as="t" hint-placeholder-count="5">
+          <button onClick="{{t.flip}}" aria-pressed="{{t.done}}" style="display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 10px; border: none; border-radius: 16px; background: transparent; text-align: left; font: 500 15px Inter, sans-serif; color: #141218">
+            <span style="{{t.box}}">
+              <sc-if value="{{t.done}}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></sc-if>
+            </span>
+            <span style="flex: 1">{{t.label}}</span>
+            <span style="font-size: 13px; font-weight: 600; color: #6B6872">+{{t.pts}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between">
+        <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 21px; font-weight: 700">Ranking da semana</h2>
+        <span style="font-size: 13px; color: #6B6872">zera domingo</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 14px; border-radius: 18px; background: #FFFFFF">
+          <span style="width: 26px; height: 26px; border-radius: 13px; background: #FFB224; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800">1</span>
+          <span style="width: 34px; height: 34px; border-radius: 17px; background: #CDEBDD; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">J</span>
+          <span style="flex: 1; font-weight: 600; font-size: 15px">Júlia</span>
+          <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 18px">420</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 14px; border-radius: 18px; background: #FFFFFF">
+          <span style="width: 26px; height: 26px; border-radius: 13px; background: #E9E5DC; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800">2</span>
+          <span style="width: 34px; height: 34px; border-radius: 17px; background: #D9D1FF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">C</span>
+          <span style="flex: 1; font-weight: 600; font-size: 15px">Caio</span>
+          <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 18px">395</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 14px; border-radius: 18px; background: #141218; color: #FFFFFF">
+          <span style="width: 26px; height: 26px; border-radius: 13px; background: #FF5B2E; color: #141218; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800">3</span>
+          <span style="width: 34px; height: 34px; border-radius: 17px; background: #FFF1E4; color: #141218; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">R</span>
+          <span style="flex: 1; font-weight: 600; font-size: 15px">Você</span>
+          <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 18px">{{myPts}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { done: { treino: true, ler: true, ingles: false, dormir: false, projeto: false } }; }
+  renderVals() {
+    const items = [
+      { id: 'treino', label: 'Treinar (4x na semana)', pts: 20 },
+      { id: 'ler', label: 'Ler 20 minutos', pts: 10 },
+      { id: 'ingles', label: 'Estudar inglês', pts: 10 },
+      { id: 'dormir', label: 'Dormir antes das 23h', pts: 10 },
+      { id: 'projeto', label: 'Avançar no projeto pessoal', pts: 15 }
+    ];
+    const d = this.state.done;
+    let extra = 0, count = 0;
+    const tasks = items.map((x) => {
+      const on = !!d[x.id];
+      if (on) { count++; extra += x.pts; }
+      return {
+        label: x.label, pts: x.pts, done: on,
+        flip: () => this.setState({ done: Object.assign({}, this.state.done, { [x.id]: !this.state.done[x.id] }) }),
+        box: 'width: 26px; height: 26px; border-radius: 9px; display: flex; align-items: center; justify-content: center; transition: background 140ms; ' + (on ? 'background: #6C4DFF;' : 'background: #FFFFFF; box-shadow: inset 0 0 0 2px #D8D2C6;')
+      };
+    });
+    return { tasks: tasks, doneCount: count, myPts: 350 + extra };
+  }
+}
+</script>
+</body>
+</html>
