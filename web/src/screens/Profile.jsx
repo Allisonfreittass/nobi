@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import PostCard from '../components/PostCard.jsx';
+import { ShieldsItem } from '../components/Shields.jsx';
 import { Avatar, BackButton, ErrorNote, ProgressBar, Skeleton } from '../components/ui.jsx';
 import { useLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
@@ -192,6 +193,7 @@ export default function Profile() {
               <div className="t-12 muted" style={{ marginTop: 4 }}>{s.challenges === 1 ? 'desafio' : 'desafios'}</div>
             </div>
           </div>
+          {isMe && <ShieldsItem />}
           {isMe && (
             <Link to="/semana" className="card row gap-12 tap">
               <Icon name="share" size={20} />

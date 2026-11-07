@@ -6,6 +6,8 @@ import { streakSummary, profileStats } from '../services/progress.js';
 import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
 import { weeklySummary } from '../services/weekly.js';
+import { ensureShields } from '../services/shields.js';
+import { ShieldUse } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
@@ -13,6 +15,7 @@ export const me = Router();
 
 export async function meView(user, today) {
   const [summary, season] = await Promise.all([streakSummary(user, today), currentSeason(today)]);
+  const sh = user._shields || (await ensureShields(user, today));
   return {
     ...publicUser(user),
     email: user.email || null,
@@ -27,6 +30,13 @@ export async function meView(user, today) {
     golden: summary.golden,
     maxActiveDays: summary.maxActiveDays,
     season: seasonInfo(season, today),
+    shields: {
+      available: sh.available,
+      max: sh.max,
+      earnedTotal: sh.earnedTotal,
+      newlyEarned: Math.max(0, sh.earnedTotal - (user.shieldsEarnedSeen || 0)),
+      protectedDays: sh.unseen, // dias que um escudo protegeu e a pessoa ainda não viu
+    },
   };
 }
 
@@ -120,6 +130,14 @@ me.delete('/blocked/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+me.post('/shields/seen', async (req, res) => {
+  const sh = await ensureShields(req.user, req.today);
+  await ShieldUse.updateMany({ userId: req.user._id, seen: false }, { seen: true });
+  req.user.shieldsEarnedSeen = sh.earnedTotal;
+  await req.user.save();
+  res.json({ ok: true });
+});
+
 me.post('/notifications/seen', async (req, res) => {
   req.user.notificationsSeenAt = new Date();
   await req.user.save();
@@ -128,6 +146,7 @@ me.post('/notifications/seen', async (req, res) => {
 
 me.get('/export', async (req, res) => {
   const id = req.user._id;
+  const shields = await ShieldUse.find({ userId: id }).lean();
   const [goals, checkins, posts, comments, follows, achievements] = await Promise.all([
     Goal.find({ $or: [{ ownerId: id }, { 'shared.participants': id }] }).lean(),
     Checkin.find({ userId: id }).lean(),
@@ -138,7 +157,7 @@ me.get('/export', async (req, res) => {
   ]);
   const { passwordHash, resetToken, resetTokenExpiresAt, ...profile } = req.user.toObject();
   res.setHeader('Content-Disposition', `attachment; filename="nobi-${req.user.username}.json"`);
-  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements });
+  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements, shieldsUsed: shields.map((s) => s.date) });
 });
 
 me.delete('/', async (req, res) => {
@@ -167,6 +186,7 @@ me.delete('/', async (req, res) => {
     Follow.deleteMany({ $or: [{ followerId: id }, { followeeId: id }] }),
     Achievement.deleteMany({ userId: id }),
     XpGrant.deleteMany({ userId: id }),
+    ShieldUse.deleteMany({ userId: id }),
     User.updateMany({ blocked: id }, { $pull: { blocked: id } }),
   ]);
   // Objetivos com amigos: passa a posse para quem ficou; apaga os que ficaram sem ninguém

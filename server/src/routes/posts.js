@@ -8,6 +8,7 @@ import { computeStreak } from '../services/streaks.js';
 import { weekStartsOn } from '../services/progress.js';
 import { isOurImage, deleteImages } from '../services/storage.js';
 import { notify } from '../services/push.js';
+import { ensureShields } from '../services/shields.js';
 import { social } from '../services/pushMessages.js';
 
 export const posts = Router();
@@ -98,7 +99,7 @@ posts.post('/', async (req, res) => {
   if (!member) throw forbidden();
 
   const mine = await Checkin.find({ goalId: goal._id, userId: req.user._id }).lean();
-  const streak = computeStreak(goal, mine, req.today, weekStartsOn(req.user));
+  const streak = computeStreak(goal, mine, req.today, weekStartsOn(req.user), (await ensureShields(req.user, req.today)).shieldDates);
   const metrics = { streak: streak.current, streakUnit: streak.unit };
   let kind = 'checkin';
   let title = '';

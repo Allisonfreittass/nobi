@@ -32,7 +32,9 @@ export async function reminderContext(user, date, hour) {
     challenge = { title: versus.title, position: mine.position, aheadName: ahead?.name.split(' ')[0] || null, gap: ahead ? ahead.points - mine.points : 0 };
   }
   const comeback = pending.every((g) => g.streak === 0) && goals.some((g) => g.streak.best >= 3);
-  return { pending, total: goals.filter((g) => g.status.activeToday && g.kind !== 'project').length, maxDays: summary.maxDays, golden: summary.golden, friendsDone, challenge, hour, comeback };
+  const yesterday = new Date(new Date(`${date}T12:00:00Z`).getTime() - 86400000).toISOString().slice(0, 10);
+  const shieldSaved = Boolean(user._shields?.unseen?.includes(yesterday));
+  return { pending, total: goals.filter((g) => g.status.activeToday && g.kind !== 'project').length, maxDays: summary.maxDays, golden: summary.golden, friendsDone, challenge, hour, comeback, shieldSaved };
 }
 
 const WEEKLY_TEXTS = [

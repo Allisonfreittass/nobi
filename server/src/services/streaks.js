@@ -61,12 +61,16 @@ function walk(periods, isDone, isSkippable) {
 
 const firstDateOf = (checkins) => checkins.reduce((min, c) => (!min || c.date < min ? c.date : min), null);
 
-/** Sequência individual de um objetivo. */
-export function computeStreak(goal, checkins, today, weekStartsOn = 1) {
+/**
+ * Sequência individual de um objetivo. shieldDates: dias protegidos por escudo, que contam
+ * como descanso (não quebram e não somam). Não vale para meta semanal.
+ */
+export function computeStreak(goal, checkins, today, weekStartsOn = 1, shieldDates = null) {
   const totals = dayTotals(checkins);
   const need = needFor(goal);
   const periods = periodsFor(goal, firstDateOf(checkins), today, weekStartsOn);
-  const res = walk(periods, (p) => periodTotal(goal, totals, p) >= need, (p) => isRestDay(goal, p));
+  const shielded = (p) => goal.kind !== 'weekly' && Boolean(shieldDates?.has(p));
+  const res = walk(periods, (p) => periodTotal(goal, totals, p) >= need, (p) => isRestDay(goal, p) || shielded(p));
   return { ...res, unit: streakUnit(goal) };
 }
 

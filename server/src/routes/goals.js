@@ -10,6 +10,7 @@ import { XP } from '../services/level.js';
 import { friendIds, publicUser } from '../services/social.js';
 import { currentSeason } from '../services/seasons.js';
 import { notify, localParts } from '../services/push.js';
+import { ensureShields } from '../services/shields.js';
 import { social } from '../services/pushMessages.js';
 import { weeklyPoints } from '../services/progress.js';
 
@@ -226,8 +227,9 @@ goals.post('/:id/checkins', async (req, res) => {
     ownedCodes(uid),
     currentSeason(today),
   ]);
+  const shields = (await ensureShields(req.user, today)).shieldDates;
   const before = myCheckins.filter((c) => String(c.goalId) === String(g._id));
-  const sBefore = computeStreak(g, before, today, wso);
+  const sBefore = computeStreak(g, before, today, wso, shields);
   const summaryBefore = summarize(req.user, myGoals, myCheckins, today);
 
   const update = { $inc: { value, minutes, pages, km } };
@@ -241,7 +243,7 @@ goals.post('/:id/checkins', async (req, res) => {
   const swap = (list) => [...list.filter((c) => String(c._id) !== String(checkin._id)), checkin];
   const after = swap(before);
   const allAfter = swap(myCheckins);
-  const sAfter = computeStreak(g, after, today, wso);
+  const sAfter = computeStreak(g, after, today, wso, shields);
 
   await Promise.all([
     grantXp(uid, `checkin:${g._id}:${today}${taskKey ? `:${taskKey}` : ''}`, XP.checkin, { have }),
@@ -282,6 +284,7 @@ goals.post('/:id/checkins', async (req, res) => {
   }
 
   const fresh = await User.findById(uid);
+  fresh._shields = req.user._shields;
   const summaryAfter = summarize(fresh, myGoals, allAfter, today);
 
   // Conquista em tela cheia só quando a sequência deste objetivo cruza um marco agora

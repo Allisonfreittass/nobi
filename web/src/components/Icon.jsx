@@ -43,6 +43,7 @@ const P = {
   more: <><circle cx="5" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="19" cy="12" r="1.3" fill="currentColor" /></>,
   ban: <><circle cx="12" cy="12" r="9" /><path d="m5.6 5.6 12.8 12.8" /></>,
   sprout: <><path d="M12 21V11" /><path d="M12 13c0-3.5-2.5-6-6.5-6 0 3.5 2.5 6 6.5 6z" /><path d="M12 11c0-3.5 2.5-6 6.5-6 0 3.5-2.5 6-6.5 6z" /></>,
+  shield: <path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.3-7.5 9.5-4.4-1.2-7.5-4.9-7.5-9.5V6z" />,
   medal: <><circle cx="12" cy="15" r="5.5" /><path d="M8.5 10.5 6 3h4l2 4.5L14 3h4l-2.5 7.5" /></>,
 };
 

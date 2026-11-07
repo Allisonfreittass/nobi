@@ -2,6 +2,7 @@
 import { Goal, Checkin, Post, Streak, User } from '../models/index.js';
 import { computeStreak, computeGroupStreak, todayStatus, streakInDays, needFor } from './streaks.js';
 import { stageFromLevel } from './level.js';
+import { ensureShields, shieldDatesOf } from './shields.js';
 import { publicUser } from './social.js';
 import { addDays, range, weekStart, weekday, diffDays } from '../lib/dates.js';
 
@@ -99,9 +100,10 @@ export function serializeGoal(goal) {
 /** Visão completa de um objetivo para um usuário. */
 export async function goalView(goal, user, today, { all, postsCount } = {}) {
   const wso = weekStartsOn(user);
+  const shields = (await ensureShields(user, today)).shieldDates;
   const allCheckins = all ?? (await Checkin.find({ goalId: goal._id }).lean());
   const mine = allCheckins.filter((c) => String(c.userId) === String(user._id));
-  const streak = computeStreak(goal, mine, today, wso);
+  const streak = computeStreak(goal, mine, today, wso, shields);
   const status = todayStatus(goal, mine, today, wso);
   const ms = goal.milestones || [];
   let pct;
@@ -124,6 +126,7 @@ export async function goalView(goal, user, today, { all, postsCount } = {}) {
 
 /** Todos os objetivos ativos do usuário, já com sequência e situação de hoje. */
 export async function userGoals(user, today) {
+  await ensureShields(user, today);
   const goals = await Goal.find(goalsQuery(user._id)).sort({ createdAt: 1 }).lean();
   const ids = goals.map((g) => g._id);
   const [checkins, counts] = await Promise.all([
@@ -138,6 +141,7 @@ export async function userGoals(user, today) {
 
 /** Resumo leve: só as sequências, para anel de amigos e Broto. */
 export async function streakSummary(user, today) {
+  await ensureShields(user, today);
   const goals = await Goal.find(goalsQuery(user._id)).lean();
   const checkins = await Checkin.find({ userId: user._id, goalId: { $in: goals.map((g) => g._id) } }).lean();
   return summarize(user, goals, checkins, today);
@@ -150,7 +154,7 @@ export function summarize(user, goals, checkins, today) {
   let maxDays = 0; // para mostrar "N dias seguidos" (só objetivos medidos em dias)
   let maxGoal = null;
   for (const g of goals) {
-    const s = computeStreak(g, checkins.filter((c) => String(c.goalId) === String(g._id)), today, wso);
+    const s = computeStreak(g, checkins.filter((c) => String(c.goalId) === String(g._id)), today, wso, user._shields?.shieldDates);
     maxActiveDays = Math.max(maxActiveDays, streakInDays(s));
     if (s.unit === 'days' && s.current > maxDays) {
       maxDays = s.current;
@@ -162,8 +166,8 @@ export function summarize(user, goals, checkins, today) {
 
 /** Atualiza o cache de sequência (coleção streaks). */
 export async function refreshStreakCache(goal, userId, today, wso = 1) {
-  const mine = await Checkin.find({ goalId: goal._id, userId }).lean();
-  const s = computeStreak(goal, mine, today, wso);
+  const [mine, shields] = await Promise.all([Checkin.find({ goalId: goal._id, userId }).lean(), shieldDatesOf(userId)]);
+  const s = computeStreak(goal, mine, today, wso, shields);
   await Streak.updateOne(
     { goalId: goal._id, userId },
     { $set: { current: s.current, best: s.best, unit: s.unit, lastDate: s.lastDate } },

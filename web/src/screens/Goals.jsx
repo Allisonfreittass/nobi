@@ -4,6 +4,7 @@ import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
 import GoalCard from '../components/GoalCard.jsx';
 import { PushCard } from '../components/PushPrompt.jsx';
+import { ShieldNotice } from '../components/Shields.jsx';
 import { Avatar, Chip, ErrorNote, RingProgress, Skeleton } from '../components/ui.jsx';
 import { useLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
@@ -120,6 +121,7 @@ export default function Goals() {
         <Link to="/metas/novo" className="btn btn-dark sm"><Icon name="plus" size={18} /> Novo</Link>
       </header>
 
+      <ShieldNotice />
       <Invites onJoined={reload} />
       <PushCard />
       <ErrorNote error={error} onRetry={reload} />

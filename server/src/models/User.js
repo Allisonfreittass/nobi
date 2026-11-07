@@ -32,6 +32,7 @@ const userSchema = new Schema({
       challenges: { type: Boolean, default: true },
     },
   },
+  shieldsEarnedSeen: { type: Number, default: 0 }, // quantos escudos ganhos a pessoa já viu (para o aviso)
   timeZone: { type: String, default: 'America/Sao_Paulo' }, // para o lembrete sair no horário de quem usa
   demo: { type: Boolean, default: false, index: true }, // conta do seed: nunca aparece em descoberta
   blocked: [{ type: Schema.Types.ObjectId, ref: 'User' }],

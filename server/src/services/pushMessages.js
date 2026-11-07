@@ -17,6 +17,11 @@ const CAT_WORD = { treino: 'treino', leitura: 'leitura', estudo: 'estudo', habit
  */
 export const REMINDERS = [
   {
+    id: 'shield-saved', weight: 12,
+    when: (c) => c.shieldSaved,
+    build: (c) => ({ title: 'Seu escudo segurou a sequência', body: `Ontem ficou protegido. Hoje é dia de seguir: ${c.pending[0].title}.` }),
+  },
+  {
     id: 'golden-eve', weight: 9,
     when: (c) => c.pending.some((g) => g.unit === 'days' && g.streak === 6),
     build: (c) => {
