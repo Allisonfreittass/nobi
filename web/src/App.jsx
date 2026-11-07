@@ -66,7 +66,7 @@ function Splash() {
   const { bootError, refresh } = useSession();
   return (
     <div className="block-brasa stack center gap-16" style={{ minHeight: '100dvh', justifyContent: 'center', padding: 24 }} aria-busy={!bootError}>
-      <div className={bootError ? '' : 'nobi-hop'}><Broto size={110} expression={bootError ? 'saudade' : 'padrao'} title={bootError ? 'Sem conexão' : 'Carregando'} /></div>
+      <div className={bootError ? '' : 'nobi-hop'}><span className="broto-plate round"><Broto size={110} expression={bootError ? 'saudade' : 'padrao'} title={bootError ? 'Broto com saudade: sem conexão' : 'Carregando'} priority /></span></div>
       {bootError && (
         <>
           <p className="title t-20" style={{ textAlign: 'center' }}>Não deu para conectar.</p>

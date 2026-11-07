@@ -38,7 +38,8 @@ Direção visual: **Playful Premium**. Divertido e expressivo, nunca infantil. A
 | `brasa` | `#FF5B2E` | Marca, ação principal, botão "+" |
 | `orbita` | `#6C4DFF` | Desafios (cards, cabeçalhos, ranking) |
 | `tinta` | `#141218` | Texto, botões escuros |
-| `creme` | `#FFF1E4` | Corpo do mascote, pílulas suaves |
+| `creme` | `#FFF1E4` | Pílulas suaves, fundos de destaque |
+| `folha` | `#7FB86A` | **Só do mascote** (broto, sobrancelhas, capa). Nunca em botão, texto ou estado de UI |
 | `papel` | `#F7F5F0` | Fundo do app |
 | `dourado` | `#FFB224` | **Exclusivo da sequência** (broto dourado, anel de amigo em sequência) |
 
@@ -59,28 +60,47 @@ Direção visual: **Playful Premium**. Divertido e expressivo, nunca infantil. A
 
 ## 6. Mascote Broto — sistema completo
 
-Componente: `design/broto/Broto.jsx`. Um único componente para o app inteiro.
+**Arte oficial (nov/2026):** personagem ilustrado — cabeça redonda branca, broto verde de duas folhas, sobrancelhas verdes, bochechas rosadas, corpo pequeno, capa e lenço verdes, contorno escuro grosso. A base foi gerada por IA (ChatGPT) e editada; para ter direito autoral próprio, vale encomendar a versão final a um ilustrador quando o app crescer. Registrar como **marca figurativa no INPI**.
+
+Arquivos:
+- `design/broto/kit/broto-<expressão>-<estágio>[-dourado].webp` — 40 artes 768×768 com fundo transparente.
+- `design/icon/nobi-icon-<tamanho>.png` — ícone (só a cabeça, fundo `brasa`) em 1024, 512, 192, 180, 167, 152, 120, 64, 48, 40, 32 e 24 px.
+- `design/broto/Broto.jsx` — componente. Copie `kit/` para `web/public/broto/` e `icon/` para `web/public/icon/`.
+- Os antigos `icon-*.svg` e `broto-estados.png` ficam só como histórico.
 
 **Regras de uso:**
-- **Dentro do app:** sempre de **corpo inteiro** (cabeça em gota, bracinhos, barriga clara, pernas curtas e pés tipo chinelo creme com contorno tinta, sombra elíptica separada).
-- **Ícone e logo:** **só a cabeça**, cortada embaixo (`design/broto/icon-*.svg`). Sem braços, sem barriga.
-- Exceção: no Registrar ele espia por trás da folha (pernas escondidas naturalmente).
-- Corpo é sempre `creme`. Sobre fundo branco, usar a variante com contorno (`outlined`).
-- Sempre sobre um bloco de cor da paleta ou com contorno.
+- **Dentro do app:** sempre de **corpo inteiro**, via `<Broto />`. Nunca recortar, esticar, recolorir ou girar a arte.
+- **Ícone e logo:** **só a cabeça**, fundo coral (`<BrotoHead />` ou os PNGs).
+- Funciona sobre `papel`, branco e `creme`. Sobre `brasa`, `orbita` ou `tinta`, colocar dentro de um círculo/cartão claro.
+- Tamanho mínimo do corpo inteiro: 64 px. Abaixo disso, use a cabeça.
 
 **Duas regras independentes:**
-- **Forma = nível (permanente, nunca regride):** `broto` (nível 1–9, 2 folhas) → `muda` (10–24, 3 folhas) → `botao` (25–49, botão de flor violeta) → `flor` (50+).
-- **Cor = sequência (muda dia a dia):** folhas escuras por padrão; **douradas** quando a maior sequência ativa do usuário é ≥ 7 dias. Quando a sequência zera, volta ao escuro com a expressão `saudade` ("que bom te ver") — sem tristeza, sem aviso vermelho.
+- **Forma = nível (permanente, nunca regride):** `broto` (nível 1–9, 2 folhas) → `muda` (10–24, terceira folha) → `botao` (25–49, botão coral) → `flor` (50+, flor coral com miolo dourado).
+- **Cor = sequência (muda dia a dia):** folhas verdes por padrão; **douradas com brilho** quando a maior sequência ativa é ≥ 7 dias. Quando a sequência zera, volta ao verde com a expressão `saudade` ("que bom te ver") — sem tristeza, sem aviso vermelho.
 
-**Expressões:** `padrao`, `comemorando` (olhos fechados felizes, boca aberta, braços para cima), `foco` (sobrancelhas em arco suave — nunca inclinadas/bravas), `saudade` (olhos grandes com brilho duplo, boquinha "o", acenando).
+**Expressões e onde usar:**
+| Expressão | Onde |
+|---|---|
+| `padrao` | Feed, perfil, telas vazias |
+| `comemorando` | Conquista, parabéns de novo hábito, fim de desafio |
+| `foco` | Sessão de foco, desafio em andamento (sobrancelhas levemente inclinadas = determinado, nunca bravo) |
+| `saudade` | Volta ao app depois de dias sem registrar, sequência zerada |
+| `descanso` | Dia de descanso programado (não quebra a sequência) |
 
-**Props do componente:** `stage`, `golden`, `expression`, `arms` (`down` | `up` | `wave`), `outlined`, `shadow`, `size`.
+**Uso no código:**
+```jsx
+import Broto, { stageFromLevel, isGolden, preloadBroto } from './Broto';
 
-**Derivação no código:**
-```js
-stage  = level >= 50 ? 'flor' : level >= 25 ? 'botao' : level >= 10 ? 'muda' : 'broto';
-golden = maxActiveStreakDays(user) >= 7;
+<Broto
+  expression="comemorando"
+  stage={stageFromLevel(user.level)}
+  golden={isGolden(user.maxActiveStreakDays)}
+  size={160}
+  title="Broto comemorando sua sequência"   // omita se for só decorativo
+  priority                                   // telas de pico (Conquista, Login)
+/>
 ```
+Antes de abrir a tela de Conquista, chame `preloadBroto([{ expression: 'comemorando', stage, golden }])` para a arte aparecer sem atraso.
 
 ## 7. Navegação e telas
 

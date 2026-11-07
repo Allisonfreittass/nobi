@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Icon from './Icon.jsx';
-import Broto from './Broto.jsx';
+import { BrotoHead } from './Broto.jsx';
 import InstallCard from './InstallPrompt.jsx';
 import { usePush } from '../lib/push.js';
 import { useInstall } from '../lib/install.js';
@@ -35,9 +35,7 @@ export function PushCard() {
   }
   return (
     <section className="card row gap-12" aria-label="Ativar lembrete" style={{ padding: '12px 8px 12px 12px' }}>
-      <span className="block-brasa" style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }} aria-hidden="true">
-        <Broto size={38} expression="padrao" shadow={false} />
-      </span>
+      <span style={{ flexShrink: 0 }}><BrotoHead size={44} /></span>
       <div className="grow stack" style={{ gap: 1 }}>
         <span className="strong t-15">Lembrete às {time}?</span>
         <span className="t-13 muted">Um aviso por dia, só se faltar algo.</span>

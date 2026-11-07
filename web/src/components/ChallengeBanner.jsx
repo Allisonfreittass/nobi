@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import Broto from './Broto.jsx';
 import Icon from './Icon.jsx';
+import { useBroto } from '../lib/session.jsx';
 
 export default function ChallengeBanner({ c }) {
+  const broto = useBroto();
   const sub = c.position
     ? `${c.position}º lugar${c.ahead ? ` · a ${c.ahead.gap} pts de ${c.ahead.name}` : ' · liderando'}`
     : `sequência do grupo: ${c.groupStreak} · ${c.doneTodayCount} de ${c.participantsCount} hoje`;
@@ -14,7 +16,7 @@ export default function ChallengeBanner({ c }) {
         <span className="t-13 row gap-6"><Icon name="trophy" size={15} /> {sub}</span>
       </div>
       <div style={{ marginRight: -6, marginBottom: -22, alignSelf: 'flex-end' }}>
-        <Broto size={78} expression="foco" />
+        <span className="broto-plate round" style={{ padding: 4 }}><Broto size={72} expression="foco" {...broto} shadow={false} /></span>
       </div>
     </Link>
   );

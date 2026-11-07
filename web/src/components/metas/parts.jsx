@@ -8,6 +8,7 @@ import { actionFor, valueLine } from '../GoalCard.jsx';
 import { api } from '../../lib/api.js';
 import { useToast } from '../../lib/toast.jsx';
 import { useCheckin } from '../../lib/useCheckin.js';
+import { useOpenAchievement } from '../../lib/session.jsx';
 import { afterCheckin, invalidateLoad } from '../../lib/useLoad.js';
 import { CATEGORIES, goalColor, unitShort } from '../../lib/format.js';
 
@@ -17,7 +18,7 @@ export const shortDay = (iso) => (iso ? `${Number(iso.slice(8, 10))} ${MONTHS[Nu
 /** Concluir/desfazer uma tarefa. Marco concluído abre a Conquista. */
 export function useTaskToggle(onChange) {
   const toast = useToast();
-  const navigate = useNavigate();
+  const openAchievement = useOpenAchievement();
   return async (task) => {
     const next = { ...task, done: !task.done };
     onChange?.(next);
@@ -25,7 +26,7 @@ export function useTaskToggle(onChange) {
       const r = await api(`/tasks/${task.id}`, { method: 'PATCH', body: { done: next.done } });
       if (r.goal) afterCheckin(r.goal);
       invalidateLoad('/metas?view=semana', '/metas?view=mes', '/metas?view=concluidas');
-      if (r.celebration) navigate('/conquista', { state: { celebration: r.celebration } });
+      if (r.celebration) openAchievement({ celebration: r.celebration });
       return r;
     } catch (e) {
       onChange?.(task);

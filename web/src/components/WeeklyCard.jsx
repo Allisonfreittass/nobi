@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Broto from './Broto.jsx';
 import Icon from './Icon.jsx';
 import { useLoad } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
+import { brotoOf, useSession } from '../lib/session.jsx';
 
 const KEY = 'nobi.weekly.seen';
 // Domingo a partir das 18h, segunda e terça (para quem não abriu no domingo)
@@ -24,8 +24,8 @@ export default function WeeklyCard() {
   return (
     <section className="card row gap-14 tap" style={{ padding: 12, background: 'var(--nobi-tinta)', color: '#FFFFFF', position: 'relative' }} aria-label="Resumo da semana">
       <Link to="/semana" onClick={dismiss} className="row gap-14 grow" style={{ color: 'inherit' }}>
-        <span className="block-brasa" style={{ width: 64, height: 88, borderRadius: 14, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }} aria-hidden="true">
-          <Broto size={58} stage={me.stage} golden={me.golden} expression="comemorando" shadow={false} />
+        <span className="block-creme" style={{ width: 72, height: 88, borderRadius: 14, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', flexShrink: 0 }} aria-hidden="true">
+          <Broto size={64} {...brotoOf(me)} expression="comemorando" shadow={false} />
         </span>
         <span className="stack grow" style={{ gap: 2 }}>
           <span className="label-caps t-12" style={{ opacity: 0.7 }}>{data.label}</span>

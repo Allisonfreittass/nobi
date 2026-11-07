@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Broto from '../components/Broto.jsx';
+import { BrotoHead } from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, BackButton, Chip, ErrorNote, Segmented, SelectRow } from '../components/ui.jsx';
 import { useLoad, invalidateLoad } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, CATEGORY_ORDER, GOAL_COLORS, WEEK, firstName } from '../lib/format.js';
 
@@ -40,7 +39,6 @@ function Section({ title, children, hint }) {
 export default function NewGoal() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { me } = useSession();
   const { data: home } = useLoad('/home');
   const friends = home?.ring || [];
   const startCat = CATEGORIES[params.get('categoria')] ? params.get('categoria') : 'habito';
@@ -286,9 +284,7 @@ export default function NewGoal() {
       </div>
 
       <div className="card row gap-14">
-        <span style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: color }} aria-hidden="true">
-          <Broto size={40} stage={me.stage} golden={me.golden} shadow={false} />
-        </span>
+        <span style={{ flexShrink: 0 }}><BrotoHead size={48} /></span>
         <div className="stack gap-4">
           <span className="strong t-15">{withFriends ? 'Cada um registra no próprio app' : 'Sua sequência começa hoje'}</span>
           <span className="t-13 secondary">{hint}</span>

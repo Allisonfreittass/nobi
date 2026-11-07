@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 0 80 80">
-<defs><clipPath id="c"><rect x="20" y="0" width="80" height="80" rx="18"/></clipPath></defs>
-<g clip-path="url(#c)"><rect x="20" y="0" width="80" height="80" fill="#FF5B2E"/>
-<g transform="translate(60 80) scale(1) translate(-60 -80)"><path d="M60 32 V14" stroke="#141218" stroke-width="9" stroke-linecap="round"/>
-<path d="M60 30 C84 30 96 52 96 74 C96 93 81 104 60 104 C39 104 24 93 24 74 C24 52 36 30 60 30Z" fill="#FFF1E4"/>
-<ellipse cx="48" cy="56" rx="10.5" ry="13.5" fill="#141218"/>
-<ellipse cx="72" cy="56" rx="10.5" ry="13.5" fill="#141218"/></g></g></svg>

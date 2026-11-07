@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
-import Broto from '../components/Broto.jsx';
+import Broto, { BrotoHead } from '../components/Broto.jsx';
 import { Avatar, BackButton, ErrorNote, Skeleton } from '../components/ui.jsx';
 import { useLoad } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
+import { brotoOf, useSession } from '../lib/session.jsx';
 import { api } from '../lib/api.js';
 import { firstName, timeAgo } from '../lib/format.js';
 
@@ -30,7 +30,7 @@ export default function Notifications() {
       case 'reminder':
         return (
           <Link to="/metas" className="list-row">
-            <span style={{ width: 44, height: 44, borderRadius: 16, background: 'var(--nobi-brasa)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}><Broto size={38} stage={me.stage} golden={me.golden} shadow={false} /></span>
+            <span style={{ flexShrink: 0 }}><BrotoHead size={44} /></span>
             <span className="grow t-14"><strong>{i.count === 1 ? "Falta" : "Faltam"} {i.count} hoje.</strong> {i.titles.join(', ')}. Sem pressa: cada objetivo tem a sua sequência.</span>
           </Link>
         );
@@ -77,7 +77,7 @@ export default function Notifications() {
       <ErrorNote error={error} onRetry={reload} />
       {!data && !error && <Skeleton height={240} />}
       {data?.items.length === 0 && (
-        <div className="card empty"><Broto size={90} outlined /><p className="t-15 secondary">Tudo em dia por aqui.</p></div>
+        <div className="card empty"><Broto size={90} expression="padrao" {...brotoOf(me)} /><p className="t-15 secondary">Tudo em dia por aqui.</p></div>
       )}
       {data?.items.length > 0 && <div className="card flush card-list">{data.items.map((i) => <div key={i.id}>{render(i)}</div>)}</div>}
     </div>

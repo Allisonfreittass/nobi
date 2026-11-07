@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
-import { useSession, useMascotMotion } from '../lib/session.jsx';
+import { brotoOf, useSession, useMascotMotion } from '../lib/session.jsx';
 import { useShare } from '../lib/share.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
@@ -76,7 +76,7 @@ export default function Achievement() {
       <div className="stack center" style={{ maxWidth: 440, margin: '0 auto', minHeight: '100dvh', padding: 'calc(56px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom))', position: 'relative' }}>
         <span className="label-caps" style={{ padding: '7px 14px', borderRadius: 16, background: 'rgba(20,18,24,0.12)' }}>Nova conquista</span>
         <div className={motion ? 'nobi-hop' : ''} style={{ marginTop: 24 }}>
-          <Broto size={210} stage={me?.stage} golden={c.golden ?? me?.golden} expression="comemorando" shadow={false} title="Broto comemorando" />
+          <span className="broto-plate round"><Broto size={210} stage={brotoOf(me).stage} golden={c.golden ?? brotoOf(me).golden} expression="comemorando" shadow={false} title={c.golden ? 'Broto dourado comemorando sua sequência' : 'Broto comemorando sua conquista'} priority /></span>
         </div>
         <div aria-hidden="true" style={{ width: 150, height: 14, borderRadius: '50%', background: 'rgba(20,18,24,0.18)', marginTop: 4 }} />
         <h1 className="display t-64 nobi-pop" style={{ marginTop: 26, textAlign: 'center' }}>{t.title[0]}<br />{t.title[1]}</h1>

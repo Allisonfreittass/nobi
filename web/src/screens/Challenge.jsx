@@ -4,7 +4,7 @@ import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, ErrorNote, Skeleton } from '../components/ui.jsx';
 import { useLoad, afterCheckin, invalidateLoad } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
+import { useBroto, useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useCheckin } from '../lib/useCheckin.js';
 import { useCelebrate, closedTheDay } from '../lib/celebrate.jsx';
@@ -15,6 +15,7 @@ import { useStatusBar } from '../lib/statusBar.js';
 
 function Header({ g, seasonName }) {
   const s = g.shared;
+  const broto = useBroto();
   const navigate = useNavigate();
   return (
     <header className="block-orbita" style={{ position: 'relative', overflow: 'hidden', padding: 'calc(20px + env(safe-area-inset-top)) 20px 24px', borderRadius: '0 0 32px 32px' }}>
@@ -35,7 +36,7 @@ function Header({ g, seasonName }) {
             <span className="t-13">{s.ended ? 'Desafio encerrado' : `Dia ${s.day} de ${s.totalDays} · termina em ${s.daysLeft} ${s.daysLeft === 1 ? 'dia' : 'dias'}`}</span>
           </div>
         )}
-        <div style={{ position: 'absolute', right: -4, bottom: -34 }} aria-hidden="true"><Broto size={112} expression="foco" shadow={false} /></div>
+        <div style={{ position: 'absolute', right: -4, bottom: -34 }}><span className="broto-plate round"><Broto size={112} expression="foco" {...broto} shadow={false} /></span></div>
       </div>
     </header>
   );

@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icon.jsx';
+import Broto from '../../components/Broto.jsx';
 import PersonRow from '../../components/PersonRow.jsx';
 import { Chip, ErrorNote, Sheet, Skeleton } from '../../components/ui.jsx';
 import { api } from '../../lib/api.js';
 import { useLoad, invalidateLoad } from '../../lib/useLoad.js';
-import { useSession } from '../../lib/session.jsx';
+import { useBroto, useSession } from '../../lib/session.jsx';
 import { useToast } from '../../lib/toast.jsx';
 import { CATEGORIES, CATEGORY_ORDER, goalColor } from '../../lib/format.js';
 import { ClubGridCard, ClubTile, ChallengeRow, people } from './parts.jsx';
@@ -144,6 +145,7 @@ function Suggestions() {
 }
 
 function Clubs() {
+  const broto = useBroto();
   const { data, error, reload, setData } = useLoad('/community');
   const [interest, setInterest] = useState(null);
   const [byInterest, setByInterest] = useState(null);
@@ -173,7 +175,13 @@ function Clubs() {
         </div>
         {data.myClubs.length > 0
           ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>{data.myClubs.map((c) => <MyClubCard key={c.id} club={c} />)}</div>
-          : <p className="t-14 secondary">Você ainda não entrou em nenhum clube. Clubes juntam gente com o mesmo objetivo: seus posts Públicos da categoria aparecem lá. Não achou o seu? Crie um.</p>}
+          : (
+            <div className="card empty">
+              <div className="broto-plate"><Broto size={96} expression="padrao" {...broto} /></div>
+              <h3 className="title t-20">Entre num clube pra evoluir com mais gente</h3>
+              <p className="secondary t-14" style={{ maxWidth: 300 }}>Clubes juntam gente com o mesmo objetivo: seus posts Públicos da categoria aparecem lá. Não achou o seu? Crie um.</p>
+            </div>
+          )}
       </section>
 
       <section className="stack gap-10" aria-label="Perto de você">
@@ -249,6 +257,7 @@ function Challenges() {
 }
 
 function SearchResults({ q }) {
+  const broto = useBroto();
   const [r, setR] = useState(null);
   useEffect(() => {
     setR(null);
@@ -259,7 +268,13 @@ function SearchResults({ q }) {
   const none = !r.clubs.length && !r.challenges.length && !r.people.length;
   return (
     <section className="stack gap-14" aria-label="Resultados">
-      {none && <p className="muted t-14">Nada encontrado para “{q}”.</p>}
+      {none && (
+        <div className="card empty">
+          <div className="broto-plate"><Broto size={96} expression="foco" {...broto} /></div>
+          <h2 className="title t-20">Nada encontrado para “{q}”</h2>
+          <p className="secondary t-14" style={{ maxWidth: 300 }}>Tente outra palavra, o nome de um clube ou um @usuário.</p>
+        </div>
+      )}
       {r.clubs.length > 0 && (
         <div className="stack gap-10"><h2 className="title t-18">Clubes</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>

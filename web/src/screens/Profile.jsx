@@ -6,7 +6,7 @@ import PostCard from '../components/PostCard.jsx';
 import { ShieldsItem } from '../components/Shields.jsx';
 import { Avatar, BackButton, ErrorNote, ProgressBar, Skeleton } from '../components/ui.jsx';
 import { useLoad } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
+import { brotoOf, useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { capitalize, monthName, signed, weekOrder } from '../lib/format.js';
@@ -103,9 +103,8 @@ export default function Profile() {
   if (!p) return <div className="screen"><Skeleton height={120} /><Skeleton height={90} /><Skeleton height={260} /></div>;
 
   const s = p.stats;
-  const stage = isMe ? me.stage : p.stage;
-  const golden = isMe ? me.golden : p.golden;
   const level = isMe ? me.level : p.level;
+  const { stage, golden } = brotoOf(isMe ? me : p);
   const xpPct = isMe ? me.levelProgress : null;
 
   async function block() {
@@ -163,8 +162,8 @@ export default function Profile() {
       {p.interests?.length > 0 && <div className="row gap-8 wrap">{p.interests.map((i) => <span key={i} className="tag">{i}</span>)}</div>}
 
       <section className="card row gap-14 block-creme" aria-label={`${STAGE_NAME[stage]}, nível ${level}`} style={{ color: 'var(--nobi-tinta)' }}>
-        <span style={{ background: 'var(--nobi-brasa)', borderRadius: 20, padding: '8px 10px 0', display: 'flex' }}>
-          <Broto size={64} stage={stage} golden={golden} shadow={false} />
+        <span style={{ display: 'flex', flexShrink: 0 }}>
+          <Broto size={64} expression="padrao" stage={stage} golden={golden} shadow={false} />
         </span>
         <div className="stack gap-6 grow">
           <span className="title t-18">{STAGE_NAME[stage]}{golden ? ' dourado' : ''}</span>

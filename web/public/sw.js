@@ -8,7 +8,7 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Nobi';
   event.waitUntil(self.registration.showNotification(title, {
     body: data.body || '',
-    icon: '/icon-192.png',
+    icon: '/icon/nobi-icon-192.png',
     badge: '/badge-96.png',
     tag: data.tag || 'nobi',
     renotify: data.tag === 'reminder',

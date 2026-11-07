@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Icon from './Icon.jsx';
-import Broto from './Broto.jsx';
+import { BrotoHead } from './Broto.jsx';
 import { Sheet } from './ui.jsx';
 import { api } from '../lib/api.js';
 import { useSession } from '../lib/session.jsx';
@@ -85,9 +85,9 @@ export function ShieldNotice() {
     : `Você tem ${s.available} de ${s.max}. Se falhar um dia, ele protege sua sequência.`;
   return (
     <section className="card row gap-12" role="status" style={{ padding: '12px 8px 12px 12px', boxShadow: 'inset 0 0 0 2px color-mix(in srgb, var(--nobi-orbita) 45%, transparent)' }}>
-      <span className="block-orbita" style={{ width: 48, height: 48, borderRadius: 16, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, position: 'relative' }} aria-hidden="true">
-        <Broto size={40} expression={saved ? 'padrao' : 'comemorando'} shadow={false} />
-        <span style={{ position: 'absolute', top: 4, right: 4, color: '#FFFFFF' }}><Icon name="shield" size={14} stroke={2.6} /></span>
+      <span style={{ width: 48, height: 48, flexShrink: 0, position: 'relative' }} aria-hidden="true">
+        <BrotoHead size={48} />
+        <span style={{ position: 'absolute', right: -4, bottom: -4, width: 22, height: 22, borderRadius: 11, background: 'var(--nobi-orbita)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px var(--nobi-card)' }}><Icon name="shield" size={13} stroke={2.6} /></span>
       </span>
       <div className="grow stack" style={{ gap: 2 }}>
         <span className="strong t-15">{title}</span>

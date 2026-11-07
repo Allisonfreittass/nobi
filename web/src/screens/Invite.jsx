@@ -40,7 +40,7 @@ export default function Invite() {
   return (
     <div className="block-brasa" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <div className="stack center gap-16" style={{ flex: 1, justifyContent: 'flex-end', padding: 'calc(40px + env(safe-area-inset-top)) 24px 28px' }}>
-        <div className="nobi-hop" style={{ animationDuration: '2.4s' }}><Broto size={140} arms="wave" title="Broto acenando" /></div>
+        <div className="nobi-hop" style={{ animationDuration: '2.4s' }}><span className="broto-plate round"><Broto size={140} expression="padrao" /></span></div>
         {inviter && (
           <div className="stack center gap-10">
             <span style={{ boxShadow: '0 0 0 4px var(--nobi-creme)', borderRadius: '50%' }}><Avatar user={inviter} size={64} /></span>

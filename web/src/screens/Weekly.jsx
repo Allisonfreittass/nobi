@@ -5,7 +5,7 @@ import Broto from '../components/Broto.jsx';
 import { BackButton, ErrorNote, SelectRow, Skeleton } from '../components/ui.jsx';
 import { api } from '../lib/api.js';
 import { useLoad, afterPost } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
+import { brotoOf, useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { drawWeeklyStory, canvasToBlob } from '../lib/storyCard.js';
 import { APP_NAME } from '../config.js';
@@ -98,7 +98,7 @@ export default function Weekly() {
 
           {s.activeDays === 0 ? (
             <div className="card empty">
-              <div className="block-brasa" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={96} expression="saudade" stage={me.stage} /></div>
+              <div className="broto-plate"><Broto size={96} expression="saudade" stage={brotoOf(me).stage} title="Broto com saudade, guardando o seu lugar" /></div>
               <h2 className="title t-20">Nenhum registro nesta semana</h2>
               <p className="secondary t-14" style={{ maxWidth: 300 }}>Sem problema. O Broto guarda o lugar, e a próxima semana pode render um belo story.</p>
             </div>

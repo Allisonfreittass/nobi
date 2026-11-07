@@ -339,6 +339,9 @@ h1, h2, h3, p { margin: 0; }
 .block-orbita { background: var(--nobi-orbita); color: #FFFFFF; }
 .block-tinta { background: var(--nobi-tinta); color: #FFFFFF; }
 .block-creme { background: var(--nobi-creme); color: var(--nobi-tinta); }
+/* Broto sobre brasa, órbita, tinta ou cartão escuro: sempre num cartão/disco claro (DESIGN.md §6). */
+.broto-plate { display: inline-flex; align-items: flex-end; justify-content: center; line-height: 0; background: var(--nobi-creme); border-radius: 24px; padding: 12px 20px 4px; }
+.broto-plate.round { border-radius: 50%; padding: 10px; }
 
 .empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 28px 16px; }
 .divider { height: 1px; background: var(--nobi-track); }
@@ -423,7 +426,7 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
   box-shadow: 0 18px 40px -16px rgba(20, 18, 24, 0.6); animation: celebrate-in 420ms var(--nobi-ease-spring) both;
 }
 :root[data-theme='dark'] .celebrate { background: #2A2630; box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
-.celebrate-art { position: relative; flex-shrink: 0; width: 72px; height: 72px; border-radius: 20px; background: var(--nobi-brasa); display: flex; align-items: flex-end; justify-content: center; overflow: visible; }
+.celebrate-art { position: relative; flex-shrink: 0; width: 72px; height: 72px; border-radius: 20px; background: var(--nobi-creme); display: flex; align-items: flex-end; justify-content: center; overflow: visible; }
 .celebrate-share { background: var(--nobi-brasa); color: var(--nobi-tinta); height: 36px; min-height: 36px; padding: 0 14px; border-radius: 12px; }
 @keyframes celebrate-in { 0% { transform: translateY(40px) scale(0.92); opacity: 0; } 100% { transform: none; opacity: 1; } }
 

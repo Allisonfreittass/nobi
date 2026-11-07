@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/Icon.jsx';
 import { api } from '../../lib/api.js';
 import { useToast } from '../../lib/toast.jsx';
+import { useCelebrate } from '../../lib/celebrate.jsx';
 import { invalidateLoad } from '../../lib/useLoad.js';
 import { CATEGORIES, goalColor } from '../../lib/format.js';
 
@@ -26,6 +27,7 @@ export function ClubTile({ club, size = 48, icon = false }) {
 /** Entrar (tinta) ou Membro ✓ (neutro). Já sendo membro, o botão leva ao clube; sair fica no menu do clube. */
 export function useJoin(onJoined) {
   const toast = useToast();
+  const celebrate = useCelebrate();
   const [busy, setBusy] = useState(false);
   async function join(club) {
     setBusy(true);
@@ -33,7 +35,7 @@ export function useJoin(onJoined) {
       const c = await api(`/clubs/${club.slug}/join`, { method: 'POST' });
       invalidateLoad('/community');
       onJoined?.(c);
-      toast(`Você entrou em ${club.name}.`);
+      celebrate(null, { title: 'Você entrou!', text: `Agora você faz parte de ${club.name}.` });
     } catch (e) { toast(e.message); } finally { setBusy(false); }
   }
   return { join, busy };

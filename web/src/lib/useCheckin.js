@@ -1,8 +1,7 @@
-import { useNavigate } from 'react-router-dom';
 import { api } from './api.js';
 import { useToast } from './toast.jsx';
 import { useShare } from './share.jsx';
-import { useSession } from './session.jsx';
+import { useOpenAchievement, useSession } from './session.jsx';
 import { unitWord } from './format.js';
 import { afterCheckin } from './useLoad.js';
 import { useCelebrate, closedTheDay } from './celebrate.jsx';
@@ -37,7 +36,7 @@ export function optimisticCheckin(goal, body = {}) {
  * Se fechou um marco de sequência, vai para a tela de Conquista.
  */
 export function useCheckin(onGoal) {
-  const navigate = useNavigate();
+  const openAchievement = useOpenAchievement();
   const toast = useToast();
   const share = useShare();
   const { patchMe } = useSession();
@@ -56,7 +55,7 @@ export function useCheckin(onGoal) {
     afterCheckin(r.goal);
     patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
     if (r.celebration) {
-      navigate('/conquista', { state: { celebration: r.celebration } });
+      openAchievement({ celebration: r.celebration });
       return r;
     }
     if (closedTheDay(goal, r.goal)) {

@@ -4,7 +4,7 @@ import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { StreakPill, Toggle, Skeleton } from '../components/ui.jsx';
 import { api, localNow } from '../lib/api.js';
-import { useSession, useMascotMotion } from '../lib/session.jsx';
+import { brotoOf, useSession, useMascotMotion } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { afterCheckin, afterPost, invalidateLoad } from '../lib/useLoad.js';
 import { optimisticCheckin } from '../lib/useCheckin.js';
@@ -129,13 +129,13 @@ export default function Started() {
       <span className="label-caps" style={{ padding: '7px 14px', borderRadius: 16, background: 'color-mix(in srgb, #2E9C6A 14%, var(--nobi-card))', color: '#1F6B47' }}>{BADGE[goal.kind]}</span>
 
       <div style={{ position: 'relative', width: 280, height: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} aria-hidden="true">
-        <div style={{ position: 'absolute', left: 45, top: 4, width: 190, height: 190, borderRadius: 95, background: 'var(--nobi-brasa)' }} />
+        <div style={{ position: 'absolute', left: 45, top: 4, width: 190, height: 190, borderRadius: 95, background: 'var(--nobi-creme)' }} />
         <span className="nobi-pop" style={{ position: 'absolute', left: 22, top: 30, width: 12, height: 12, borderRadius: 4, background: 'var(--nobi-brasa)', transform: 'rotate(20deg)' }} />
         <span className="nobi-pop" style={{ position: 'absolute', right: 26, top: 18, width: 14, height: 14, borderRadius: 7, background: '#2E9C6A', animationDelay: '80ms' }} />
         <span className="nobi-pop" style={{ position: 'absolute', right: 8, top: 110, width: 8, height: 18, borderRadius: 4, background: 'var(--nobi-orbita)', transform: 'rotate(-30deg)', animationDelay: '160ms' }} />
         <span className="nobi-pop" style={{ position: 'absolute', left: 6, top: 140, width: 10, height: 10, borderRadius: 5, background: 'var(--nobi-tinta)', animationDelay: '240ms' }} />
         <div className={motion ? 'nobi-hop' : ''} style={{ position: 'relative', marginRight: 40 }}>
-          <Broto size={168} stage={me.stage} golden={me.golden} expression="comemorando" arms="wave" />
+          <Broto size={168} {...brotoOf(me)} expression="comemorando" priority />
         </div>
         <Pot color={goal.color === '#141218' ? '#2E9C6A' : goal.color} />
       </div>

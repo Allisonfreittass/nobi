@@ -91,7 +91,7 @@ export default function Login() {
     <div className="block-brasa" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <div className="stack center gap-18" style={{ flex: 1, justifyContent: 'flex-end', padding: 'calc(48px + env(safe-area-inset-top)) 24px 28px' }}>
         <div className="nobi-hop" style={{ animationDuration: '2.4s' }}>
-          <Broto size={150} arms="wave" title={`${APP_NAME}: o Broto acenando`} />
+          <span className="broto-plate round"><Broto size={150} expression="padrao" title={`${APP_NAME}: o Broto sorrindo`} priority /></span>
         </div>
         <div className="stack center gap-8">
           <h1 className="display t-64">{APP_NAME}<span style={{ color: 'var(--nobi-creme)' }}>.</span></h1>

@@ -2,13 +2,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icon.jsx';
+import Broto from '../../components/Broto.jsx';
 import PostCard from '../../components/PostCard.jsx';
 import PersonRow from '../../components/PersonRow.jsx';
 import ReportSheet from '../../components/ReportSheet.jsx';
 import { Avatar, ErrorNote, Sheet, Skeleton } from '../../components/ui.jsx';
 import { api } from '../../lib/api.js';
 import { useLoad, invalidateLoad } from '../../lib/useLoad.js';
-import { useSession } from '../../lib/session.jsx';
+import { useBroto, useSession } from '../../lib/session.jsx';
 import { useToast } from '../../lib/toast.jsx';
 import { useConfirm } from '../../lib/confirm.jsx';
 import { useStatusBar } from '../../lib/statusBar.js';
@@ -63,7 +64,7 @@ function Header({ club, onJoin, joining, onMenu, onShare }) {
           </div>
           {club.kind !== 'private' && (club.member
             ? <span className="btn sm" style={{ height: 44, background: 'rgba(255,255,255,0.18)', color: '#FFFFFF', flexShrink: 0 }}>Membro ✓</span>
-            : <button type="button" className="btn sm" style={{ height: 44, background: '#FFFFFF', color: '#141218', flexShrink: 0 }} disabled={joining || club.banned} onClick={onJoin}>{club.banned ? 'Indisponível' : 'Entrar'}</button>)}
+            : <button type="button" className="btn sm btn-dark" style={{ height: 44, flexShrink: 0, boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.35)' }} disabled={joining || club.banned} onClick={onJoin}>{club.banned ? 'Indisponível' : 'Entrar'}</button>)}
         </div>
       </div>
     </header>
@@ -71,6 +72,7 @@ function Header({ club, onJoin, joining, onMenu, onShare }) {
 }
 
 function Feed({ club }) {
+  const broto = useBroto();
   const { me } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,7 +107,11 @@ function Feed({ club }) {
       <ErrorNote error={error} onRetry={reload} />
       {!data && !error && <><Skeleton height={180} /><Skeleton height={140} /></>}
       {data?.posts.length === 0 && (
-        <p className="t-14 secondary">Ainda não tem post aqui. Posts <strong>Públicos</strong> de {cat?.label.toLowerCase()} dos membros aparecem no clube.</p>
+        <div className="card empty">
+          <div className="broto-plate"><Broto size={96} expression="padrao" {...broto} /></div>
+          <h2 className="title t-20">Seja o primeiro a postar</h2>
+          <p className="secondary t-14" style={{ maxWidth: 300 }}>Posts <strong>Públicos</strong> de {cat?.label.toLowerCase()} dos membros aparecem no clube.</p>
+        </div>
       )}
       {data?.posts.map((p) => (
         <PostCard key={p.id} post={p} club={mod} onRemoved={remove} onDelete={remove}

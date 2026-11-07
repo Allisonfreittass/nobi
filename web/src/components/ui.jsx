@@ -56,8 +56,9 @@ export function Avatar({ user, size = 40, ring, className = '' }) {
   const ringClass = ring ? `ring-${ring}` : '';
   let inner = <span style={{ fontSize: '38cqi', lineHeight: 1 }}>{(user?.name || '?').trim().charAt(0).toUpperCase()}</span>;
   if (user?.avatarUrl === 'broto') {
+    // Ícone do app (cabeça sobre coral) preenchendo o círculo do avatar
     style.background = 'var(--nobi-brasa)';
-    inner = <BrotoHead size={Math.round(size * 0.92)} />;
+    inner = <BrotoHead size={size} />;
   } else if (user?.avatarUrl) {
     inner = <img src={user.avatarUrl} alt="" loading="lazy" decoding="async" width={size} height={size} />;
   }

@@ -3,9 +3,11 @@ import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
 import { Avatar, ErrorNote, Skeleton } from '../components/ui.jsx';
 import { useLoad } from '../lib/useLoad.js';
+import { useBroto } from '../lib/session.jsx';
 import { firstName } from '../lib/format.js';
 
 export default function Challenges() {
+  const broto = useBroto();
   const { data, error, reload } = useLoad('/home/challenges');
   return (
     <div className="screen">
@@ -17,7 +19,7 @@ export default function Challenges() {
       {!data && !error && <><Skeleton height={130} /><Skeleton height={130} /></>}
       {data?.length === 0 && (
         <div className="card empty">
-          <div className="block-orbita" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={96} expression="foco" /></div>
+          <div className="broto-plate"><Broto size={96} expression="foco" {...broto} /></div>
           <h2 className="title t-20">Evoluir junto é mais leve</h2>
           <p className="secondary t-14" style={{ maxWidth: 300 }}>Crie um objetivo com amigos: Juntos, sem competição, ou Disputa, com ranking semanal.</p>
         </div>

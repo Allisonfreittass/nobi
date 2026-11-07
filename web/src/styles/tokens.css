@@ -40,10 +40,11 @@
   --nobi-border-strong: #E4DDD0;
   --nobi-toggle-off: #D8D2C6;
 
-  /* Mascote */
-  --nobi-mascot-body: #FFF1E4;
-  --nobi-mascot-cheek: #FF8A66;
-  --nobi-mascot-outline: #D8D2C6;
+  /* Mascote (só no Broto — nunca em UI) */
+  --nobi-folha: #7FB86A;
+  --nobi-mascot-body: #FFFFFF;
+  --nobi-mascot-cheek: #E9A3A0;
+  --nobi-mascot-ink: #1E1B1B;
 
   /* Controles do sistema (switch, seleção): neutros. Coral só na ação principal e nas celebrações. */
   --nobi-control-on: #141218;

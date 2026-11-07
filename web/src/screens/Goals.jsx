@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
-import Broto from '../components/Broto.jsx';
 import GoalCard from '../components/GoalCard.jsx';
 import { PushCard } from '../components/PushPrompt.jsx';
 import { ShieldNotice } from '../components/Shields.jsx';

@@ -1,11 +1,11 @@
 import { BrotoHead } from './Broto.jsx';
 import { APP_NAME } from '../config.js';
 
-/** Ícone (só a cabeça, sobre bloco brasa) + wordmark com o ponto em brasa. */
+/** Ícone do app: só a cabeça do Broto, fundo coral (PNG oficial em /icon/). */
 export function AppIcon({ size = 34 }) {
   return (
-    <span role="img" aria-label={APP_NAME} style={{ width: size, height: size, borderRadius: size * 0.26, background: 'var(--nobi-brasa)', display: 'inline-flex', overflow: 'hidden', flexShrink: 0 }}>
-      <BrotoHead size={size} />
+    <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+      <BrotoHead size={size} title={APP_NAME} />
     </span>
   );
 }

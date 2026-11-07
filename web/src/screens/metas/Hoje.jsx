@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../../components/Icon.jsx';
 import Broto from '../../components/Broto.jsx';
+import { brotoOf } from '../../lib/session.jsx';
 import { ErrorNote, Sheet, SelectRow, Skeleton, RingProgress } from '../../components/ui.jsx';
 import { TaskRow, ObjectiveCard, RoutineRow, CheckCircle, useTaskToggle, shortDay } from '../../components/metas/parts.jsx';
 import { api } from '../../lib/api.js';
@@ -162,7 +163,7 @@ export default function Hoje({ me }) {
   if (empty) {
     return (
       <div className="card empty">
-        <div className="block-brasa" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={100} stage={me.stage} golden={me.golden} /></div>
+        <div className="broto-plate"><Broto size={100} expression="padrao" {...brotoOf(me)} /></div>
         <h2 className="title t-20">O que você quer construir?</h2>
         <p className="secondary t-14" style={{ maxWidth: 300 }}>Crie um objetivo e ganhe uma sequência só dele. Pode ser pessoal ou com amigos.</p>
         <button type="button" className="btn btn-primary" onClick={() => navigate('/metas/novo')}>Criar objetivo</button>

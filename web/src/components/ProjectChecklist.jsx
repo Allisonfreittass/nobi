@@ -1,7 +1,7 @@
 // Checklist de projeto (DESIGN.md 8.2): etapa → subetapa (2 níveis), data, marco,
 // reordenar arrastando pela alça, adicionar no fim e "+ subetapa".
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useOpenAchievement } from '../lib/session.jsx';
 import Icon from './Icon.jsx';
 import { CheckCircle, shortDay } from './metas/parts.jsx';
 import { api } from '../lib/api.js';
@@ -70,7 +70,7 @@ function Title({ task, onRename }) {
 
 export default function ProjectChecklist({ goal, onGoal }) {
   const toast = useToast();
-  const navigate = useNavigate();
+  const openAchievement = useOpenAchievement();
   const [steps, setSteps] = useState(goal.tasks || []);
   const [newStep, setNewStep] = useState('');
   const [subFor, setSubFor] = useState(null);
@@ -89,7 +89,7 @@ export default function ProjectChecklist({ goal, onGoal }) {
     const r = await api(`/tasks/${task.id}`, { method: 'PATCH', body });
     if (r.goal) { onGoal(r.goal); afterCheckin(r.goal); }
     invalidateLoad('/metas?view=hoje', '/metas?view=semana', '/metas?view=mes', '/metas?view=concluidas');
-    if (r.celebration) navigate('/conquista', { state: { celebration: r.celebration } });
+    if (r.celebration) openAchievement({ celebration: r.celebration });
   });
   const toggle = (task) => {
     const flip = (t) => (t.id === task.id ? { ...t, done: !t.done } : { ...t, children: t.children?.map(flip) });

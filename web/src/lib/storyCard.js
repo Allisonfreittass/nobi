@@ -1,66 +1,24 @@
 // Card de story (1080 × 1920) do resumo semanal, desenhado em canvas no próprio aparelho.
-import { BROTO_SHAPES } from '../components/Broto.jsx';
+import { brotoSrc } from '../components/Broto.jsx';
+import { brotoOf } from './session.jsx';
 import { APP_NAME, BRAND_LINE, SITE_URL } from '../config.js';
 import { weekOrder } from './format.js';
 
 const W = 1080;
 const H = 1920;
-const { C, ARM_UP_L, ARM_UP_R, BODY, FOOT_L, FOOT_R } = BROTO_SHAPES;
 const INK = '#141218';
 const CREME = '#FFF1E4';
 const BRASA = '#FF5B2E';
 
-// Folhas e caule de cada estágio (mesmos traços do Broto.jsx)
-const SPROUTS = {
-  broto: { dy: 0, stem: 'M60 32 V16', leaves: ['M60 19 C52 7 40 8 37 14 C45 21 54 21 60 19Z', 'M60 17 C66 3 80 2 84 8 C77 16 68 19 60 17Z'] },
-  muda: { dy: -4, stem: 'M60 36 V10', leaves: ['M60 28 C52 16 40 17 37 23 C45 30 54 30 60 28Z', 'M60 22 C66 8 80 7 84 13 C77 21 68 24 60 22Z', 'M60 13 C53 3 44 3 41 8 C47 14 55 15 60 13Z'] },
-  botao: { dy: -4, stem: 'M60 36 V14', leaves: ['M60 29 C52 17 40 18 37 24 C45 31 54 31 60 29Z', 'M60 25 C66 11 80 10 84 16 C77 24 68 27 60 25Z'], bud: 'M60 2 C70 6 71 16 60 19 C49 16 50 6 60 2Z' },
-  flor: { dy: -4, stem: 'M60 36 V16', leaves: ['M60 30 C52 18 40 19 37 25 C45 32 54 32 60 30Z', 'M60 26 C66 12 80 11 84 17 C77 25 68 28 60 26Z'], flower: true },
-};
-
-function drawBroto(ctx, x, y, size, { stage = 'broto', golden = false }) {
-  const s = size / 120;
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(s, s);
-  ctx.translate(0, 8); // viewBox começa em y = -8
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  const fill = (d, color) => { ctx.fillStyle = color; ctx.fill(new Path2D(d)); };
-  const stroke = (d, color, w) => { ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(new Path2D(d)); };
-
-  const sp = SPROUTS[stage] || SPROUTS.broto;
-  ctx.save();
-  ctx.translate(0, sp.dy);
-  stroke(sp.stem, INK, 5);
-  for (const leaf of sp.leaves) {
-    if (golden) { fill(leaf, C.gold); stroke(leaf, INK, 3); } else fill(leaf, INK);
-  }
-  if (sp.bud) { fill(sp.bud, C.bud); stroke(sp.bud, INK, 3); }
-  if (sp.flower) {
-    for (const [cx, cy] of [[60, 3], [69, 9.5], [65.5, 19.5], [54.5, 19.5], [51, 9.5]]) {
-      ctx.beginPath(); ctx.arc(cx, cy, 6.5, 0, Math.PI * 2); ctx.fillStyle = C.body; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.stroke();
-    }
-    ctx.beginPath(); ctx.arc(60, 12, 5.5, 0, Math.PI * 2); ctx.fillStyle = C.bud; ctx.fill(); ctx.stroke();
-  }
-  ctx.restore();
-
-  const rr = (rx, ry, rw, rh, r) => { ctx.beginPath(); ctx.roundRect(rx, ry, rw, rh, r); ctx.fillStyle = C.body; ctx.fill(); };
-  rr(47, 98, 9, 15, 4.5);
-  rr(64, 98, 9, 15, 4.5);
-  for (const f of [FOOT_L, FOOT_R]) { fill(f, C.body); stroke(f, INK, 2); }
-  fill(ARM_UP_L, C.body);
-  fill(ARM_UP_R, C.body);
-  fill(BODY, C.body);
-  ctx.globalAlpha = 0.75;
-  ctx.beginPath(); ctx.ellipse(60, 86, 20, 13, 0, 0, Math.PI * 2); ctx.fillStyle = C.belly; ctx.fill();
-  ctx.globalAlpha = 1;
-  // Rosto comemorando
-  stroke('M40 60 Q48 50 56 60', INK, 4.5);
-  stroke('M64 60 Q72 50 80 60', INK, 4.5);
-  for (const cx of [36, 84]) { ctx.beginPath(); ctx.ellipse(cx, 70, 5.5, 3.5, 0, 0, Math.PI * 2); ctx.fillStyle = C.cheek; ctx.fill(); }
-  fill('M51 70 Q60 86 69 70 Z', INK);
-  ctx.restore();
+/** Carrega a arte do Broto (WebP transparente, 768 × 768). Sem arte, o card sai sem o mascote. */
+function loadBroto(state) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = brotoSrc({ expression: 'comemorando', ...state });
+  });
 }
 
 function text(ctx, str, x, y, { size, weight = 700, family = 'Inter', color = INK, align = 'left', tracking = 0 }) {
@@ -96,7 +54,7 @@ function pickMetrics(s) {
   return all.slice(0, 3);
 }
 
-/** Desenha o card e devolve o canvas. me: { username, stage, golden, prefs }. */
+/** Desenha o card e devolve o canvas. me: { username, level, golden, prefs }. */
 export async function drawWeeklyStory(summary, me) {
   try {
     await Promise.all([
@@ -105,6 +63,7 @@ export async function drawWeeklyStory(summary, me) {
       document.fonts.load('600 40px "Inter"'),
     ]);
   } catch { /* usa a fonte do sistema */ }
+  const broto = await loadBroto(brotoOf(me));
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -127,9 +86,9 @@ export async function drawWeeklyStory(summary, me) {
   roundRect(ctx, W - 90 - pw, 132, pw, 72, 36, 'rgba(20,18,24,0.12)');
   text(ctx, pill, W - 90 - pw / 2, 180, { size: 30, weight: 700, align: 'center', tracking: 2 });
 
-  // Broto comemorando
-  ctx.beginPath(); ctx.ellipse(W / 2, 880, 170, 22, 0, 0, Math.PI * 2); ctx.fillStyle = 'rgba(20,18,24,0.18)'; ctx.fill();
-  drawBroto(ctx, W / 2 - 270, 330, 540, { stage: me.stage, golden: me.golden });
+  // Broto comemorando, num disco claro (sobre coral, DESIGN.md §6). Arte quadrada, sem esticar.
+  ctx.beginPath(); ctx.arc(W / 2, 610, 300, 0, Math.PI * 2); ctx.fillStyle = CREME; ctx.fill();
+  if (broto) ctx.drawImage(broto, W / 2 - 270, 340, 540, 540);
 
   // Número principal
   text(ctx, `${summary.activeDays} de 7`, W / 2, 1090, { size: 190, weight: 800, family: 'Bricolage Grotesque', align: 'center', tracking: -8 });

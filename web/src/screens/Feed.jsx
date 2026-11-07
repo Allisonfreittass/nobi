@@ -13,7 +13,7 @@ import { Logo } from '../components/Logo.jsx';
 import { Avatar, ErrorNote, Skeleton, ProgressBar } from '../components/ui.jsx';
 import { useUnread } from '../components/Layout.jsx';
 import { useLoad, useDesktop, afterCheckin } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
+import { useBroto, useOpenAchievement, useSession } from '../lib/session.jsx';
 import { api } from '../lib/api.js';
 import { firstName, greeting, longToday, signed } from '../lib/format.js';
 import { useToast } from '../lib/toast.jsx';
@@ -47,9 +47,10 @@ function usePosts() {
 }
 
 function EmptyFeed() {
+  const broto = useBroto();
   return (
     <div className="card empty">
-      <div className="block-brasa" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={96} arms="wave" /></div>
+      <div className="broto-plate"><Broto size={96} expression="padrao" {...broto} /></div>
       <h2 className="title t-20">Seu feed começa com amigos</h2>
       <p className="secondary t-14" style={{ maxWidth: 300 }}>Siga quem você conhece e acompanhe a evolução de cada um. Seus registros só aparecem aqui se você escolher postar.</p>
       <Link to="/comunidade" className="btn btn-dark">Encontrar pessoas e clubes</Link>
@@ -82,14 +83,14 @@ function MobileFeed() {
 
 function ProjectCard({ goal, onChange }) {
   const toast = useToast();
-  const navigate = useNavigate();
+  const openAchievement = useOpenAchievement();
   async function toggle(m) {
     try {
       if (m.children?.length) { toast('Essa etapa fica feita quando todas as subetapas estiverem feitas.'); return; }
       const r = await api(`/tasks/${m.id}`, { method: 'PATCH', body: { done: !m.done } });
       onChange(r.goal);
       afterCheckin(r.goal);
-      if (r.celebration) navigate('/conquista', { state: { celebration: r.celebration } });
+      if (r.celebration) openAchievement({ celebration: r.celebration });
     } catch (e) { toast(e.message); }
   }
   const steps = goal.tasks || [];

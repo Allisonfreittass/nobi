@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { isGolden, preloadBroto, stageFromLevel } from '../components/Broto.jsx';
 import { api, getToken, setToken } from './api.js';
 import { clearLoadCache } from './useLoad.js';
 import { refreshStatusBar } from './statusBar.js';
@@ -63,4 +65,31 @@ export function useMascotMotion() {
   const { me } = useSession();
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   return !reduced && me?.prefs?.mascotMotion !== false;
+}
+
+/**
+ * Forma e cor do Broto de uma pessoa (DESIGN.md §6). Nível e sequência vêm do servidor:
+ * stage sai de stageFromLevel(level) e golden de isGolden(maior sequência ativa).
+ */
+export function brotoOf(user) {
+  // O servidor já manda golden = isGolden(maxActiveDays); ele é atualizado a cada registro.
+  const golden = typeof user?.golden === 'boolean' ? user.golden : isGolden(user?.maxActiveDays || 0);
+  return { stage: stageFromLevel(user?.level || 1), golden };
+}
+
+/** Broto da pessoa logada: { stage, golden }. */
+export function useBroto() {
+  const { me } = useSession();
+  return brotoOf(me);
+}
+
+/** Abre a tela de Conquista já com a arte do Broto comemorando carregada. */
+export function useOpenAchievement() {
+  const navigate = useNavigate();
+  const { me } = useSession();
+  return useCallback((state, options = {}) => {
+    const { stage, golden } = brotoOf(me);
+    preloadBroto([{ expression: 'comemorando', stage, golden: state?.celebration?.golden ?? golden }]);
+    navigate('/conquista', { ...options, state });
+  }, [navigate, me]);
 }

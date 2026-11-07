@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
-import { useSession, useMascotMotion } from './session.jsx';
+import { brotoOf, useSession, useMascotMotion } from './session.jsx';
 import { useShare } from './share.jsx';
 import { goalColor } from './format.js';
 
@@ -62,8 +62,9 @@ export function CelebrateProvider({ children }) {
     timer.current = setTimeout(() => { if (!hovering.current) setItem(null); }, DURATION);
   }, []);
 
-  const celebrate = useCallback((goal, { checkinId, posted, level } = {}) => {
-    const msg = dailyMessage(goal);
+  // goal = null: momento rápido sem objetivo (ex.: entrou num clube), com title e text próprios.
+  const celebrate = useCallback((goal, { checkinId, posted, level, title, text } = {}) => {
+    const msg = goal ? dailyMessage(goal) : { title, text };
     if (level) msg.text = `E você subiu para o nível ${level}!`;
     setItem({ goal, checkinId, posted, key: Date.now(), ...msg });
     arm();
@@ -92,16 +93,18 @@ export function CelebrateProvider({ children }) {
             <div className="celebrate-art" aria-hidden="true">
               <Confetti />
               <div className={motion ? 'nobi-hop' : ''} style={{ animationIterationCount: 2 }}>
-                <Broto size={62} stage={me?.stage} golden={me?.golden} expression="comemorando" shadow={false} />
+                <Broto size={64} {...brotoOf(me)} expression="comemorando" shadow={false} />
               </div>
             </div>
             <div className="stack grow" style={{ gap: 2, minWidth: 0 }}>
               <span className="title nobi-pop" style={{ fontSize: 'var(--nobi-text-2xl)', fontWeight: 800 }}>{item.title}</span>
               <span className="t-13" style={{ opacity: 0.8 }}>{item.posted ? 'Publicado para seus amigos.' : item.text}</span>
-              <span className="row gap-6 t-12 ellipsis" style={{ opacity: 0.7, marginTop: 2 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 3, background: color, flexShrink: 0 }} />
-                {g.title}
-              </span>
+              {g && (
+                <span className="row gap-6 t-12 ellipsis" style={{ opacity: 0.7, marginTop: 2 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 3, background: color, flexShrink: 0 }} />
+                  {g.title}
+                </span>
+              )}
             </div>
             <div className="stack gap-4" style={{ alignItems: 'flex-end', flexShrink: 0 }}>
               <button type="button" className="icon-btn plain" aria-label="Fechar" onClick={close} style={{ color: 'inherit', width: 36, height: 36 }}><Icon name="close" size={16} /></button>

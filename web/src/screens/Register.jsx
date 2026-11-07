@@ -4,7 +4,7 @@ import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
 import { Chip, ErrorNote, Skeleton, Sheet, SelectRow, SwitchRow } from '../components/ui.jsx';
 import { useLoad, afterCheckin, afterPost } from '../lib/useLoad.js';
-import { useSession } from '../lib/session.jsx';
+import { brotoOf, useOpenAchievement, useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, CATEGORY_ORDER } from '../lib/format.js';
@@ -15,6 +15,7 @@ const MINUTE_SET = new Set([5, 10, 15, 20, 25, 30, 40, 45, 50, 60, 75, 90, 120, 
 
 export default function Register() {
   const navigate = useNavigate();
+  const openAchievement = useOpenAchievement();
   const { state } = useLocation();
   const { me, patchMe } = useSession();
   const toast = useToast();
@@ -75,7 +76,7 @@ export default function Register() {
       if (r.celebration) {
         // Fechou um marco: a Conquista oferece postar (com a escolha de público já feita aqui, se houver)
         const sent = share ? await sendPostPhoto(photo) : undefined;
-        navigate('/conquista', { replace: true, state: { celebration: r.celebration, audience: share ? aud : null, text: note.trim(), photo: sent } });
+        openAchievement({ celebration: r.celebration, audience: share ? aud : null, text: note.trim(), photo: sent }, { replace: true });
         return;
       }
       if (share) {
@@ -106,7 +107,7 @@ export default function Register() {
       routed
       onClose={close}
       labelledBy="registrar-titulo"
-      peek={<Broto size={96} stage={me?.stage} golden={me?.golden} expression="foco" shadow={false} />}
+      peek={<Broto size={96} {...brotoOf(me)} expression="foco" shadow={false} />}
       header={(
         <div className="row between gap-12">
           <button type="button" className="icon-btn" aria-label="Fechar" onClick={close}><Icon name="close" /></button>
