@@ -187,7 +187,7 @@ feed.get('/', async (req, res) => {
 feed.get('/explore', async (req, res) => {
   const me = req.user._id;
   const [following, blocked] = await Promise.all([followingIds(me), blockedIds(me)]);
-  const publicUsers = await User.find({ 'privacy.profile': 'public', _id: { $nin: [me, ...following, ...blocked] } }, { _id: 1 }).lean();
+  const publicUsers = await User.find({ 'privacy.profile': 'public', demo: { $ne: true }, _id: { $nin: [me, ...following, ...blocked] } }, { _id: 1 }).lean();
   const list = await Post.find({ audience: 'public', userId: { $in: publicUsers.map((u) => u._id) } }).sort({ createdAt: -1 }).limit(30).lean();
   res.json(await hydratePosts(list, me));
 });

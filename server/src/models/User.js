@@ -30,6 +30,7 @@ const userSchema = new Schema({
       challenges: { type: Boolean, default: true },
     },
   },
+  demo: { type: Boolean, default: false, index: true }, // conta do seed: nunca aparece em descoberta
   blocked: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   notificationsSeenAt: { type: Date, default: () => new Date(0) },
   resetToken: { type: String },

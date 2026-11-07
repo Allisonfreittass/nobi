@@ -12,7 +12,11 @@ function GoogleButton({ onCredential }) {
     if (!GOOGLE_CLIENT_ID) return undefined;
     const render = () => {
       window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: (r) => onCredential(r.credential) });
-      window.google.accounts.id.renderButton(ref.current, { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale: 'pt-BR', width: ref.current.offsetWidth || 320 });
+      const dark = document.documentElement.dataset.theme === 'dark';
+      window.google.accounts.id.renderButton(ref.current, {
+        theme: dark ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale: 'pt-BR',
+        width: Math.min(400, ref.current.offsetWidth || 320), // o Google aceita no máximo 400 px
+      });
     };
     if (window.google?.accounts) { render(); return undefined; }
     const s = document.createElement('script');
@@ -23,7 +27,8 @@ function GoogleButton({ onCredential }) {
     return () => s.remove();
   }, [onCredential]);
   // Botão oficial do Google (Google Identity Services)
-  return <div ref={ref} style={{ minHeight: 44, display: 'flex', justifyContent: 'center' }} />;
+  // colorScheme 'normal': sem isso o navegador pinta um fundo branco atrás do iframe do Google
+  return <div ref={ref} style={{ minHeight: 44, display: 'flex', justifyContent: 'center', colorScheme: 'normal' }} />;
 }
 
 export default function Login() {

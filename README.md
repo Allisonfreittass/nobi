@@ -19,7 +19,7 @@ Rede social de evolução pessoal. Stack: React (JS) + Node/Express + MongoDB.
 
 ## Como rodar o app
 
-Requisitos: Node 20+. Não precisa instalar MongoDB: sem `MONGODB_URI`, a API sobe um MongoDB embutido (só para desenvolvimento) e guarda os dados em `api/.data`.
+Requisitos: Node 20+. Não precisa instalar MongoDB: sem `MONGODB_URI`, a API sobe um MongoDB embutido (só para desenvolvimento) e guarda os dados em `server/.data`.
 
 ```bash
 npm install
@@ -31,7 +31,7 @@ npm test       # regras de sequência, nível e Broto dourado
 Conta de demonstração: `rafalima@nobi.dev` / `nobi1234` (também `marina`, `caionunes`, `juliaprado`, `teo` @nobi.dev).
 
 ### Estrutura
-- `api/` — Express + Mongoose. Regras de sequência em `api/src/services/streaks.js` (funções puras, testadas), nível em `level.js`, conquistas em `achievements.js`, temporadas em `seasons.js`. O servidor calcula sequência, nível, Broto dourado e ranking; o cliente nunca envia esses valores.
+- `server/` — Express + Mongoose. Regras de sequência em `server/src/services/streaks.js` (funções puras, testadas), nível em `level.js`, conquistas em `achievements.js`, temporadas em `seasons.js`. O servidor calcula sequência, nível, Broto dourado e ranking; o cliente nunca envia esses valores.
 - `web/` — React + Vite. `src/config.js` tem `APP_NAME` e os textos de marca. Design system em `src/styles/` (tokens + componentes da §9) e `src/components/ui.jsx`. O Broto é `src/components/Broto.jsx` (cópia de `design/broto/Broto.jsx`).
 
 ### Decisões tomadas na implementação

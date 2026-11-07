@@ -1,17 +1,21 @@
 {
   "name": "nobi",
   "private": true,
+  "type": "module",
   "workspaces": [
-    "api",
+    "server",
     "web"
   ],
   "scripts": {
-    "dev": "concurrently -n api,web -c auto \"npm run dev -w api\" \"npm run dev -w web\"",
+    "dev": "concurrently -n api,web -c auto \"npm run dev -w server\" \"npm run dev -w web\"",
     "build": "npm run build -w web",
-    "seed": "npm run seed -w api",
-    "test": "npm test -w api"
+    "seed": "npm run seed -w server",
+    "test": "npm test -w server"
   },
   "devDependencies": {
     "concurrently": "^9.2.5"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

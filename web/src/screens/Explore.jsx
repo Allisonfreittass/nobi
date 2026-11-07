@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import PostCard from '../components/PostCard.jsx';
 import { Avatar, Skeleton } from '../components/ui.jsx';
+import Broto from '../components/Broto.jsx';
 import { useLoad } from '../lib/useLoad.js';
+import { APP_NAME } from '../config.js';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 
@@ -27,6 +29,26 @@ function PersonRow({ u, onRelation }) {
         </span>
       </Link>
       <button type="button" className={`btn sm ${rel.following === 'none' ? 'btn-primary' : 'btn-outline'}`} aria-pressed={rel.following !== 'none'} onClick={click}>{label}</button>
+    </div>
+  );
+}
+
+function Invite() {
+  const toast = useToast();
+  async function share() {
+    const url = window.location.origin;
+    const text = `Bora evoluir junto no ${APP_NAME}?`;
+    try {
+      if (navigator.share) await navigator.share({ title: APP_NAME, text, url });
+      else { await navigator.clipboard.writeText(`${text} ${url}`); toast('Link copiado.'); }
+    } catch { /* cancelado */ }
+  }
+  return (
+    <div className="card empty">
+      <div className="block-brasa" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={96} arms="wave" /></div>
+      <h2 className="title t-20">Fica melhor com amigos</h2>
+      <p className="secondary t-14" style={{ maxWidth: 300 }}>Chame quem você quer acompanhar. Quando vocês se seguirem, um vê a evolução do outro e dá para criar desafios juntos.</p>
+      <button type="button" className="btn btn-dark" onClick={share}><Icon name="share" size={18} /> Convidar amigos</button>
     </div>
   );
 }
@@ -72,12 +94,14 @@ export default function Explore() {
               <People list={sugg.data} setList={sugg.setData} />
             </section>
           )}
-          <section className="stack gap-12" aria-label="Em alta">
-            <h2 className="title t-20">Em alta no público</h2>
-            {!posts.data && <Skeleton height={200} />}
-            {posts.data?.length === 0 && <p className="muted t-14">Ainda não há posts públicos de quem você não segue.</p>}
-            {(posts.data || []).map((p) => <PostCard key={p.id} post={p} />)}
-          </section>
+          {!posts.data && <Skeleton height={200} />}
+          {posts.data?.length > 0 && (
+            <section className="stack gap-12" aria-label="Em alta">
+              <h2 className="title t-20">Em alta no público</h2>
+              {posts.data.map((p) => <PostCard key={p.id} post={p} />)}
+            </section>
+          )}
+          {posts.data?.length === 0 && sugg.data && <Invite />}
         </>
       )}
     </div>

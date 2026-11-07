@@ -5,6 +5,7 @@ import { useSession } from './lib/session.jsx';
 import Login from './screens/Login.jsx';
 import ResetPassword from './screens/ResetPassword.jsx';
 import Terms from './screens/Terms.jsx';
+import Landing from './screens/Landing.jsx';
 import Feed from './screens/Feed.jsx';
 import Explore from './screens/Explore.jsx';
 import Register from './screens/Register.jsx';
@@ -31,7 +32,8 @@ function Private({ children }) {
   const { me } = useSession();
   const loc = useLocation();
   if (me === undefined) return <Splash />;
-  if (!me) return <Navigate to="/entrar" replace state={{ from: loc.pathname }} />;
+  // Na raiz, quem não está logado vê a landing page
+  if (!me) return loc.pathname === '/' ? <Landing /> : <Navigate to="/entrar" replace state={{ from: loc.pathname }} />;
   return children;
 }
 
@@ -48,6 +50,7 @@ export default function App() {
       <Route path="/entrar" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="/redefinir-senha" element={<ResetPassword />} />
       <Route path="/termos" element={<Terms />} />
+      <Route path="/privacidade" element={<Terms />} />
 
       {/* Telas cheias, sem menu */}
       <Route path="/registrar" element={<Private><Register /></Private>} />

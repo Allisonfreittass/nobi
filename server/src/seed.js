@@ -24,7 +24,7 @@ await Promise.all([User, Goal, Checkin, Post, Comment, Follow, Achievement, Stre
 
 const hash = await bcrypt.hash(PASSWORD, 10);
 const mk = (name, username, extra = {}) => User.create({
-  name, username, email: `${username}@nobi.dev`, passwordHash: hash, privacy: { profile: 'public', stats: 'friends', approveFollowers: false }, ...extra,
+  name, username, email: `${username}@nobi.dev`, passwordHash: hash, demo: true, privacy: { profile: 'public', stats: 'friends', approveFollowers: false }, ...extra,
 });
 const rafa = await mk('Rafa Lima', 'rafalima', { bio: 'Lendo mais, correndo melhor e terminando o app.', interests: ['Leitura', 'Corrida', 'Inglês', 'Projeto pessoal'], avatarColor: '#FFF1E4', xp: 1340, level: levelFromXp(1340) });
 const marina = await mk('Marina Alves', 'marina', { bio: 'Clube do livro às quintas.', interests: ['Leitura', 'Meditação'], avatarColor: '#FFD8C7', xp: 2210, level: 23 });
