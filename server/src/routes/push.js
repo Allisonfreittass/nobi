@@ -37,7 +37,8 @@ export const cron = Router();
 
 // Protegida por segredo: o cron-job.org manda "Authorization: Bearer <CRON_SECRET>"
 cron.all('/reminders', async (req, res) => {
-  const given = (req.get('Authorization') || '').replace(/^Bearer /, '') || String(req.query.key || '');
+  if (!config.cronSecret) throw new HttpError(503, 'CRON_SECRET não está configurado no servidor.');
+  const given = ((req.get('Authorization') || '').trim().replace(/^Bearer\s+/i, '') || String(req.query.key || '')).trim();
   const ok = config.cronSecret && given.length === config.cronSecret.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(config.cronSecret));
   if (!ok) throw new HttpError(401, 'Não autorizado.');
   res.json(await runReminders());

@@ -10,7 +10,8 @@ export const config = {
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:contato@nobievolua.com.br',
-  cronSecret: process.env.CRON_SECRET || '',
+  // Tolerante a espaço, quebra de linha ou aspas coladas junto do valor
+  cronSecret: (process.env.CRON_SECRET || '').trim().replace(/^["']|["']$/g, '').replace(/^CRON_SECRET=/, ''),
   isProd: process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production',
 };
 
