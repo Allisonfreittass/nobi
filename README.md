@@ -45,7 +45,7 @@ Conta de demonstração: `rafalima@nobi.dev` / `nobi1234` (também `marina`, `ca
 - **Tema escuro:** não estava no design; foi derivado dos tokens (a cor "Tinta" de objetivo vira cinza no escuro).
 
 ### Fotos
-Foto de perfil e foto nos posts ficam no **Vercel Blob** (público), nunca no banco. O app reduz a imagem no aparelho (perfil 256 px, post até 1440 px) e o servidor confere os bytes (só JPG, PNG ou WebP). Em produção é preciso a variável `BLOB_READ_WRITE_TOKEN`, criada ao ligar um Blob Store ao projeto na Vercel. Em desenvolvimento, sem o token, as fotos vão para `server/.uploads`.
+Foto de perfil e foto nos posts ficam no **Vercel Blob** (público), nunca no banco. O app reduz a imagem no aparelho (perfil 256 px, post até 1440 px) e o servidor confere os bytes (só JPG, PNG ou WebP). Em produção basta ligar um Blob Store (público) ao projeto na Vercel: os Blobs novos criam `BLOB_STORE_ID` e autenticam sozinhos (OIDC); os antigos usam `BLOB_READ_WRITE_TOKEN`. Em desenvolvimento, sem nenhum dos dois, as fotos vão para `server/.uploads`.
 
 ### Ainda não feito
 - Login com Apple (precisa de conta de desenvolvedor Apple). O Google funciona ao preencher `GOOGLE_CLIENT_ID` / `VITE_GOOGLE_CLIENT_ID`.

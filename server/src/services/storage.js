@@ -1,4 +1,5 @@
-// Guarda imagens fora do banco. Produção: Vercel Blob (precisa de BLOB_READ_WRITE_TOKEN).
+// Guarda imagens fora do banco. Produção: Vercel Blob, com BLOB_STORE_ID (autenticação OIDC
+// automática da Vercel, padrão dos Blobs novos) ou BLOB_READ_WRITE_TOKEN (Blobs antigos).
 // Desenvolvimento sem token: grava em server/.uploads e serve em /api/uploads.
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -29,15 +30,21 @@ export function decodeDataUrl(dataUrl) {
   return { buffer, contentType };
 }
 
-export const storageReady = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN) || !config.isProd;
+const blobConfigured = () => Boolean(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
+export const storageReady = () => blobConfigured() || !config.isProd;
 
 /** Salva e devolve a URL pública. folder: 'avatars' | 'posts'. */
 export async function saveImage({ buffer, contentType }, folder, userId) {
   const name = `${folder}/${userId}/${crypto.randomUUID()}.${EXT[contentType]}`;
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  if (blobConfigured()) {
     const { put } = await import('@vercel/blob');
-    const blob = await put(name, buffer, { access: 'public', contentType, addRandomSuffix: false, cacheControlMaxAge: 31536000 });
-    return blob.url;
+    try {
+      const blob = await put(name, buffer, { access: 'public', contentType, addRandomSuffix: false, cacheControlMaxAge: 31536000 });
+      return blob.url;
+    } catch (e) {
+      console.error('[blob]', e.message);
+      throw new HttpError(503, 'Não deu para guardar a foto agora. Tente de novo.');
+    }
   }
   if (config.isProd) throw new HttpError(503, 'Envio de fotos ainda não está configurado.');
   const file = path.join(UPLOAD_DIR, name);
@@ -50,5 +57,5 @@ export async function saveImage({ buffer, contentType }, folder, userId) {
 export function isOurImage(url) {
   const u = String(url || '');
   if (/^\/api\/uploads\/(avatars|posts)\/[a-f0-9]{24}\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(u)) return true;
-  return /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/(avatars|posts)\/[a-f0-9]{24}\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(u);
+  return /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/(avatars|posts)\/[a-f0-9]{24}\/[a-f0-9-]{36}\.(jpg|png|webp)$/i.test(u);
 }
