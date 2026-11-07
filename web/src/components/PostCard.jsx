@@ -101,7 +101,7 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
           <Link to={`/u/${post.user.username}`} className="strong t-15 ellipsis">{post.user.name}</Link>
           <span className="row gap-6 t-13 secondary">
             <span style={{ width: 8, height: 8, flexShrink: 0, borderRadius: 3, background: cat.color }} aria-hidden="true" />
-            {cat.label}<span aria-hidden="true">·</span>{timeAgo(post.createdAt)}
+            {post.kind === 'weekly' ? 'Resumo da semana' : cat.label}<span aria-hidden="true">·</span>{timeAgo(post.createdAt)}
             {post.audience === 'public' ? <Icon name="globe" size={13} /> : <Icon name="users" size={13} />}
             <span className="sr-only">{post.audience === 'public' ? 'Público' : 'Amigos'}</span>
           </span>
@@ -122,7 +122,9 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
 
       {post.photo && (
         <img src={post.photo.url} alt={post.text || `Foto de ${post.user.name}`} loading="lazy" decoding="async" width={post.photo.w} height={post.photo.h}
-          style={{ width: '100%', height: 'auto', aspectRatio: `${post.photo.w} / ${post.photo.h}`, maxHeight: compact ? 260 : 520, objectFit: 'cover', borderRadius: 18, background: 'var(--nobi-track)' }} />
+          style={post.kind === 'weekly'
+            ? { width: compact ? 'min(100%, 200px)' : 'min(100%, 300px)', height: 'auto', aspectRatio: '9 / 16', alignSelf: 'center', borderRadius: 22, background: 'var(--nobi-brasa)' }
+            : { width: '100%', height: 'auto', aspectRatio: `${post.photo.w} / ${post.photo.h}`, maxHeight: compact ? 260 : 520, objectFit: 'cover', borderRadius: 18, background: 'var(--nobi-track)' }} />
       )}
       {metrics.length > 0 && (
         <div className="row gap-20 wrap" style={{ padding: '12px 14px', borderRadius: 18, background: 'var(--nobi-bg)' }}>{metrics}</div>

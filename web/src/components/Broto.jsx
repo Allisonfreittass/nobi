@@ -221,3 +221,6 @@ export function BrotoHead({ size = 40, detail = 'auto', title }) {
     </svg>
   );
 }
+
+// Traços usados para desenhar o Broto fora do SVG (ex.: card de story em canvas)
+export const BROTO_SHAPES = { C, ARM_DOWN_L, ARM_DOWN_R, ARM_UP_L, ARM_UP_R, BODY, FOOT_L, FOOT_R };

@@ -5,6 +5,7 @@ import { bad, HttpError, pick } from '../lib/http.js';
 import { streakSummary, profileStats } from '../services/progress.js';
 import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
+import { weeklySummary } from '../services/weekly.js';
 import { publicUser } from '../services/social.js';
 import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
@@ -105,6 +106,7 @@ me.patch('/account', async (req, res) => {
 });
 
 me.get('/stats', async (req, res) => res.json(await profileStats(req.user, req.today)));
+me.get('/weekly', async (req, res) => res.json(await weeklySummary(req.user, req.today, req.query.start)));
 me.get('/achievements', async (req, res) => res.json(await achievementsView(req.user._id)));
 
 me.get('/blocked', async (req, res) => {

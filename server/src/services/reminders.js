@@ -5,6 +5,7 @@ import { userGoals, streakSummary } from './progress.js';
 import { friendIds } from './social.js';
 import { localParts, sendPush, recentMessageIds, remember } from './push.js';
 import { REMINDERS, chooseMessage } from './pushMessages.js';
+import { weeklySummary } from './weekly.js';
 
 const UNIT_LABEL = { copos: 'copos', treinos: 'treinos', 'lições': 'lições', min: 'min', 'páginas': 'páginas' };
 
@@ -32,6 +33,34 @@ export async function reminderContext(user, date, hour) {
   }
   const comeback = pending.every((g) => g.streak === 0) && goals.some((g) => g.streak.best >= 3);
   return { pending, total: goals.filter((g) => g.status.activeToday && g.kind !== 'project').length, maxDays: summary.maxDays, golden: summary.golden, friendsDone, challenge, hour, comeback };
+}
+
+const WEEKLY_TEXTS = [
+  (s) => ({ title: 'Sua semana virou story', body: `${s.activeDays} de 7 dias ativos. O Broto já posou pra foto.` }),
+  (s) => ({ title: `${s.activeDays} de 7: sua semana está pronta`, body: 'Um card pronto pra postar no Instagram. Bora mostrar?' }),
+  (s) => ({ title: 'Resumo da semana saiu do forno', body: s.bestStreak >= 7 ? `${s.bestStreak} dias seguidos e Broto dourado. Isso merece um story.` : `${s.checkins} registros nesta semana. Isso merece um story.` }),
+];
+
+/** Domingo à noite: avisa que o resumo da semana está pronto (uma vez por semana, só se teve dia ativo). */
+export async function runWeeklyRecap(now = new Date()) {
+  const ids = await PushSubscription.distinct('userId');
+  const users = await User.find({ _id: { $in: ids }, 'prefs.notify.checkin': { $ne: false } });
+  let sent = 0;
+  for (const user of users) {
+    try {
+      const { date, time } = localParts(user.timeZone, now);
+      if (new Date(`${date}T12:00:00Z`).getUTCDay() !== 0 || time < '19:00' || time >= '22:00') continue;
+      if (await PushLog.exists({ userId: user._id, key: `weekly:${date}` })) continue;
+      const s = await weeklySummary(user, date);
+      if (!s.activeDays) continue;
+      const msg = WEEKLY_TEXTS[Math.floor(Math.random() * WEEKLY_TEXTS.length)](s);
+      const n = await sendPush(user._id, { ...msg, url: '/semana', tag: 'weekly' }, { type: 'reminder', dedupeKey: `weekly:${date}`, quiet: false, user });
+      if (n) sent += 1;
+    } catch (e) {
+      console.error('[weekly]', String(user._id), e.message);
+    }
+  }
+  return sent;
 }
 
 export async function runReminders(now = new Date()) {

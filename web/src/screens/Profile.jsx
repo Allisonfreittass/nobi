@@ -192,6 +192,13 @@ export default function Profile() {
               <div className="t-12 muted" style={{ marginTop: 4 }}>{s.challenges === 1 ? 'desafio' : 'desafios'}</div>
             </div>
           </div>
+          {isMe && (
+            <Link to="/semana" className="card row gap-12 tap">
+              <Icon name="share" size={20} />
+              <span className="grow stack" style={{ gap: 1 }}><span className="strong t-15">Resumo da semana</span><span className="t-13 muted">card pronto pra postar no Instagram</span></span>
+              <Icon name="chevron" size={18} />
+            </Link>
+          )}
           <MonthMap month={s.month} weekStart={me.prefs.weekStart} audience={p.statsAudience} />
           {p.achievements && <Achievements data={p.achievements} />}
         </>

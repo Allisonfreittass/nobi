@@ -73,6 +73,17 @@ posts.post('/', async (req, res) => {
     const dim = (n) => Math.min(10000, Math.max(1, Math.round(Number(n) || 1)));
     photo = { url: b.photo.url, w: dim(b.photo.w), h: dim(b.photo.h) };
   }
+  // Resumo da semana: não pertence a um objetivo, vai com a imagem do card
+  if (b.weekly) {
+    if (!photo) throw bad('Falta a imagem do resumo.');
+    const label = String(b.weekly.label || '').slice(0, 40);
+    const post = await Post.create({
+      userId: req.user._id, audience: b.audience, kind: 'weekly', title: `Minha semana${label ? ` · ${label}` : ''}`,
+      metrics: { streak: Number(b.weekly.bestStreak) || 0, streakUnit: 'days' }, text, photo, date: req.today,
+    });
+    const [view] = await hydratePosts([post.toObject()], req.user._id);
+    return res.status(201).json({ post: view, achievements: [] });
+  }
   let goal = null;
   let checkin = null;
   if (b.checkinId) {

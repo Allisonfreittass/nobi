@@ -7,6 +7,7 @@ import GoalCard from '../components/GoalCard.jsx';
 import FriendsRing from '../components/FriendsRing.jsx';
 import ChallengeBanner from '../components/ChallengeBanner.jsx';
 import SmartPrompt from '../components/PushPrompt.jsx';
+import WeeklyCard from '../components/WeeklyCard.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { Avatar, ErrorNote, Skeleton, ProgressBar } from '../components/ui.jsx';
 import { useUnread } from '../components/Layout.jsx';
@@ -64,6 +65,7 @@ function MobileFeed() {
         <Logo size={34} />
         <Bell />
       </header>
+      <WeeklyCard />
       <SmartPrompt />
       {home.data ? <FriendsRing ring={home.data.ring} /> : <Skeleton height={80} />}
       {home.data?.challenge && <ChallengeBanner c={home.data.challenge} />}
