@@ -53,3 +53,12 @@ test('conta com e-mail já confirmado mantém a senha ao linkar', async () => {
   assert.equal(user.passwordHash, 'x');
   assert.equal(user.googleId, 'google-456');
 });
+
+test('conta só do Google explica como entrar ao tentar e-mail e senha', async () => {
+  await User.create({ name: 'Gi', username: 'gi_google', email: 'gi@exemplo.com', googleId: 'g-999', emailVerified: true });
+  const r = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'gi@exemplo.com', password: 'qualquer' }) });
+  const body = await r.json();
+  assert.equal(r.status, 401);
+  assert.equal(body.googleOnly, true);
+  assert.match(body.error, /Google/);
+});

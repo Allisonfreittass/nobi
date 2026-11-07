@@ -57,6 +57,10 @@ auth.post('/signup', async (req, res) => {
 auth.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   const user = await User.findOne({ email: String(email || '').toLowerCase() });
+  // Conta criada pelo Google não tem senha no Nobi (a senha do Google fica com o Google)
+  if (user && !user.passwordHash && user.googleId) {
+    throw new HttpError(401, 'Essa conta entra com o Google. Use o botão do Google ou crie uma senha em Configurações → E-mail e senha.', { googleOnly: true });
+  }
   if (!user?.passwordHash || !(await bcrypt.compare(String(password || ''), user.passwordHash))) {
     throw new HttpError(401, 'E-mail ou senha não conferem.');
   }
