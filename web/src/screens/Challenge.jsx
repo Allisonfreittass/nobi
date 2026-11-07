@@ -10,6 +10,7 @@ import { useCheckin } from '../lib/useCheckin.js';
 import { useCelebrate, closedTheDay } from '../lib/celebrate.jsx';
 import { api } from '../lib/api.js';
 import { firstName, unitWord } from '../lib/format.js';
+import { useConfirm } from '../lib/confirm.jsx';
 
 function Header({ g, seasonName }) {
   const s = g.shared;
@@ -24,7 +25,7 @@ function Header({ g, seasonName }) {
         <p className="label-caps t-13" style={{ marginTop: 18 }}>
           {s.totalDays ? `Desafio de ${s.totalDays} dias` : 'Com amigos'}{seasonName ? ` · Temporada ${seasonName}` : ''}
         </p>
-        <h1 className="display" style={{ fontSize: 36, marginTop: 6, maxWidth: 240, letterSpacing: '-0.03em', lineHeight: 1 }}>{g.title}</h1>
+        <h1 className="display" style={{ fontSize: '2.25rem', marginTop: 6, maxWidth: 240, letterSpacing: '-0.03em', lineHeight: 1 }}>{g.title}</h1>
         {s.totalDays && (
           <div className="stack gap-6" style={{ marginTop: 16, width: 220 }}>
             <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }} role="progressbar" aria-valuemin={0} aria-valuemax={s.totalDays} aria-valuenow={s.day} aria-label="Progresso do desafio">
@@ -60,13 +61,13 @@ function Tasks({ g, onGoal }) {
   }
   return (
     <section className="stack gap-10" aria-label="Hoje">
-      <div className="section-head"><h2 className="title t-22" style={{ fontSize: 21 }}>Hoje</h2><span className="t-14 strong secondary">{done.size} de {g.shared.tasks.length}</span></div>
+      <div className="section-head"><h2 className="title t-22" style={{ fontSize: '1.3125rem' }}>Hoje</h2><span className="t-14 strong secondary">{done.size} de {g.shared.tasks.length}</span></div>
       <div className="card tight stack gap-6">
         {g.shared.tasks.map((t) => {
           const on = done.has(t.key);
           return (
             <button key={t.key} type="button" aria-pressed={on} disabled={busy === t.key || g.shared.ended} onClick={() => flip(t)}
-              className="row gap-12" style={{ height: 50, padding: '0 10px', border: 'none', borderRadius: 16, background: 'transparent', textAlign: 'left', fontSize: 15, fontWeight: 500 }}>
+              className="row gap-12" style={{ height: 50, padding: '0 10px', border: 'none', borderRadius: 16, background: 'transparent', textAlign: 'left', fontSize: 'var(--nobi-text-md)', fontWeight: 500 }}>
               <span style={{ width: 26, height: 26, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background var(--nobi-dur-fast)', background: on ? 'var(--nobi-orbita)' : 'var(--nobi-card)', boxShadow: on ? 'none' : 'inset 0 0 0 2px var(--nobi-toggle-off)', color: '#FFFFFF' }}>
                 {on && <Icon name="check" size={16} stroke={2.8} className="nobi-pop" />}
               </span>
@@ -83,7 +84,7 @@ function Tasks({ g, onGoal }) {
 function Ranking({ ranking }) {
   return (
     <section className="stack gap-10" aria-label="Ranking da semana">
-      <div className="section-head"><h2 className="title t-22" style={{ fontSize: 21 }}>Ranking da semana</h2><span className="t-13 muted">zera domingo</span></div>
+      <div className="section-head"><h2 className="title t-22" style={{ fontSize: '1.3125rem' }}>Ranking da semana</h2><span className="t-13 muted">zera domingo</span></div>
       <ol className="stack gap-6" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {ranking.map((r) => (
           <li key={r.id} className="row gap-12" style={{ height: 54, padding: '0 14px', borderRadius: 18, background: r.me ? 'var(--nobi-tinta)' : 'var(--nobi-card)', color: r.me ? '#FFFFFF' : undefined }}>
@@ -144,6 +145,7 @@ export default function Challenge() {
   const navigate = useNavigate();
   const toast = useToast();
   const { data: g, error, reload, setData } = useLoad(`/goals/${id}`);
+  const confirm = useConfirm();
 
   if (error) return <div className="screen no-nav"><ErrorNote error={error} onRetry={reload} /></div>;
   if (!g) return <div className="screen no-nav"><Skeleton height={240} /><Skeleton height={200} /></div>;
@@ -156,7 +158,7 @@ export default function Challenge() {
     } catch (e) { toast(e.message); }
   }
   async function leave() {
-    if (!window.confirm('Sair deste desafio? Seus registros ficam no seu histórico.')) return;
+    if (!(await confirm({ title: 'Sair do desafio?', message: 'Seus registros ficam no seu histórico, e o grupo continua sem você.', confirmLabel: 'Sair do desafio', danger: true }))) return;
     await api(`/goals/${g.id}`, { method: 'DELETE' });
     navigate('/metas', { replace: true });
   }

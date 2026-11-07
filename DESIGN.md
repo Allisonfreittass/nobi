@@ -55,7 +55,7 @@ Direção visual: **Playful Premium**. Divertido e expressivo, nunca infantil. A
 
 - **Títulos, números, conquistas:** Bricolage Grotesque 700–800, tracking negativo (−0,02 a −0,04em).
 - **Interface e texto corrido:** Inter 400–700.
-- Escala: 64 / 40 / 30 / 28 / 22 / 20 / 18 / 16 / 15 / 14 / 13 / 12 px. Mínimo 12 px.
+- Escala em **rem** (`--nobi-text-*`): 4 / 2.5 / 1.875 / 1.75 / 1.375 / 1.25 / 1.125 / 1 / 0.9375 / 0.875 / 0.8125 / 0.75 rem (= 64…12 px na fonte padrão). Mínimo 0.75 rem. Nunca px em font-size.
 
 ## 6. Mascote Broto — sistema completo
 
@@ -94,7 +94,7 @@ Barra inferior (celular): **Feed · Explorar · [+] Registrar · Metas · Perfil
 | Conquista | `Conquista.dc.html` | Tela cheia coral, Broto comemorando e dourado, "7 dias seguidos!", semana Seg–Dom, Compartilhar / Agora não |
 | Desafio | `Desafio.dc.html` | Cabeçalho violeta com temporada, progresso do desafio, checklist do dia com pontos, ranking semanal |
 | Perfil | `Perfil.dc.html` | Editar/Configurações no topo, avatar com nível, selo de temporada, interesses, sequência/consistência/desafios, mapa do mês, conquistas |
-| Metas | `Objetivos.dc.html` | Resumo do dia (anel), filtros por categoria, cards com sequência própria, progresso, 7 dias e ação por tipo |
+| Metas | `Objetivos.dc.html` | Seletor **Hoje · Semana · Mês · Concluídas** (ver seção 8.1) |
 | Criar objetivo | `NovoObjetivo.dc.html` | Nome, **Pessoal / Com amigos**, convidar amigos + Juntos/Disputa, tipo, dias, cor |
 | Parabéns — novo hábito | `NovoHabito.dc.html` | Aparece logo após criar um objetivo. "Novo hábito plantado", Broto comemorando ao lado de um vaso com broto que cresce, "Começou!", card do objetivo com a semana (hoje destacado, dias de descanso explicados), toggle opcional "Contar para os amigos" (desligado por padrão), "Fazer o 1º check-in agora" / "Começar [próximo dia ativo]" |
 | Editar perfil | `EditarPerfil.dc.html` | Foto, nome, @usuário (checagem), bio 120, interesses, estatísticas Amigos/Público |
@@ -121,13 +121,65 @@ Regras da tela de parabéns: aparece **toda vez** que um objetivo é criado (é 
 8. **Temporadas:** ciclos de ~12 semanas (ex.: "Temporada Primavera · sem. 3/12") com conquistas e acessórios colecionáveis próprios.
 9. **Notificações respeitosas:** lembrete de check-in só se faltar algo no dia, um por dia, no horário escolhido.
 
+### 8.1 Metas: visões por período (sem aba nova)
+
+A aba Metas é a central de tudo que é do usuário. **Não existe aba "Foco" separada** (o nome "Foco" é da sessão de foco com timer).
+
+- **Hoje**, nesta ordem:
+  1. **3 prioridades de hoje** — card escuro; o usuário escolhe até 3 tarefas/itens do dia, cada um ligado a um objetivo (bolinha da cor da categoria). Check com "pulo".
+  2. **Rotina** — não há construtor de rotina: são os **hábitos que têm horário opcional**, ordenados por horário (linha do tempo com cor da categoria, pílula de sequência, check).
+  3. **Ficou pra trás** — **só tarefas com data vencida** (hábito nunca "atrasa"). Visual neutro, sem vermelho, texto "sem pressa, decide aqui", ações **Fazer hoje** / **Reagendar** (e remover).
+  4. **Objetivos** — % concluído, **dias restantes**, barra com **marcador de ritmo** (onde deveria estar hoje) e status "No ritmo" ou "Um pouco atrás do ritmo · N pts" (nunca "atrasado").
+- **Semana** — hábitos cumpridos no período (x/y + barras por dia, descanso em cinza) e tarefas da semana agrupadas por objetivo.
+- **Mês** — % de hábitos no mês, tarefas feitas, marcos batidos e o que vence até o fim do mês.
+- **Concluídas** — histórico do período; marcos de projeto podem virar post (botão **Postar**, opcional).
+
+Ritmo esperado: `pacePct = (hoje - inicio) / (prazo - inicio) * 100`. "No ritmo" se `pct >= pacePct`.
+
+Fora do MVP (decidido): integração com Google Agenda, construtor de rotina separado, aba "Foco".
+
+### 8.2 Checklist de projeto
+
+- Ao criar um objetivo do tipo **Projeto**, a seção de dias dá lugar a **Etapas do projeto** + **Prazo**.
+- **Dois níveis no máximo:** etapa → subetapa. Nada de sub-sub-itens (não virar gestor de tarefas).
+- Cada etapa pode ter data e ser marcada como **Marco**. Concluir um marco dispara comemoração e oferece post (opcional).
+- **Progresso do projeto** = itens concluídos / total, contando subetapas; etapa com subetapas conta como concluída quando todas as subetapas estão concluídas.
+- Etapas e subetapas são `tasks` (aparecem nas visões Hoje/Semana/Mês quando têm data, e podem ser escolhidas como prioridade do dia).
+- Reordenar por arrastar (alça à esquerda); adicionar etapa pelo campo no fim da lista; "+ subetapa" em cada etapa.
+
+## 8.3 Nativo é o piso, a marca é o teto
+
+Referência: "Native is a floor, not a ceiling" (Mathieu Poli, UX Collective). Prancha no canvas: **Jeito nativo — antes e depois**.
+
+Os mockups em `design/telas/` desenham controles à mão (barra de abas, folhas, toggles, seletores, alertas). **No código, isso não deve ser redesenhado como imagem.** Divisão do esforço:
+
+**Fica com o sistema / navegador (não redesenhar):**
+| Elemento | Implementação |
+|---|---|
+| Voltar | Cada tela **e cada folha** tem rota própria (react-router) → botão voltar do Android e gesto do navegador funcionam |
+| Folhas (Registrar, convites) | Folha **destacada das bordas** (8 px de margem, raio 34, alça no topo), fecha com arrastar, X, Esc e voltar. Base: `<dialog>` com foco preso e `aria-modal` |
+| Confirmações (excluir conta, remover objetivo) | `<dialog>` nativo, botões reais |
+| Compartilhar | `navigator.share()` (abre a folha do celular); fallback copiar link |
+| Datas e horários (prazo, etapas, lembrete) | `<input type="date">` / `type="time"` |
+| Escolha de opção ("Para quem", tempo) | Linha de lista que abre `<select>` / seletor numérico nativo |
+| Switches | `<input type="checkbox" role="switch">` estilizado; **ligado = tinta**, não coral |
+| Texto | `rem` em tudo (tokens `--nobi-text-*`) → cresce com a fonte do sistema. Nunca px em font-size |
+| Barra de abas | Pílula **flutuante** destacada da borda, aba ativa marcada, "+" separado ao lado, `env(safe-area-inset-bottom)` |
+| Preferências do sistema | `prefers-reduced-motion`, `prefers-color-scheme`, foco visível no teclado |
+
+**Fica com a marca (aqui gastar identidade):** Broto, telas de celebração (Conquista, Parabéns novo hábito), títulos em Bricolage, cards de métricas do feed, tom do texto, microinterações de check-in, ícone.
+
+**Regra do coral:** **um coral por tela** — a ação principal (e o "+"). Switches, seleção, chips e abas usam tinta/neutros. As celebrações podem usar fundo coral inteiro.
+
+Se um dia virar React Native: usar tab bar, sheets, alerts, switches e haptics do sistema; o visual Nobi fica no conteúdo.
+
 ## 9. Componentes base
 
 - **Card:** fundo branco, raio 24, sombra `0 1px 0 #E9E5DC`, padding 16.
 - **Botão primário:** `brasa`, texto `tinta` 700, altura 56–58, raio 18–20, `inset 0 -4px 0 rgba(0,0,0,.12)`.
 - **Botão escuro:** `tinta`, texto branco, raio 16–22.
 - **Chip/filtro:** altura 44 (área de toque), raio 22; selecionado = `tinta` com texto branco.
-- **Toggle:** 50 × 30, ligado = `brasa`, bolinha branca 24.
+- **Toggle:** switch do sistema (`role="switch"`), 50 × 30, ligado = `tinta` (ver 8.3), bolinha branca.
 - **Controle segmentado:** trilho `papel`, opção ativa branca com sombra leve, altura 40.
 - **Pílula de sequência:** ícone de chama + número; ativa = fundo `creme`, texto `#B83A12`.
 - **Áreas de toque:** mínimo **44 × 44 px** em tudo que é clicável.
@@ -158,8 +210,15 @@ Regras da tela de parabéns: aparece **toda vez** que um objetivo é criado (é 
   activeDays: [0..6], color,
   shared: null | { mode: 'together'|'versus', participants: [userId],
                    startsAt, endsAt, seasonId },   // com endsAt = desafio
-  milestones: [{ title, done }],      // projetos
+  startsAt, dueAt,                    // para % de ritmo e "dias restantes"
+  scheduleTime: null | 'HH:MM',       // hábito com horário → aparece na Rotina
   createdAt, archivedAt }
+
+// tasks  (substitui milestones: marco de projeto = tarefa com isMilestone)
+// Checklist do projeto: etapa (parentId null) e subetapa (parentId = id da etapa). MÁXIMO 2 NÍVEIS.
+{ _id, userId, goalId, parentId: ObjectId | null, title, dueDate: 'YYYY-MM-DD' | null, isMilestone: Boolean,
+  priorityDate: 'YYYY-MM-DD' | null,  // escolhida como uma das 3 prioridades nesse dia (máx. 3 por dia)
+  order: Number, doneAt: Date | null, createdAt }
 
 // checkins
 { _id, goalId, userId, date: 'YYYY-MM-DD', value: Number, note, createdAt }
@@ -180,7 +239,7 @@ Regras da tela de parabéns: aparece **toda vez** que um objetivo é criado (é 
 { _id, userId, code, seasonId, earnedAt }
 ```
 
-Índices úteis: `checkins {userId, date}`, `checkins {goalId, date}` único por usuário/dia, `posts {createdAt: -1}`, `follows {followerId, followeeId}` único.
+Índices úteis: `tasks {userId, dueDate}`, `tasks {userId, priorityDate}`, `checkins {userId, date}`, `checkins {goalId, date}` único por usuário/dia, `posts {createdAt: -1}`, `follows {followerId, followeeId}` único.
 
 **O servidor calcula** sequência, nível, `golden` e ranking. O cliente nunca envia esses valores.
 

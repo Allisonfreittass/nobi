@@ -11,6 +11,7 @@ import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { longToday } from '../lib/format.js';
+import { useConfirm } from '../lib/confirm.jsx';
 
 const FILTERS = [
   ['todos', 'Todos', () => true],
@@ -59,6 +60,7 @@ function Archived({ onRestored }) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const { data, setData } = useLoad('/goals/archived');
+  const confirm = useConfirm();
   if (!data?.length) return null;
   async function restore(g) {
     try {
@@ -69,7 +71,7 @@ function Archived({ onRestored }) {
     } catch (e) { toast(e.message); }
   }
   async function destroy(g) {
-    if (!window.confirm(`Excluir “${g.title}” de vez? Apaga os registros e os posts dele. Não dá para desfazer.`)) return;
+    if (!(await confirm({ title: `Excluir “${g.title}” de vez?`, message: 'Apaga os registros e os posts dele, com fotos. Não dá para desfazer.', confirmLabel: 'Excluir de vez', danger: true }))) return;
     try {
       await api(`/goals/${g.id}?modo=excluir`, { method: 'DELETE' });
       setData((l) => l.filter((x) => x.id !== g.id));

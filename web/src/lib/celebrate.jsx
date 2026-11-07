@@ -96,7 +96,7 @@ export function CelebrateProvider({ children }) {
               </div>
             </div>
             <div className="stack grow" style={{ gap: 2, minWidth: 0 }}>
-              <span className="title nobi-pop" style={{ fontSize: 20, fontWeight: 800 }}>{item.title}</span>
+              <span className="title nobi-pop" style={{ fontSize: 'var(--nobi-text-2xl)', fontWeight: 800 }}>{item.title}</span>
               <span className="t-13" style={{ opacity: 0.8 }}>{item.posted ? 'Publicado para seus amigos.' : item.text}</span>
               <span className="row gap-6 t-12 ellipsis" style={{ opacity: 0.7, marginTop: 2 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 3, background: color, flexShrink: 0 }} />

@@ -15,7 +15,7 @@ function PhonePreview() {
         <div className="stack gap-12" style={{ padding: '34px 16px 16px' }}>
           <div className="stack" style={{ gap: 2 }}>
             <span className="t-12 secondary">Sexta, 6 de novembro</span>
-            <span className="title" style={{ fontSize: 24, fontWeight: 800 }}>Meus objetivos</span>
+            <span className="title" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Meus objetivos</span>
           </div>
           <div className="card row gap-12" style={{ padding: 12, borderRadius: 20 }}>
             <RingProgress value={0.75} size={54} thickness={7}><span className="num t-14">3/4</span></RingProgress>
@@ -142,7 +142,7 @@ export default function Landing() {
                 <div className="card stack gap-12" style={{ padding: 20 }}>
                   <div className="row between gap-12">
                     <span className="stack" style={{ gap: 0 }}><span className="strong t-15">Publicar no feed</span><span className="t-13 muted">você decide agora</span></span>
-                    <span className="toggle" style={{ pointerEvents: 'none' }}><span className="knob" /></span>
+                    <span className="switch" aria-hidden="true" style={{ pointerEvents: 'none' }}><input type="checkbox" role="switch" tabIndex={-1} readOnly checked={false} /></span>
                   </div>
                   <p className="t-13 secondary">Não vai pro feed. Conta normalmente nas suas sequências e estatísticas.</p>
                 </div>
@@ -194,7 +194,7 @@ export default function Landing() {
               ].map(([t, d]) => (
                 <li key={t} className="stack gap-8">
                   <h3 className="title t-20">{t}</h3>
-                  <p className="lp-p" style={{ fontSize: 15 }}>{d}</p>
+                  <p className="lp-p" style={{ fontSize: 'var(--nobi-text-md)' }}>{d}</p>
                 </li>
               ))}
             </ul>
@@ -203,9 +203,9 @@ export default function Landing() {
 
         <section className="lp-cta">
           <div className="lp-wrap stack center gap-24">
-            <h2 className="lp-title" style={{ fontSize: 'clamp(40px, 6vw, 72px)', textAlign: 'center' }}>Comece hoje<span style={{ color: 'var(--nobi-brasa)' }}>.</span></h2>
+            <h2 className="lp-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', textAlign: 'center' }}>Comece hoje<span style={{ color: 'var(--nobi-brasa)' }}>.</span></h2>
             <p className="lp-lead" style={{ textAlign: 'center' }}>Seu primeiro objetivo leva menos de um minuto.</p>
-            <Link to="/entrar?modo=criar" className="btn btn-primary" style={{ padding: '0 32px' }}>Criar conta grátis</Link>
+            <Link to="/entrar?modo=criar" className="btn btn-dark" style={{ padding: '0 32px' }}>Criar conta grátis</Link>
           </div>
         </section>
       </main>

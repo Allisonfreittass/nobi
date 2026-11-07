@@ -133,12 +133,12 @@ export default function Login() {
               {sent && <p className="t-14 secondary" role="status">Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha.</p>}
               <div className="row between">
                 {social || mode !== 'email' ? (
-                  <button type="button" className="btn btn-ghost" style={{ padding: 0, color: 'var(--nobi-text-secondary)', fontSize: 14, fontWeight: 600 }} onClick={() => go(social ? 'social' : 'email')}>
+                  <button type="button" className="btn btn-ghost" style={{ padding: 0, color: 'var(--nobi-text-secondary)', fontSize: 'var(--nobi-text-base)', fontWeight: 600 }} onClick={() => go(social ? 'social' : 'email')}>
                     ← {social ? 'Outras opções' : 'Voltar'}
                   </button>
                 ) : <span />}
                 {mode === 'email' && (
-                  <button type="button" className="btn btn-ghost" style={{ padding: 0, color: 'var(--nobi-text-secondary)', fontSize: 14, fontWeight: 600 }} onClick={() => go('forgot')}>Esqueci a senha</button>
+                  <button type="button" className="btn btn-ghost" style={{ padding: 0, color: 'var(--nobi-text-secondary)', fontSize: 'var(--nobi-text-base)', fontWeight: 600 }} onClick={() => go('forgot')}>Esqueci a senha</button>
                 )}
               </div>
               <button type="submit" className="btn btn-primary block" disabled={busy}>

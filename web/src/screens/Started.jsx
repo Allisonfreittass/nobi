@@ -140,7 +140,7 @@ export default function Started() {
         <Pot color={goal.color === '#141218' ? '#2E9C6A' : goal.color} />
       </div>
 
-      <h1 className="display nobi-pop" style={{ fontSize: 52, textAlign: 'center' }}>{done ? 'É isso!' : 'Começou!'}</h1>
+      <h1 className="display nobi-pop" style={{ fontSize: '3.25rem', textAlign: 'center' }}>{done ? 'É isso!' : 'Começou!'}</h1>
       <p className="t-16" style={{ maxWidth: 310, textAlign: 'center', lineHeight: 1.45, color: 'var(--nobi-text-secondary)' }}>
         {done ? 'Primeiro passo dado. Agora é um dia de cada vez.' : `Você plantou ${goal.kind === 'project' ? 'um projeto novo' : goal.kind === 'weekly' ? 'uma meta nova' : 'um hábito novo'}. O primeiro check-in é o que mais conta, e ele pode ser ${todayActive ? 'hoje' : nextLabel}.`}
       </p>
@@ -168,7 +168,7 @@ export default function Started() {
                 : active ? { background: 'var(--nobi-track)' } : { background: 'var(--nobi-bg)', boxShadow: 'inset 0 0 0 1px var(--nobi-border-strong)' };
             return (
               <li key={iso} className="stack center gap-4">
-                <span className={filled ? 'nobi-pop' : ''} style={{ width: '100%', aspectRatio: '1', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, transition: 'background 200ms', ...box }}>
+                <span className={filled ? 'nobi-pop' : ''} style={{ width: '100%', aspectRatio: '1', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 700, transition: 'background 200ms', ...box }}>
                   {filled ? <Icon name="check" size={16} stroke={2.8} /> : isToday ? 'Hoje' : ''}
                 </span>
                 <span className="t-12" style={{ fontWeight: isToday ? 700 : 400, color: isToday ? 'var(--nobi-text)' : 'var(--nobi-text-muted)' }}>{dayInfo(weekdayOf(iso)).label}</span>

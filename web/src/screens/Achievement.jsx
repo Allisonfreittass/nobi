@@ -78,7 +78,7 @@ export default function Achievement() {
         </div>
         <div aria-hidden="true" style={{ width: 150, height: 14, borderRadius: '50%', background: 'rgba(20,18,24,0.18)', marginTop: 4 }} />
         <h1 className="display t-64 nobi-pop" style={{ marginTop: 26, textAlign: 'center' }}>{t.title[0]}<br />{t.title[1]}</h1>
-        <p className="t-16" style={{ marginTop: 14, textAlign: 'center', maxWidth: 320, fontSize: 17, lineHeight: 1.45 }}>{t.body}</p>
+        <p className="t-16" style={{ marginTop: 14, textAlign: 'center', maxWidth: 320, fontSize: '1.0625rem', lineHeight: 1.45 }}>{t.body}</p>
 
         {c.kind === 'streak' && c.unit === 'days' && week.length === 7 && (
           <ol className="row gap-8" style={{ listStyle: 'none', padding: 0, margin: '24px 0 0' }} aria-label="Esta semana">
@@ -108,7 +108,7 @@ export default function Achievement() {
           <button type="button" className="btn btn-dark lg block" onClick={onShare} disabled={busy} style={{ background: 'var(--nobi-tinta)', color: '#FFFFFF' }}>
             <Icon name="share" size={19} /> Compartilhar no feed
           </button>
-          <button type="button" className="btn btn-ghost block" style={{ height: 52, fontSize: 16, color: 'var(--nobi-tinta)' }} onClick={done}>Agora não</button>
+          <button type="button" className="btn btn-ghost block" style={{ height: 52, fontSize: 'var(--nobi-text-lg)', color: 'var(--nobi-tinta)' }} onClick={done}>Agora não</button>
         </div>
       </div>
     </div>

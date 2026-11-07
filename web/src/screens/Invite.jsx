@@ -42,7 +42,7 @@ export default function Invite() {
         {inviter && (
           <div className="stack center gap-10">
             <span style={{ boxShadow: '0 0 0 4px var(--nobi-creme)', borderRadius: '50%' }}><Avatar user={inviter} size={64} /></span>
-            <h1 className="display" style={{ fontSize: 'clamp(34px, 9vw, 48px)', textAlign: 'center' }}>{firstName(inviter.name)} te chamou<br />pro {APP_NAME}<span style={{ color: 'var(--nobi-creme)' }}>.</span></h1>
+            <h1 className="display" style={{ fontSize: 'clamp(2.125rem, 9vw, 3rem)', textAlign: 'center' }}>{firstName(inviter.name)} te chamou<br />pro {APP_NAME}<span style={{ color: 'var(--nobi-creme)' }}>.</span></h1>
           </div>
         )}
         {inviter === null && <h1 className="display t-40" style={{ textAlign: 'center' }}>Convite não encontrado</h1>}

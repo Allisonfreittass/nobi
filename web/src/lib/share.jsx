@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
-import { Sheet, Segmented, ErrorNote } from '../components/ui.jsx';
+import { Sheet, SelectRow, ErrorNote } from '../components/ui.jsx';
 import { api } from './api.js';
 import { afterPost } from './useLoad.js';
 import { useToast } from './toast.jsx';
@@ -51,10 +51,8 @@ export function ShareProvider({ children }) {
       {children}
       <Sheet open={Boolean(payload)} onClose={() => setPayload(null)} title="Compartilhar no feed">
         {payload?.title && <p className="secondary t-14">{payload.title}</p>}
-        <div className="stack gap-8">
-          <span className="t-14 strong" id="share-aud">Para quem</span>
-          <Segmented label="Para quem" options={[['friends', 'Amigos'], ['public', 'Público']]} value={audience} onChange={setAudience} className="bg-segment" />
-          <span className="field-hint">{audience === 'public' ? 'Aparece no seu perfil e no Explorar.' : 'Só quem é seu amigo vê e pode reagir.'}</span>
+        <div className="row-group">
+          <SelectRow label="Para quem" hint={audience === 'public' ? 'aparece no seu perfil e no Explorar' : 'só seus amigos veem e podem reagir'} value={audience} onChange={setAudience} options={[['friends', 'Amigos'], ['public', 'Público']]} />
         </div>
         <label className="field">
           Legenda (opcional)

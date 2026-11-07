@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
-import { Chip, Segmented, Toggle, ErrorNote, Skeleton } from '../components/ui.jsx';
+import { Chip, ErrorNote, Skeleton, Sheet, SelectRow, SwitchRow } from '../components/ui.jsx';
 import { useLoad, afterCheckin, afterPost } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
@@ -11,21 +11,7 @@ import { CATEGORIES, CATEGORY_ORDER } from '../lib/format.js';
 import PhotoPicker, { sendPostPhoto } from '../components/PhotoPicker.jsx';
 import { useCelebrate, closedTheDay } from '../lib/celebrate.jsx';
 
-function Stepper({ value, onChange, step, min, unit, label }) {
-  return (
-    <div className="row between card" style={{ padding: 8 }} role="group" aria-label={label}>
-      <button type="button" className="icon-btn" style={{ width: 52, height: 52, borderRadius: 18 }} aria-label={`Menos ${step}`} onClick={() => onChange(Math.max(min, value - step))} disabled={value <= min}>
-        <Icon name="minus" size={22} stroke={2.4} />
-      </button>
-      <span className="row gap-6" style={{ alignItems: 'baseline' }} aria-live="polite">
-        <span className="num t-40">{value}</span><span className="strong t-16">{unit}</span>
-      </span>
-      <button type="button" className="icon-btn" style={{ width: 52, height: 52, borderRadius: 18 }} aria-label={`Mais ${step}`} onClick={() => onChange(value + step)}>
-        <Icon name="plus" size={22} stroke={2.4} />
-      </button>
-    </div>
-  );
-}
+const MINUTE_SET = new Set([5, 10, 15, 20, 25, 30, 40, 45, 50, 60, 75, 90, 120, 150, 180, 240]);
 
 export default function Register() {
   const navigate = useNavigate();
@@ -34,6 +20,8 @@ export default function Register() {
   const toast = useToast();
   const celebrate = useCelebrate();
   const { data: allGoals, loading, error, reload } = useLoad('/goals');
+  // Folha com rota própria: fechar volta para a tela de baixo (ou para o Feed, se abriu direto)
+  const close = () => (state?.backgroundLocation ? navigate(-1) : navigate('/', { replace: true }));
   const goals = useMemo(() => (allGoals || []).filter((g) => !g.shared?.tasks?.length), [allGoals]);
 
   const [cat, setCat] = useState(null);
@@ -98,7 +86,7 @@ export default function Register() {
       } else {
         toast(r.me.leveledUp ? `Registrado. Subiu para o nível ${r.me.level}!` : 'Registrado. Conta nas suas sequências.');
       }
-      navigate('/', { replace: true });
+      close();
     } catch (e) {
       setErr(e);
     } finally {
@@ -106,105 +94,87 @@ export default function Register() {
     }
   }
 
-  return (
-    <div className="block-brasa" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ maxWidth: 560, width: '100%', margin: '0 auto', padding: 'calc(16px + env(safe-area-inset-top)) 20px 0', position: 'relative', height: 150 }}>
-        <button type="button" className="icon-btn" style={{ background: 'rgba(20,18,24,.12)', boxShadow: 'none', color: 'var(--nobi-tinta)' }} aria-label="Fechar" onClick={() => navigate(-1)}>
-          <Icon name="close" />
-        </button>
-        {/* O Broto espia por trás da folha: as pernas ficam escondidas */}
-        <div style={{ position: 'absolute', right: 34, bottom: -58 }} aria-hidden="true">
-          <Broto size={120} stage={me?.stage} golden={me?.golden} expression="foco" shadow={false} />
-        </div>
-      </div>
-      <div style={{ flex: 1, background: 'var(--nobi-bg)', color: 'var(--nobi-text)', borderRadius: '32px 32px 0 0', position: 'relative', zIndex: 1 }}>
-        <div className="stack gap-18" style={{ maxWidth: 560, margin: '0 auto', padding: '24px 20px calc(28px + env(safe-area-inset-bottom))' }}>
-          <h1 className="title t-28">O que você fez hoje?</h1>
-          <ErrorNote error={error} onRetry={reload} />
-          {loading && !allGoals && <Skeleton height={180} />}
+  const minuteOptions = [5, 10, 15, 20, 25, 30, 40, 45, 50, 60, 75, 90, 120, 150, 180, 240].concat((MINUTE_SET.has(mins) ? [] : [mins])).sort((a, b) => a - b).map((m) => [m, m < 60 || m % 60 ? `${m} min` : `${m / 60} h`]);
+  const qtyOptions = Array.from({ length: 20 }, (_, k) => [k + 1, `${k + 1} ${goal?.target?.unit || ''}`.trim()]);
 
-          {allGoals && (
+  return (
+    <Sheet
+      open
+      routed
+      onClose={close}
+      labelledBy="registrar-titulo"
+      peek={<Broto size={96} stage={me?.stage} golden={me?.golden} expression="foco" shadow={false} />}
+      header={(
+        <div className="row between gap-12">
+          <button type="button" className="icon-btn" aria-label="Fechar" onClick={close}><Icon name="close" /></button>
+          <span className="t-16 strong">Registrar</span>
+          <span style={{ width: 44 }} />
+        </div>
+      )}
+    >
+      <h1 id="registrar-titulo" className="title t-22" style={{ fontWeight: 800 }}>O que você fez hoje?</h1>
+      <ErrorNote error={error} onRetry={reload} />
+      {loading && !allGoals && <Skeleton height={180} />}
+
+      {allGoals && (
+        <>
+          <div className="row gap-8 wrap" role="group" aria-label="Categoria">
+            {CATEGORY_ORDER.map((c) => (
+              <Chip key={c} small on={cat === c} onClick={() => pick(c)} style={{ opacity: goals.some((g) => g.category === c) ? 1 : 0.6 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 4, background: CATEGORIES[c].color }} aria-hidden="true" />{CATEGORIES[c].label}
+              </Chip>
+            ))}
+          </div>
+
+          {!goal ? (
+            <div className="stack gap-10">
+              <p className="t-15 secondary">Você ainda não tem um objetivo de {unitWord}.</p>
+              <Link className="btn btn-dark" to={`/metas/novo?categoria=${cat}`}>Criar objetivo de {unitWord}</Link>
+            </div>
+          ) : (
             <>
-              <div role="group" aria-label="Categoria" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
-                {CATEGORY_ORDER.map((c) => {
-                  const on = cat === c;
-                  const n = goals.filter((g) => g.category === c).length;
-                  return (
-                    <button key={c} type="button" aria-pressed={on} onClick={() => pick(c)} className="tap"
-                      style={{ height: 84, borderRadius: 20, border: 'none', padding: 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between', background: 'var(--nobi-card)', boxShadow: on ? 'inset 0 0 0 2.5px var(--nobi-text)' : 'inset 0 0 0 1px var(--nobi-border)', transition: 'box-shadow var(--nobi-dur-fast)', opacity: n ? 1 : 0.7 }}>
-                      <span style={{ width: 22, height: 22, borderRadius: 8, background: CATEGORIES[c].color }} aria-hidden="true" />
-                      <span className="t-15 strong">{CATEGORIES[c].label}</span>
-                    </button>
-                  );
-                })}
+              <div className="row-group">
+                {inCat.length > 1 && (
+                  <SelectRow label="Objetivo" value={goal.id} onChange={setGoalId} options={inCat.map((g) => [g.id, g.title])} />
+                )}
+                {isCount ? (
+                  <SelectRow label={`Quantidade · ${goal.status.todayValue} de ${goal.status.need} hoje`} value={qty} onChange={(v) => setQty(Number(v))} options={qtyOptions} chevron="right" />
+                ) : (
+                  <SelectRow label="Tempo" value={mins} onChange={(v) => setMins(Number(v))} options={minuteOptions} chevron="right" />
+                )}
+                {(cat === 'leitura' || cat === 'treino') && (
+                  <label className="select-row">
+                    <span className="grow t-15" style={{ fontWeight: 500 }}>{cat === 'leitura' ? 'Páginas' : 'Distância (km)'}</span>
+                    <input className="inline-input" inputMode="decimal" value={cat === 'leitura' ? pages : km}
+                      onChange={(e) => (cat === 'leitura' ? setPages(e.target.value.replace(/\D/g, '')) : setKm(e.target.value.replace(/[^\d.,]/g, '')))}
+                      placeholder="opcional" aria-label={cat === 'leitura' ? 'Páginas' : 'Distância em km'} />
+                  </label>
+                )}
               </div>
 
-              {!goal ? (
-                <div className="card stack gap-10">
-                  <p className="t-15">Você ainda não tem um objetivo de {unitWord}.</p>
-                  <Link className="btn btn-dark" to={`/metas/novo?categoria=${cat}`}>Criar objetivo de {unitWord}</Link>
-                </div>
-              ) : (
-                <>
-                  {inCat.length > 1 && (
-                    <div className="chips" role="group" aria-label="Objetivo">
-                      {inCat.map((g) => <Chip key={g.id} on={g.id === goal.id} onClick={() => setGoalId(g.id)}>{g.title}</Chip>)}
-                    </div>
-                  )}
-                  <div className="stack gap-8">
-                    <span className="t-14 strong">{isCount ? `Quantidade · ${goal.status.todayValue} de ${goal.status.need} hoje` : 'Tempo'}</span>
-                    {isCount
-                      ? <Stepper label="Quantidade" value={qty} onChange={setQty} step={1} min={1} unit={goal.target.unit} />
-                      : <Stepper label="Tempo em minutos" value={mins} onChange={setMins} step={5} min={5} unit="min" />}
-                  </div>
-                  {(cat === 'leitura' || cat === 'treino') && (
-                    <label className="field">
-                      {cat === 'leitura' ? 'Páginas (opcional)' : 'Distância em km (opcional)'}
-                      <input className="input" inputMode="decimal" value={cat === 'leitura' ? pages : km}
-                        onChange={(e) => (cat === 'leitura' ? setPages(e.target.value.replace(/\D/g, '')) : setKm(e.target.value.replace(/[^\d.,]/g, '')))}
-                        placeholder={cat === 'leitura' ? 'Ex.: 24' : 'Ex.: 5,2'} />
-                    </label>
-                  )}
-                  <label className="field">
-                    Nota (opcional)
-                    <textarea className="textarea" rows={2} maxLength={280} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Como foi?" />
-                  </label>
+              <label className="field">
+                <span className="sr-only">Nota</span>
+                <textarea className="textarea" rows={2} maxLength={280} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional): como foi?" />
+              </label>
 
-                  <div className="card stack gap-12">
-                    <div className="row between gap-12">
-                      <div className="stack">
-                        <span id="share-l" className="t-15 strong">Publicar no feed</span>
-                        <span className="t-13 muted">você decide agora</span>
-                      </div>
-                      <Toggle checked={share} onChange={setShare} label="Publicar no feed" />
-                    </div>
-                    {share ? (
-                      <>
-                        <div className="row between gap-12">
-                          <span className="t-14 strong">Para quem</span>
-                          <Segmented compact label="Para quem" options={[['friends', 'Amigos'], ['public', 'Público']]} value={aud} onChange={setAud} />
-                        </div>
-                        <PhotoPicker value={photo} onChange={setPhoto} />
-                      </>
-                    ) : (
-                      <p className="t-13 secondary">Não vai pro feed. Conta normalmente nas suas sequências e estatísticas.</p>
-                    )}
-                  </div>
+              <div className="row-group">
+                <SwitchRow label="Publicar no feed" hint={share ? undefined : 'Não vai pro feed. Conta nas suas sequências.'} checked={share} onChange={setShare} />
+                {share && <SelectRow label="Para quem" value={aud} onChange={setAud} options={[['friends', 'Amigos'], ['public', 'Público']]} />}
+              </div>
+              {share && <PhotoPicker value={photo} onChange={setPhoto} />}
 
-                  {willClose && (
-                    <p className="row gap-8 t-14 strong" style={{ color: 'var(--nobi-text-streak)' }}>
-                      <Icon name="flame" size={18} style={{ color: 'var(--nobi-brasa)' }} />
-                      Isso fecha {goal.streak.unit === 'weeks' ? 'sua' : 'seu'} {goal.wouldBe}{goal.streak.unit === 'weeks' ? 'ª semana seguida' : 'º dia seguido'} de {unitWord}
-                    </p>
-                  )}
-                  <ErrorNote error={err} />
-                  <button type="button" className="btn btn-primary lg block" onClick={submit} disabled={busy}>{busy ? 'Registrando…' : 'Registrar'}</button>
-                </>
+              {willClose && (
+                <p className="row gap-8 t-14 strong" style={{ color: 'var(--nobi-text-streak)' }}>
+                  <Icon name="flame" size={18} style={{ color: 'var(--nobi-brasa)' }} />
+                  Isso fecha {goal.streak.unit === 'weeks' ? 'sua' : 'seu'} {goal.wouldBe}{goal.streak.unit === 'weeks' ? 'ª semana seguida' : 'º dia seguido'} de {unitWord}
+                </p>
               )}
+              <ErrorNote error={err} />
+              <button type="button" className="btn btn-primary block" style={{ borderRadius: 27 }} onClick={submit} disabled={busy}>{busy ? 'Registrando…' : 'Registrar'}</button>
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </Sheet>
   );
 }

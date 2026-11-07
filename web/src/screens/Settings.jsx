@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
-import { Avatar, BackButton, ErrorNote, Segmented, Sheet, Toggle } from '../components/ui.jsx';
+import { Avatar, BackButton, ErrorNote, Sheet, Toggle, SelectRow } from '../components/ui.jsx';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useLoad } from '../lib/useLoad.js';
@@ -172,9 +172,7 @@ export default function Settings() {
       </Group>
 
       <Group title="Privacidade">
-        <Row label="Perfil" desc="quem vê seus posts e estatísticas">
-          <Segmented compact label="Quem vê o perfil" options={[['friends', 'Amigos'], ['public', 'Público']]} value={me.privacy.profile} onChange={(v) => privacy({ profile: v })} />
-        </Row>
+        <div style={{ padding: '0 16px' }}><SelectRow label="Perfil" hint="quem vê seus posts e estatísticas" value={me.privacy.profile} onChange={(v) => privacy({ profile: v })} options={[['friends', 'Amigos'], ['public', 'Público']]} /></div>
         <Row label="Novos seguidores" desc="aprovar antes de seguir você"><Toggle checked={me.privacy.approveFollowers} onChange={(v) => privacy({ approveFollowers: v })} label="Aprovar novos seguidores" /></Row>
         {(requests.data || []).map((r) => (
           <div key={r.id} className="list-row">
@@ -194,8 +192,8 @@ export default function Settings() {
       </Group>
 
       <Group title="Preferências">
-        <Row label="Tema"><Segmented compact label="Tema" options={[['light', 'Claro'], ['dark', 'Escuro'], ['system', 'Auto']]} value={me.prefs.theme} onChange={(v) => prefs({ theme: v })} /></Row>
-        <Row label="Semana começa"><Segmented compact label="Semana começa" options={[['mon', 'Segunda'], ['sun', 'Domingo']]} value={me.prefs.weekStart} onChange={(v) => prefs({ weekStart: v })} /></Row>
+        <div style={{ padding: '0 16px' }}><SelectRow label="Tema" value={me.prefs.theme} onChange={(v) => prefs({ theme: v })} options={[['system', 'Igual ao celular'], ['light', 'Claro'], ['dark', 'Escuro']]} /></div>
+        <div style={{ padding: '0 16px' }}><SelectRow label="Semana começa" value={me.prefs.weekStart} onChange={(v) => prefs({ weekStart: v })} options={[['mon', 'Segunda'], ['sun', 'Domingo']]} /></div>
         <Row label="Animações do Broto" desc="pulos e reações ao concluir algo"><Toggle checked={me.prefs.mascotMotion} onChange={(v) => prefs({ mascotMotion: v })} label="Animações do Broto" /></Row>
       </Group>
 

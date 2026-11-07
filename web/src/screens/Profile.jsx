@@ -10,6 +10,7 @@ import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { capitalize, monthName, signed, weekOrder } from '../lib/format.js';
+import { useConfirm } from '../lib/confirm.jsx';
 
 const STAGE_NAME = { broto: 'Broto', muda: 'Muda', botao: 'Botão', flor: 'Flor' };
 const NEXT_STAGE = { broto: 10, muda: 25, botao: 50 };
@@ -79,7 +80,7 @@ function FollowButton({ profile, onChange }) {
     } catch (e) { toast(e.message); }
   }
   return (
-    <button type="button" className={`btn sm ${rel.following === 'none' ? 'btn-primary' : 'btn-outline'}`} aria-pressed={rel.following !== 'none'} onClick={click}>
+    <button type="button" className={`btn sm ${rel.following === 'none' ? 'btn-dark' : 'btn-outline'}`} aria-pressed={rel.following !== 'none'} onClick={click}>
       {rel.following === 'accepted' && <Icon name="check" size={16} />}{label}
     </button>
   );
@@ -94,6 +95,7 @@ export default function Profile() {
   const isMe = username === me.username;
   const { data: p, error, reload, setData } = useLoad(`/users/${username}`);
   const posts = useLoad(`/users/${username}/posts`);
+  const confirm = useConfirm();
 
   if (error) return <div className="screen"><BackButton /><ErrorNote error={error} onRetry={reload} /></div>;
   if (!p) return <div className="screen"><Skeleton height={120} /><Skeleton height={90} /><Skeleton height={260} /></div>;
@@ -105,7 +107,7 @@ export default function Profile() {
   const xpPct = isMe ? me.levelProgress : null;
 
   async function block() {
-    if (!window.confirm(`Bloquear ${p.name}? Vocês deixam de se seguir e não veem os posts um do outro.`)) return;
+    if (!(await confirm({ title: `Bloquear ${p.name}?`, message: 'Vocês deixam de se seguir e não veem os posts um do outro.', confirmLabel: 'Bloquear', danger: true }))) return;
     await api(`/users/${p.id}/block`, { method: 'POST' });
     toast('Conta bloqueada.');
     navigate('/', { replace: true });
@@ -135,10 +137,10 @@ export default function Profile() {
           <span style={{ width: 76, height: 76, borderRadius: 26, overflow: 'hidden', display: 'inline-flex', boxShadow: 'inset 0 0 0 1px var(--nobi-border)' }}>
             <Avatar user={p} size={76} className="profile-avatar" />
           </span>
-          <span style={{ position: 'absolute', right: -6, bottom: -6, padding: '3px 7px', borderRadius: 10, background: 'var(--nobi-orbita)', color: '#FFFFFF', fontSize: 12, fontWeight: 700, boxShadow: '0 0 0 3px var(--nobi-bg)' }}>Nv {level}</span>
+          <span style={{ position: 'absolute', right: -6, bottom: -6, padding: '3px 7px', borderRadius: 10, background: 'var(--nobi-orbita)', color: '#FFFFFF', fontSize: 'var(--nobi-text-xs)', fontWeight: 700, boxShadow: '0 0 0 3px var(--nobi-bg)' }}>Nv {level}</span>
         </span>
         <div className="stack grow" style={{ gap: 3 }}>
-          <h1 className="title t-22" style={{ fontWeight: 800, fontSize: 24 }}>{p.name}</h1>
+          <h1 className="title t-22" style={{ fontWeight: 800, fontSize: '1.5rem' }}>{p.name}</h1>
           <span className="t-13 muted">@{p.username}</span>
           <span className="row gap-14 t-14">
             <Link to={`/u/${p.username}/seguidores`} className="tap" style={{ minHeight: 32, display: 'inline-flex', alignItems: 'center' }}><strong>{p.followers}</strong>&nbsp;<span className="secondary">{p.followers === 1 ? 'seguidor' : 'seguidores'}</span></Link>

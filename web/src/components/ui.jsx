@@ -2,11 +2,12 @@ import { useEffect, useId, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 import { BrotoHead } from './Broto.jsx';
 
+/** Switch do sistema: checkbox real com role="switch" (DESIGN.md 8.3). */
 export function Toggle({ checked, onChange, label, disabled }) {
   return (
-    <button type="button" role="switch" aria-checked={checked} aria-label={label} className="toggle" disabled={disabled} onClick={() => onChange(!checked)}>
-      <span className="knob" />
-    </button>
+    <label className="switch">
+      <input type="checkbox" role="switch" checked={Boolean(checked)} aria-label={label} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+    </label>
   );
 }
 
@@ -51,9 +52,9 @@ export function StreakPill({ value, unit = 'dias', active, bump }) {
 }
 
 export function Avatar({ user, size = 40, ring, className = '' }) {
-  const style = { width: size, height: size, fontSize: Math.round(size * 0.38), background: user?.avatarColor || 'var(--nobi-creme)' };
+  const style = { width: size, height: size, containerType: 'inline-size', background: user?.avatarColor || 'var(--nobi-creme)' };
   const ringClass = ring ? `ring-${ring}` : '';
-  let inner = (user?.name || '?').trim().charAt(0).toUpperCase();
+  let inner = <span style={{ fontSize: '38cqi', lineHeight: 1 }}>{(user?.name || '?').trim().charAt(0).toUpperCase()}</span>;
   if (user?.avatarUrl === 'broto') {
     style.background = 'var(--nobi-brasa)';
     inner = <BrotoHead size={Math.round(size * 0.92)} />;
@@ -93,35 +94,108 @@ export function Field({ label, hint, hintTone, children, id: given }) {
   );
 }
 
-export function Sheet({ open, onClose, title, children, labelledBy }) {
-  const ref = useRef(null);
+// Folha que acabou de fechar: se outra abrir em seguida (ex.: o React montando de novo no
+// modo de desenvolvimento), reaproveita a entrada do histórico em vez de voltar e empilhar outra.
+let closingSheet = null;
+
+/**
+ * Folha destacada das bordas (DESIGN.md 8.3), sobre <dialog> nativo: foco preso e aria-modal.
+ * Fecha com X, Esc, arrastando para baixo e com o voltar do celular (cada folha aberta
+ * ganha uma entrada no histórico).
+ */
+export function Sheet({ open, onClose, title, children, labelledBy, routed = false, peek = null, header = null }) {
+  const dialogRef = useRef(null);
+  const sheetRef = useRef(null);
+  const boxRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const drag = useRef(null);
+
   useEffect(() => {
     if (!open) return undefined;
+    const dialog = dialogRef.current;
     const prev = document.activeElement;
-    const onKey = (e) => e.key === 'Escape' && onClose?.();
-    document.addEventListener('keydown', onKey);
-    ref.current?.querySelector('input, textarea, button')?.focus();
-    document.body.style.overflow = 'hidden';
+    if (dialog && !dialog.open) dialog.showModal();
+    // Voltar do celular / gesto do navegador fecha a folha. Folha com rota própria já tem entrada no histórico.
+    let id = Math.random().toString(36).slice(2);
+    let closedByBack = false;
+    if (!routed) {
+      if (closingSheet && window.history.state?.nobiSheet === closingSheet.id) {
+        clearTimeout(closingSheet.timer);
+        id = closingSheet.id;
+      } else {
+        window.history.pushState({ ...(window.history.state || {}), nobiSheet: id }, '');
+      }
+      closingSheet = null;
+    }
+    const onPop = () => {
+      if (routed) return;
+      if (window.history.state?.nobiSheet !== id) { closedByBack = true; onCloseRef.current?.(); }
+    };
+    window.addEventListener('popstate', onPop);
+    // Foco na própria folha (sem abrir teclado nem destacar o X); Tab segue para os controles
+    requestAnimationFrame(() => sheetRef.current?.focus({ preventScroll: true }));
     return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      window.removeEventListener('popstate', onPop);
+      if (dialog?.open) dialog.close();
+      if (!routed && !closedByBack && window.history.state?.nobiSheet === id) {
+        const timer = setTimeout(() => {
+          closingSheet = null;
+          if (window.history.state?.nobiSheet === id) window.history.back();
+        }, 0);
+        closingSheet = { id, timer };
+      }
       prev?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open, routed]);
+
   if (!open) return null;
+
+  const onPointerDown = (e) => {
+    if (e.target.closest('button, input, textarea, select, a')) return;
+    drag.current = { y: e.clientY, dy: 0 };
+    boxRef.current.style.transition = 'none';
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onPointerMove = (e) => {
+    if (!drag.current) return;
+    drag.current.dy = Math.max(0, e.clientY - drag.current.y);
+    boxRef.current.style.transform = `translateY(${drag.current.dy}px)`;
+  };
+  const onPointerUp = () => {
+    if (!drag.current) return;
+    const { dy } = drag.current;
+    drag.current = null;
+    boxRef.current.style.transition = '';
+    boxRef.current.style.transform = '';
+    if (dy > 110) onCloseRef.current?.();
+  };
+
   return (
-    <div className="sheet-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={labelledBy ? undefined : title} aria-labelledby={labelledBy} ref={ref}>
-        <span className="sheet-grip" aria-hidden="true" />
-        {title && (
-          <div className="row between">
-            <h2 className="title t-22">{title}</h2>
-            <button type="button" className="icon-btn" aria-label="Fechar" onClick={onClose}><Icon name="close" /></button>
+    <dialog
+      ref={dialogRef}
+      className="sheet-dialog"
+      aria-label={labelledBy ? undefined : title}
+      aria-labelledby={labelledBy}
+      onCancel={(e) => { e.preventDefault(); onCloseRef.current?.(); }}
+      onMouseDown={(e) => { if (e.target === dialogRef.current) onCloseRef.current?.(); }}
+    >
+      <div className="sheet-box" ref={boxRef}>
+        {peek && <div className="sheet-peek" aria-hidden="true">{peek}</div>}
+        <div className="sheet" ref={sheetRef} tabIndex={-1}>
+          <div className="sheet-head" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+            <span className="sheet-grip" aria-hidden="true" />
+            {header || (title && (
+              <div className="row between gap-12">
+                <h2 className="title t-20">{title}</h2>
+                <button type="button" className="icon-btn" aria-label="Fechar" onClick={() => onCloseRef.current?.()}><Icon name="close" /></button>
+              </div>
+            ))}
           </div>
-        )}
-        {children}
+          {children}
+        </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 
@@ -158,6 +232,42 @@ export function ErrorNote({ error, onRetry }) {
     <div className="form-error row between gap-12" role="alert">
       <span>{error.message || String(error)}</span>
       {onRetry && <button type="button" className="btn btn-soft sm" onClick={onRetry}>Tentar de novo</button>}
+    </div>
+  );
+}
+
+/**
+ * Linha de ajuste que abre o seletor nativo do sistema (DESIGN.md 8.3).
+ * options: [[valor, texto], ...]. O <select> real fica por cima da linha, invisível.
+ */
+export function SelectRow({ label, value, options, onChange, hint, chevron = 'down' }) {
+  const id = useId();
+  const current = options.find(([v]) => String(v) === String(value));
+  return (
+    <div className="select-row">
+      <label htmlFor={id} className="grow stack" style={{ gap: 1 }}>
+        <span className="t-15" style={{ fontWeight: 500 }}>{label}</span>
+        {hint && <span className="t-13 muted">{hint}</span>}
+      </label>
+      <span className="t-15 secondary" style={{ fontWeight: 600, whiteSpace: 'nowrap' }} aria-hidden="true">
+        {current ? current[1] : value} {chevron === 'down' ? '⌄' : '›'}
+      </span>
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
+      </select>
+    </div>
+  );
+}
+
+/** Linha com switch, no mesmo grupo das linhas de ajuste. */
+export function SwitchRow({ label, hint, checked, onChange, disabled }) {
+  return (
+    <div className="select-row">
+      <span className="grow stack" style={{ gap: 1 }}>
+        <span className="t-15" style={{ fontWeight: 500 }}>{label}</span>
+        {hint && <span className="t-13 muted">{hint}</span>}
+      </span>
+      <Toggle checked={checked} onChange={onChange} label={label} disabled={disabled} />
     </div>
   );
 }

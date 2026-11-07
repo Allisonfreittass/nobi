@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
-import { Avatar, BackButton, Chip, ErrorNote, Segmented } from '../components/ui.jsx';
+import { Avatar, BackButton, Chip, ErrorNote, Segmented, SelectRow } from '../components/ui.jsx';
 import { useLoad, invalidateLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { api } from '../lib/api.js';
@@ -165,10 +165,8 @@ export default function NewGoal() {
                 </button>
               ))}
             </div>
-            <div className="stack gap-6">
-              <span className="t-14 strong">Duração</span>
-              <Segmented compact label="Duração" options={DURATIONS} value={duration} onChange={setDuration} />
-              <span className="field-hint">{duration === '0' ? 'Objetivo contínuo com amigos.' : 'Com prazo vira um desafio, com página própria.'}</span>
+            <div className="row-group">
+              <SelectRow label="Duração" hint={duration === '0' ? 'objetivo contínuo com amigos' : 'com prazo vira um desafio, com página própria'} value={duration} onChange={setDuration} options={DURATIONS.map(([v, t]) => [v, t === 'Temporada' ? 'Temporada (12 semanas)' : t])} />
             </div>
           </div>
         )}
@@ -239,7 +237,7 @@ export default function NewGoal() {
             const on = days.includes(w.d);
             return (
               <button key={w.d} type="button" aria-pressed={on} aria-label={w.full} onClick={() => flip(w.d)}
-                style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', fontWeight: 700, fontSize: 14, transition: 'background var(--nobi-dur-fast)', background: on ? color : 'var(--nobi-card)', color: on ? '#FFFFFF' : 'var(--nobi-text-secondary)', boxShadow: on ? 'none' : 'inset 0 0 0 1px var(--nobi-border)' }}>
+                style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', fontWeight: 700, fontSize: 'var(--nobi-text-base)', transition: 'background var(--nobi-dur-fast)', background: on ? color : 'var(--nobi-card)', color: on ? '#FFFFFF' : 'var(--nobi-text-secondary)', boxShadow: on ? 'none' : 'inset 0 0 0 1px var(--nobi-border)' }}>
                 {w.short}
               </button>
             );

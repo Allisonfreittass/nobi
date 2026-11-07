@@ -16,7 +16,7 @@ export default function InviteSheet({ open, onClose, username }) {
       <p className="t-14 secondary">Mande este link. Quando a pessoa entrar ou criar conta por ele, vocês já ficam amigos.</p>
       <label className="field">
         <span className="sr-only">Link do convite</span>
-        <input className="input" readOnly value={url} onFocus={(e) => e.target.select()} style={{ fontSize: 15 }} />
+        <input className="input" readOnly value={url} onFocus={(e) => e.target.select()} style={{ fontSize: 'var(--nobi-text-md)' }} />
       </label>
       <button type="button" className="btn btn-primary block" onClick={copy}>
         <Icon name={copied ? 'check' : 'share'} size={18} /> {copied ? 'Link copiado' : 'Copiar link'}

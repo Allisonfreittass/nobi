@@ -12,7 +12,7 @@ export function AppIcon({ size = 34 }) {
 
 export function Wordmark({ size = 26, dotColor = 'var(--nobi-brasa)' }) {
   return (
-    <span className="display" style={{ fontSize: size, letterSpacing: '-0.03em', lineHeight: 1 }}>
+    <span className="display" style={{ fontSize: `${size / 16}rem`, letterSpacing: '-0.03em', lineHeight: 1 }}>
       {APP_NAME}<span style={{ color: dotColor }}>.</span>
     </span>
   );

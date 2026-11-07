@@ -12,27 +12,25 @@ const NAV = [
   { to: '/perfil', label: 'Perfil', icon: 'user' },
 ];
 
+/** Barra de abas flutuante (DESIGN.md 8.3): pílula destacada da borda, aba ativa marcada, "+" separado. */
 function BottomNav() {
   const navigate = useNavigate();
-  const items = [NAV[0], NAV[1], null, NAV[2], NAV[3]];
+  const location = useLocation();
   return (
-    <nav className="bottom-nav" aria-label="Principal">
-      <ul>
-        {items.map((it) => (
-          <li key={it ? it.to : 'fab'} style={{ display: 'flex', justifyContent: 'center' }}>
-            {it ? (
-              <NavLink to={it.to} end={it.end} className="nav-item" style={{ width: '100%' }}>
-                <Icon name={it.icon} size={23} />
-                {it.label}
-              </NavLink>
-            ) : (
-              <button type="button" className="nav-fab" aria-label="Registrar" onClick={() => navigate('/registrar')}>
-                <Icon name="plus" size={28} stroke={2.6} />
-              </button>
-            )}
+    <nav className="tabbar" aria-label="Principal">
+      <ul className="tabbar-pill">
+        {NAV.map((it) => (
+          <li key={it.to}>
+            <NavLink to={it.to} end={it.end} className="tab" aria-label={it.label}>
+              <Icon name={it.icon} size={22} />
+              <span className="tab-label">{it.label}</span>
+            </NavLink>
           </li>
         ))}
       </ul>
+      <button type="button" className="tabbar-fab" aria-label="Registrar" onClick={() => navigate('/registrar', { state: { backgroundLocation: location } })}>
+        <Icon name="plus" size={26} stroke={2.6} />
+      </button>
     </nav>
   );
 }
@@ -61,7 +59,7 @@ function FocusSession() {
       if (s === 0) {
         setRunning(false);
         setLeft(FOCUS_SECONDS);
-        navigate('/registrar', { state: { goalId, minutes: 25, fromFocus: true } });
+        navigate('/registrar', { state: { goalId, minutes: 25, fromFocus: true, backgroundLocation: window.location.pathname === '/registrar' ? null : { pathname: window.location.pathname } } });
       }
     }, 500);
     return () => clearInterval(t);
@@ -90,7 +88,7 @@ function FocusSession() {
         </label>
       ) : <span className="t-13" style={{ color: 'rgba(255,255,255,.75)' }}>Crie um objetivo para contar o foco.</span>}
       <div className="row gap-8">
-        <button type="button" className="btn btn-primary grow" style={{ height: 46 }} onClick={toggle} disabled={!goal}>
+        <button type="button" className="btn grow" style={{ height: 46, background: 'var(--nobi-creme)', color: 'var(--nobi-tinta)' }} onClick={toggle} disabled={!goal}>
           <Icon name={running ? 'pause' : 'play'} size={18} /> {running ? 'Pausar' : left < FOCUS_SECONDS ? 'Continuar' : 'Começar'}
         </button>
         {left < FOCUS_SECONDS && !running && (
@@ -103,11 +101,12 @@ function FocusSession() {
 
 function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const links = [NAV[0], NAV[2], { to: '/desafios', label: 'Desafios', icon: 'trophy' }, NAV[1], NAV[3]];
   return (
     <aside className="sidebar" aria-label="Menu">
       <div style={{ padding: '0 8px 18px' }}><Logo size={34} /></div>
-      <button type="button" className="btn btn-primary block" style={{ marginBottom: 14 }} onClick={() => navigate('/registrar')}>
+      <button type="button" className="btn btn-primary block" style={{ marginBottom: 14 }} onClick={() => navigate('/registrar', { state: { backgroundLocation: location } })}>
         <Icon name="plus" size={20} stroke={2.6} /> Registrar
       </button>
       <nav className="stack gap-4" aria-label="Principal">
@@ -124,7 +123,7 @@ function Sidebar() {
 
 export default function Layout({ nav = true }) {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => { if (pathname !== '/registrar') window.scrollTo(0, 0); }, [pathname]);
   return (
     <div className="app-shell with-nav">
       <Sidebar />

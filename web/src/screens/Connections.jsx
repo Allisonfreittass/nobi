@@ -6,6 +6,7 @@ import { useLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
+import { useConfirm } from '../lib/confirm.jsx';
 
 const TABS = { seguidores: 'followers', seguindo: 'following' };
 
@@ -14,6 +15,7 @@ export default function Connections() {
   const navigate = useNavigate();
   const { me } = useSession();
   const toast = useToast();
+  const confirm = useConfirm();
   const kind = TABS[tab];
   const profile = useLoad(kind ? `/users/${username}` : null);
   const list = useLoad(kind ? `/users/${username}/${kind}` : null);
@@ -22,7 +24,7 @@ export default function Connections() {
   const people = list.data?.people || [];
 
   async function removeFollower(u) {
-    if (!window.confirm(`Remover ${u.name} dos seus seguidores? A pessoa não é avisada.`)) return;
+    if (!(await confirm({ title: `Remover ${u.name}?`, message: 'A pessoa sai dos seus seguidores e não é avisada.', confirmLabel: 'Remover', danger: true }))) return;
     try {
       await api(`/users/me/followers/${u.id}`, { method: 'DELETE' });
       list.setData((d) => ({ ...d, people: d.people.filter((p) => p.id !== u.id) }));

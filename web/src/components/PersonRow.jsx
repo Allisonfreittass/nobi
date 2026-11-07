@@ -24,7 +24,7 @@ export default function PersonRow({ u, onRelation, extra }) {
         </span>
       </Link>
       {!rel.self && (
-        <button type="button" className={`btn sm ${rel.following === 'none' ? 'btn-primary' : 'btn-outline'}`} aria-pressed={rel.following !== 'none'} onClick={click}>{label}</button>
+        <button type="button" className={`btn sm ${rel.following === 'none' ? 'btn-dark' : 'btn-outline'}`} aria-pressed={rel.following !== 'none'} onClick={click}>{label}</button>
       )}
       {extra}
     </div>

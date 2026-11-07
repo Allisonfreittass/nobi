@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
-import { BackButton, ErrorNote, Segmented, Skeleton } from '../components/ui.jsx';
+import { BackButton, ErrorNote, SelectRow, Skeleton } from '../components/ui.jsx';
 import { api } from '../lib/api.js';
 import { useLoad, afterPost } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
@@ -117,9 +117,9 @@ export default function Weekly() {
                 <button type="button" className="btn btn-outline grow" onClick={() => download()} disabled={!preview}><Icon name="download" size={18} /> Baixar imagem</button>
               </div>
               <div className="card stack gap-12">
-                <div className="row between gap-12">
-                  <span className="strong t-15">Publicar no {APP_NAME}</span>
-                  <Segmented compact label="Para quem" options={[['friends', 'Amigos'], ['public', 'Público']]} value={audience} onChange={setAudience} />
+                <span className="strong t-15">Publicar no {APP_NAME}</span>
+                <div className="row-group">
+                  <SelectRow label="Para quem" value={audience} onChange={setAudience} options={[['friends', 'Amigos'], ['public', 'Público']]} />
                 </div>
                 <button type="button" className="btn btn-dark block" onClick={publish} disabled={!preview || busy}>{busy === 'post' ? 'Publicando…' : 'Publicar no feed'}</button>
               </div>

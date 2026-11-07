@@ -5,6 +5,7 @@ import { Avatar, StreakPill } from './ui.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, timeAgo, fmtNum, signed, unitShort } from '../lib/format.js';
 import { useToast } from '../lib/toast.jsx';
+import { useConfirm } from '../lib/confirm.jsx';
 
 function Metric({ value, unit, caption }) {
   return (
@@ -67,6 +68,7 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
   const [post, setPost] = useState(initial);
   const [open, setOpen] = useState(false);
   const [pop, setPop] = useState(false);
+  const confirm = useConfirm();
   const toast = useToast();
   const cat = CATEGORIES[post.category] || CATEGORIES.objetivo;
   const m = post.metrics || {};
@@ -78,7 +80,7 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
     try { setPost(await api(`/posts/${post.id}/react`, { method: 'POST' })); } catch (e) { setPost(post); toast(e.message); }
   }
   async function remove() {
-    if (!window.confirm('Apagar este post? O registro continua nas suas sequências.')) return;
+    if (!(await confirm({ title: 'Apagar este post?', message: 'O registro continua nas suas sequências.', confirmLabel: 'Apagar', danger: true }))) return;
     await api(`/posts/${post.id}`, { method: 'DELETE' });
     onDelete?.(post.id);
   }
@@ -99,7 +101,7 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
         <Link to={`/u/${post.user.username}`} aria-label={`Perfil de ${post.user.name}`}><Avatar user={post.user} size={44} /></Link>
         <div className="grow stack" style={{ gap: 2 }}>
           <Link to={`/u/${post.user.username}`} className="strong t-15 ellipsis">{post.user.name}</Link>
-          <span className="row gap-6 t-13 secondary">
+          <span className="row gap-6 t-13 secondary" style={{ flexWrap: 'wrap', rowGap: 0, whiteSpace: 'nowrap' }}>
             <span style={{ width: 8, height: 8, flexShrink: 0, borderRadius: 3, background: cat.color }} aria-hidden="true" />
             {post.kind === 'weekly' ? 'Resumo da semana' : cat.label}<span aria-hidden="true">·</span>{timeAgo(post.createdAt)}
             {post.audience === 'public' ? <Icon name="globe" size={13} /> : <Icon name="users" size={13} />}
@@ -131,7 +133,7 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
       )}
 
       <footer className="row gap-8 wrap">
-        <button type="button" className={`btn sm ${post.reacted ? 'btn-primary' : 'btn-soft'}`} style={{ height: 44 }} aria-pressed={post.reacted} onClick={react}>
+        <button type="button" className={`btn sm ${post.reacted ? 'btn-dark' : 'btn-soft'}`} style={{ height: 44 }} aria-pressed={post.reacted} onClick={react}>
           <span className={pop ? 'nobi-bump' : ''} style={{ display: 'inline-flex' }}><Icon name="clap" size={18} /></span>
           Boa! {post.reactionsCount > 0 && <span>{post.reactionsCount}</span>}
         </button>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
-import { Avatar, BackButton, Chip, ErrorNote, Segmented } from '../components/ui.jsx';
+import { Avatar, BackButton, Chip, ErrorNote, SelectRow } from '../components/ui.jsx';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
@@ -102,12 +102,9 @@ export default function EditProfile() {
         </div>
       </section>
 
-      <section className="card stack gap-12">
-        <div className="row between gap-12">
-          <div className="stack"><span className="strong t-15">Estatísticas no perfil</span><span className="t-13 muted">sequência, consistência e mapa do mês</span></div>
-          <Segmented compact label="Quem vê as estatísticas" options={[['friends', 'Amigos'], ['public', 'Público']]} value={form.stats} onChange={(v) => set('stats', v)} />
-        </div>
-      </section>
+      <div className="row-group card" style={{ padding: '0 16px' }}>
+        <SelectRow label="Estatísticas no perfil" hint="sequência, consistência e mapa do mês" value={form.stats} onChange={(v) => set('stats', v)} options={[['friends', 'Amigos'], ['public', 'Público']]} />
+      </div>
       <ErrorNote error={error} />
       <Link to="/configuracoes" className="btn btn-ghost">Mais em Configurações <Icon name="chevron" size={18} /></Link>
     </div>

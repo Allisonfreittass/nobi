@@ -101,11 +101,20 @@ function PendingInvite() {
 
 export default function App() {
   usePrefetch();
+  const location = useLocation();
+  // Registrar é uma folha com rota própria por cima da tela de baixo; abrindo direto, a de baixo é o Feed
+  let background = location.state?.backgroundLocation;
+  if (location.pathname === '/registrar' && !background) background = { pathname: '/', search: '', hash: '', state: null, key: 'feed' };
   return (
     <>
     <PendingInvite />
     <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--nobi-bg)' }} aria-busy="true" />}>
-    <Routes>
+    {background && (
+      <Routes>
+        <Route path="/registrar" element={<Private><Register /></Private>} />
+      </Routes>
+    )}
+    <Routes location={background || location}>
       <Route path="/entrar" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="/redefinir-senha" element={<ResetPassword />} />
       <Route path="/termos" element={<Terms />} />
@@ -113,7 +122,6 @@ export default function App() {
       <Route path="/convite/:username" element={<Invite />} />
 
       {/* Telas cheias, sem menu */}
-      <Route path="/registrar" element={<Private><Register /></Private>} />
       <Route path="/conquista" element={<Private><Achievement /></Private>} />
       <Route path="/comecou/:id" element={<Private><Started /></Private>} />
 

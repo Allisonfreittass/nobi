@@ -45,6 +45,28 @@
   --nobi-mascot-cheek: #FF8A66;
   --nobi-mascot-outline: #D8D2C6;
 
+  /* Controles do sistema (switch, seleção): neutros. Coral só na ação principal e nas celebrações. */
+  --nobi-control-on: #141218;
+  --nobi-control-off: #D8D2C6;
+  --nobi-sheet-surface: rgba(255, 255, 255, 0.96);
+  --nobi-sheet-inset: 8px;          /* folha destacada das bordas */
+  --nobi-radius-sheet-floating: 34px;
+
+  /* Escala de texto em rem: acompanha o tamanho de fonte escolhido pela pessoa no sistema.
+     Nunca fixe font-size em px. Base = 16px do navegador. */
+  --nobi-text-xs: 0.75rem;     /* 12 */
+  --nobi-text-sm: 0.8125rem;   /* 13 */
+  --nobi-text-base: 0.875rem;  /* 14 */
+  --nobi-text-md: 0.9375rem;   /* 15 */
+  --nobi-text-lg: 1rem;        /* 16 */
+  --nobi-text-xl: 1.125rem;    /* 18 */
+  --nobi-text-2xl: 1.25rem;    /* 20 */
+  --nobi-text-3xl: 1.375rem;   /* 22 */
+  --nobi-text-4xl: 1.75rem;    /* 28 */
+  --nobi-text-5xl: 1.875rem;   /* 30 */
+  --nobi-text-6xl: 2.5rem;     /* 40 */
+  --nobi-text-display: 4rem;   /* 64 */
+
   /* Tipografia */
   --nobi-font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --nobi-font-body: Inter, system-ui, sans-serif;
@@ -86,7 +108,12 @@ body {
   background: var(--nobi-bg);
   color: var(--nobi-text);
   font-family: var(--nobi-font-body);
+  font-size: var(--nobi-text-lg);
+  -webkit-text-size-adjust: 100%;
 }
+
+/* Barra de abas flutuante e conteúdo respeitam a área segura do celular (PWA). */
+.nobi-safe-bottom { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 
 @keyframes nobi-bump { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
 @keyframes nobi-hop  { 0%, 100% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-18px) rotate(-3deg); } 60% { transform: translateY(-18px) rotate(3deg); } }

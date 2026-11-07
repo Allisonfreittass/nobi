@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Icon from './Icon.jsx';
 import { Avatar } from './ui.jsx';
 import { firstName } from '../lib/format.js';
@@ -7,10 +7,11 @@ const RING_LABEL = { golden: 'em sequência de 7+ dias', posted: 'postou hoje', 
 
 /** Anel dos amigos (DESIGN.md §8.7): dourado = sequência ≥ 7; brasa = postou hoje; cinza = não postou. */
 export default function FriendsRing({ ring }) {
+  const location = useLocation();
   return (
     <ul className="chips" style={{ listStyle: 'none', gap: 14, paddingTop: 6, paddingBottom: 4 }} aria-label="Amigos">
       <li>
-        <Link to="/registrar" className="stack center gap-6" style={{ width: 60 }}>
+        <Link to="/registrar" state={{ backgroundLocation: location }} className="stack center gap-6" style={{ width: 60 }}>
           <span style={{ width: 56, height: 56, borderRadius: 28, border: '2px dashed var(--nobi-toggle-off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="plus" />
           </span>
