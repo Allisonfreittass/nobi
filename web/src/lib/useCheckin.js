@@ -5,6 +5,7 @@ import { useShare } from './share.jsx';
 import { useSession } from './session.jsx';
 import { unitWord } from './format.js';
 import { afterCheckin } from './useLoad.js';
+import { useCelebrate, closedTheDay } from './celebrate.jsx';
 
 /** O que o servidor deve responder, aplicado já no toque. O servidor corrige se algo for diferente. */
 export function optimisticCheckin(goal, body = {}) {
@@ -40,6 +41,7 @@ export function useCheckin(onGoal) {
   const toast = useToast();
   const share = useShare();
   const { patchMe } = useSession();
+  const celebrate = useCelebrate();
 
   async function checkin(goal, body = {}) {
     onGoal?.(optimisticCheckin(goal, body));
@@ -55,6 +57,11 @@ export function useCheckin(onGoal) {
     patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
     if (r.celebration) {
       navigate('/conquista', { state: { celebration: r.celebration } });
+      return r;
+    }
+    if (closedTheDay(goal, r.goal)) {
+      // Todo dia concluído é uma comemoração
+      celebrate(r.goal, { checkinId: r.checkin.id, level: r.me.leveledUp ? r.me.level : null });
       return r;
     }
     const s = r.goal.streak;

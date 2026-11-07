@@ -394,3 +394,16 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 
 .lp-cta { padding: clamp(72px, 10vw, 140px) 0; border-top: 1px solid var(--nobi-border); }
 .lp-footer { padding: 28px 0 calc(32px + env(safe-area-inset-bottom)); border-top: 1px solid var(--nobi-border); }
+
+/* Comemoração do dia: cartão pequeno que sobe por baixo */
+.celebrate-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--nobi-nav-h) + 22px + env(safe-area-inset-bottom)); z-index: 55; display: flex; justify-content: center; padding: 0 12px; pointer-events: none; }
+@media (min-width: 1024px) { .celebrate-wrap { bottom: 28px; } }
+.celebrate {
+  pointer-events: auto; position: relative; width: 100%; max-width: 440px; display: flex; align-items: center; gap: 14px;
+  padding: 12px 10px 12px 12px; border-radius: 24px; background: var(--nobi-tinta); color: #FFFFFF;
+  box-shadow: 0 18px 40px -16px rgba(20, 18, 24, 0.6); animation: celebrate-in 420ms var(--nobi-ease-spring) both;
+}
+:root[data-theme='dark'] .celebrate { background: #2A2630; box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+.celebrate-art { position: relative; flex-shrink: 0; width: 72px; height: 72px; border-radius: 20px; background: var(--nobi-brasa); display: flex; align-items: flex-end; justify-content: center; overflow: visible; }
+.celebrate-share { background: var(--nobi-brasa); color: var(--nobi-tinta); height: 36px; min-height: 36px; padding: 0 14px; border-radius: 12px; }
+@keyframes celebrate-in { 0% { transform: translateY(40px) scale(0.92); opacity: 0; } 100% { transform: none; opacity: 1; } }

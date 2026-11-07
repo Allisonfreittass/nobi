@@ -7,6 +7,7 @@ import { useLoad, afterCheckin } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { useCheckin } from '../lib/useCheckin.js';
+import { useCelebrate, closedTheDay } from '../lib/celebrate.jsx';
 import { api } from '../lib/api.js';
 import { firstName, unitWord } from '../lib/format.js';
 
@@ -40,6 +41,7 @@ function Header({ g, seasonName }) {
 
 function Tasks({ g, onGoal }) {
   const toast = useToast();
+  const celebrate = useCelebrate();
   const [busy, setBusy] = useState(null);
   const done = new Set(g.shared.myTasksToday || []);
   async function flip(t) {
@@ -52,6 +54,7 @@ function Tasks({ g, onGoal }) {
         const r = await api(`/goals/${g.id}/checkins`, { method: 'POST', body: { taskKey: t.key } });
         onGoal(r.goal);
         afterCheckin(r.goal);
+        if (closedTheDay(g, r.goal)) celebrate(r.goal, { checkinId: r.checkin.id });
       }
     } catch (e) { toast(e.message); } finally { setBusy(null); }
   }

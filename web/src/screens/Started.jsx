@@ -113,10 +113,7 @@ export default function Started() {
       afterCheckin(r.goal);
       patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
       await tellFriends();
-      setTimeout(() => {
-        navigate('/metas', { replace: true });
-        toast(r.goal.status.periodDone ? 'Primeiro check-in feito. A sequência começou!' : 'Primeiro registro feito.');
-      }, 1100);
+      setTimeout(() => navigate('/metas', { replace: true }), 1300);
     } catch (e) {
       setGoal(before);
       toast(e.message);

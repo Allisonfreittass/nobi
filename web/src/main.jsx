@@ -6,6 +6,7 @@ import './lib/install.js'; // captura o convite de instalação do Chrome o quan
 import { SessionProvider } from './lib/session.jsx';
 import { ToastProvider } from './lib/toast.jsx';
 import { ShareProvider } from './lib/share.jsx';
+import { CelebrateProvider } from './lib/celebrate.jsx';
 import './styles/tokens.css';
 import './styles/app.css';
 import { APP_NAME } from './config.js';
@@ -18,7 +19,9 @@ createRoot(document.getElementById('root')).render(
       <SessionProvider>
         <ToastProvider>
           <ShareProvider>
-            <App />
+            <CelebrateProvider>
+              <App />
+            </CelebrateProvider>
           </ShareProvider>
         </ToastProvider>
       </SessionProvider>

@@ -9,6 +9,7 @@ import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, CATEGORY_ORDER } from '../lib/format.js';
 import PhotoPicker, { sendPostPhoto } from '../components/PhotoPicker.jsx';
+import { useCelebrate, closedTheDay } from '../lib/celebrate.jsx';
 
 function Stepper({ value, onChange, step, min, unit, label }) {
   return (
@@ -31,6 +32,7 @@ export default function Register() {
   const { state } = useLocation();
   const { me, patchMe } = useSession();
   const toast = useToast();
+  const celebrate = useCelebrate();
   const { data: allGoals, loading, error, reload } = useLoad('/goals');
   const goals = useMemo(() => (allGoals || []).filter((g) => !g.shared?.tasks?.length), [allGoals]);
 
@@ -88,6 +90,10 @@ export default function Register() {
       if (share) {
         await api('/posts', { method: 'POST', body: { checkinId: r.checkin.id, audience: aud, text: note.trim(), photo: await sendPostPhoto(photo) } });
         afterPost();
+      }
+      if (closedTheDay(goal, r.goal)) {
+        celebrate(r.goal, { checkinId: r.checkin.id, posted: share, level: r.me.leveledUp ? r.me.level : null });
+      } else if (share) {
         toast(aud === 'public' ? 'Registrado e publicado para todo mundo.' : 'Registrado e publicado para seus amigos.');
       } else {
         toast(r.me.leveledUp ? `Registrado. Subiu para o nível ${r.me.level}!` : 'Registrado. Conta nas suas sequências.');
