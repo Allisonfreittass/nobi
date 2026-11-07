@@ -12,6 +12,7 @@ import { uploads } from './routes/uploads.js';
 import { push, cron } from './routes/push.js';
 import { tasks } from './routes/tasks.js';
 import { metas } from './routes/metas.js';
+import { clubs, community, reports } from './routes/clubs.js';
 import { UPLOAD_DIR } from './services/storage.js';
 
 export function createApp() {
@@ -35,6 +36,9 @@ export function createApp() {
   app.use('/api/push', requireAuth, push);
   app.use('/api/tasks', requireAuth, tasks);
   app.use('/api/metas', requireAuth, metas);
+  app.use('/api/clubs', requireAuth, clubs);
+  app.use('/api/community', requireAuth, community);
+  app.use('/api/reports', requireAuth, reports);
   app.use('/api/cron', cron);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
   app.use(errorHandler);

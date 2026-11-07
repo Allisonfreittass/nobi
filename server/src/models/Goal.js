@@ -26,6 +26,9 @@ const goalSchema = new Schema({
       endsAt: { type: String },   // com endsAt = desafio
       seasonId: { type: Schema.Types.ObjectId, ref: 'Season' },
       tasks: [{ key: String, label: String, pts: Number }], // checklist opcional do desafio
+      clubId: { type: Schema.Types.ObjectId, ref: 'Club', default: null }, // desafio de clube
+      public: { type: Boolean, default: false }, // desafio da comunidade: qualquer pessoa entra
+      description: { type: String, default: '' },
     }, { _id: false }),
     default: null,
   },

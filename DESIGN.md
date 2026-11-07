@@ -84,7 +84,7 @@ golden = maxActiveStreakDays(user) >= 7;
 
 ## 7. Navegação e telas
 
-Barra inferior (celular): **Feed · Explorar · [+] Registrar · Metas · Perfil**. No PC: menu lateral com os mesmos itens + botão "Registrar" + widget "Sessão de foco".
+Barra inferior (celular): **Feed · Comunidade · Metas · Perfil** numa pílula flutuante + **[+] Registrar** separado (coral). "Comunidade" substitui o antigo "Explorar". No PC: menu lateral com os mesmos itens + botão "Registrar" + widget "Sessão de foco".
 
 | Tela | Arquivo de referência | Conteúdo essencial |
 |---|---|---|
@@ -100,9 +100,18 @@ Barra inferior (celular): **Feed · Explorar · [+] Registrar · Metas · Perfil
 | Editar perfil | `EditarPerfil.dc.html` | Foto, nome, @usuário (checagem), bio 120, interesses, estatísticas Amigos/Público |
 | Configurações | `Configuracoes.dc.html` | Notificações, privacidade, tema, semana, animações do Broto, conta, sair, excluir |
 | Desktop | `Desktop.dc.html` | Menu lateral, objetivos do dia, projeto com marcos, consistência 12 semanas, amigos e ranking |
+| Comunidade | `Comunidade.dc.html` | Busca, seletor **Desafios · Clubes**. Clubes: "Seus clubes", "Perto de você" (cidade), por interesse, botão Entrar (tinta). Desafios: destaque da temporada + lista com Participar |
+| Clube | `Clube.dc.html` | Cabeçalho na cor da categoria, membros e amigos dentro, Entrar/Membro, compartilhar, menu (regras, denunciar, sair). Abas **Feed · Desafios · Ranking · Membros**; post fixado; atalho para postar já como Público |
 
 Fluxo principal: Feed → [+] → Registrar → (se fechou marco) Conquista → Feed.
 Fluxo de novo objetivo: Metas → Novo → Criar objetivo → **Parabéns — novo hábito** → (check-in agora ou depois) → Metas.
+
+Regras da comunidade (clubes):
+- Só aparecem no clube os posts marcados como **Público** e da categoria do clube. Post de Amigos nunca vaza para clube.
+- MVP: clubes **oficiais e curados** (por interesse e por cidade) + **grupos privados de amigos**. Clube criado por qualquer pessoa só depois que a moderação estiver madura.
+- Moderação obrigatória desde o dia 1: denunciar post e pessoa, bloquear, regras fixadas, admins/moderadores, remover post, banir do clube.
+- Ranking do clube é semanal e zera no domingo (mesma lógica do desafio). Desafio do clube usa o mesmo modelo de `goals` com `shared`.
+- Entrar em clube não exige seguir ninguém; "Seguir" fica na lista de membros.
 
 Regras da tela de parabéns: aparece **toda vez** que um objetivo é criado (é o pico de motivação); o texto e o card usam os dados reais do objetivo; se hoje não é dia ativo, o botão secundário diz "Começar [próximo dia ativo]"; nada é postado se o toggle ficar desligado; com amigos, mostrar quem foi convidado.
 
@@ -234,12 +243,24 @@ Se um dia virar React Native: usar tab bar, sheets, alerts, switches e haptics d
 // follows
 { followerId, followeeId, status: 'pending'|'accepted', createdAt }
 
+// clubs
+{ _id, name, slug, category, city, kind: 'official'|'private', description, rules,
+  pinnedPostId, membersCount, createdBy, createdAt }
+
+// memberships
+{ clubId, userId, role: 'member'|'moderator'|'admin', status: 'active'|'banned', joinedAt }
+
+// reports
+{ _id, reporterId, targetType: 'post'|'user'|'comment', targetId, clubId, reason, status: 'open'|'done', createdAt }
+
+// posts ganha: clubIds: [ObjectId]  (só preenchido quando audience = 'public')
+
 // seasons / achievements
 { _id, name, startsAt, endsAt }
 { _id, userId, code, seasonId, earnedAt }
 ```
 
-Índices úteis: `tasks {userId, dueDate}`, `tasks {userId, priorityDate}`, `checkins {userId, date}`, `checkins {goalId, date}` único por usuário/dia, `posts {createdAt: -1}`, `follows {followerId, followeeId}` único.
+Índices úteis: `tasks {userId, dueDate}`, `tasks {userId, priorityDate}`, `checkins {userId, date}`, `checkins {goalId, date}` único por usuário/dia, `posts {createdAt: -1}`, `follows {followerId, followeeId}` único, `memberships {clubId, userId}` único, `posts {clubIds, createdAt: -1}`, `clubs {city, category}`.
 
 **O servidor calcula** sequência, nível, `golden` e ranking. O cliente nunca envia esses valores.
 

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Nobi — Comunidade</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#141218;text-decoration:none}a:hover{color:#141218}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5F0; color: #141218; font-family: Inter, sans-serif">
+  <div style="height: 844px; overflow-y: auto; padding: 52px 20px 120px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.02em">Comunidade</h1>
+      <button aria-label="Buscar clubes e desafios" style="width: 44px; height: 44px; border-radius: 22px; border: none; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+    </div>
+
+    <div role="tablist" aria-label="Seção" style="display: flex; padding: 4px; border-radius: 18px; background: #EEEAE2">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+        <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.s}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{isClubes}}" hint-placeholder-val="{{ true }}">
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 700">Seus clubes</h2>
+        <div style="display: flex; gap: 10px">
+          <a href="Clube.dc.html" style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+            <span style="width: 44px; height: 44px; border-radius: 14px; background: #6C4DFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5"></path></svg></span>
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 700; font-size: 14px">Leitores de BH</span><span style="font-size: 12px; color: #4A4752">3 posts novos</span></span>
+          </a>
+          <a href="Clube.dc.html" style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+            <span style="width: 44px; height: 44px; border-radius: 14px; background: #141218; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5M16 7l5 5-5 5"></path></svg></span>
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 700; font-size: 14px">Devs que treinam</span><span style="font-size: 12px; color: #4A4752">desafio ativo</span></span>
+          </a>
+        </div>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"></path><circle cx="12" cy="9" r="2.5"></circle></svg>
+          <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 700">Perto de você</h2>
+          <span style="font-size: 13px; color: #4A4752">Sul de Minas</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <sc-for list="{{clubs}}" as="c" hint-placeholder-count="4">
+            <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+              <span style="{{c.tile}}"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 800; color: #FFFFFF">{{c.initials}}</span></span>
+              <span style="font-weight: 700; font-size: 15px; line-height: 1.25; min-height: 38px">{{c.name}}</span>
+              <span style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #4A4752"><span>{{c.tags}}</span><span>{{c.place}}</span><span style="font-weight: 600; color: #141218">{{c.members}} membros</span></span>
+              <button onClick="{{c.toggle}}" aria-pressed="{{c.joined}}" style="{{c.btn}}">{{c.btnLabel}}</button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 700">Por interesse</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <a href="#" style="height: 44px; padding: 0 16px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 4px; background: #6C4DFF"></span>Leitura</a>
+          <a href="#" style="height: 44px; padding: 0 16px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 4px; background: #FF5B2E"></span>Corrida</a>
+          <a href="#" style="height: 44px; padding: 0 16px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 4px; background: #2E9C6A"></span>Idiomas</a>
+          <a href="#" style="height: 44px; padding: 0 16px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 4px; background: #141218"></span>Carreira</a>
+          <a href="#" style="height: 44px; padding: 0 16px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 4px; background: #3B82C4"></span>Hábitos</a>
+          <a href="#" style="height: 44px; padding: 0 16px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 4px; background: #E0457B"></span>Fé e devocional</a>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isDesafios}}" hint-placeholder-val="{{ false }}">
+      <a href="Desafio.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 24px; background: #6C4DFF; color: #FFFFFF">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase">Desafio da comunidade · Temporada Primavera</span>
+        <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 800; line-height: 1.1">Novembro sem tela depois das 22h</span>
+        <span style="font-size: 14px">1.240 participando · termina em 23 dias</span>
+        <span style="align-self: flex-start; margin-top: 4px; height: 40px; padding: 0 16px; border-radius: 20px; background: #FFFFFF; color: #141218; display: flex; align-items: center; font-weight: 700; font-size: 14px">Ver desafio</span>
+      </a>
+      <sc-for list="{{challenges}}" as="d" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 1px 0 #E9E5DC">
+          <span style="{{d.tile}}"></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span style="font-weight: 700; font-size: 15px">{{d.name}}</span><span style="font-size: 12px; color: #4A4752">{{d.meta}}</span></span>
+          <button onClick="{{d.toggle}}" aria-pressed="{{d.joined}}" style="{{d.btn}}">{{d.btnLabel}}</button>
+        </div>
+      </sc-for>
+    </sc-if>
+  </div>
+
+  <nav aria-label="Navegação principal" style="position: absolute; left: 12px; right: 12px; bottom: 18px; display: flex; align-items: center; gap: 10px">
+    <div style="flex: 1; height: 62px; border-radius: 31px; background: rgba(255,255,255,0.92); box-shadow: 0 10px 30px -12px rgba(20,18,24,0.35), inset 0 0 0 1px #E9E5DC; display: flex; align-items: center; justify-content: space-around; padding: 0 6px">
+      <a href="Feed.dc.html" aria-label="Feed" style="width: 60px; height: 50px; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10px; font-weight: 600; color: #4A4752"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#4A4752" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Feed</a>
+      <a href="Comunidade.dc.html" aria-label="Comunidade" aria-current="page" style="width: 76px; height: 50px; border-radius: 25px; background: #F0EDE6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10px; font-weight: 700; color: #141218"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"></path></svg>Comunidade</a>
+      <a href="Objetivos.dc.html" aria-label="Metas" style="width: 60px; height: 50px; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10px; font-weight: 600; color: #4A4752"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#4A4752" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1.5" fill="#4A4752"></circle></svg>Metas</a>
+      <a href="Perfil.dc.html" aria-label="Perfil" style="width: 60px; height: 50px; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10px; font-weight: 600; color: #4A4752"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#4A4752" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>Perfil</a>
+    </div>
+    <a href="Registrar.dc.html" aria-label="Registrar atividade" style="width: 62px; height: 62px; border-radius: 31px; background: #FF5B2E; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 24px -10px rgba(255,91,46,0.8)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#141218" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'clubes', joined: {}, dj: { d1: true } }; }
+  renderVals() {
+    const s = this.state;
+    const tabs = [['desafios', 'Desafios'], ['clubes', 'Clubes']].map((t) => {
+      const on = s.tab === t[0];
+      return { label: t[1], on: on, pick: () => this.setState({ tab: t[0] }),
+        s: 'flex: 1; height: 40px; border-radius: 14px; border: none; font: 600 14px Inter, sans-serif; color: #141218; ' + (on ? 'background: #FFFFFF; box-shadow: 0 1px 3px rgba(20,18,24,0.12);' : 'background: transparent;') };
+    });
+    const btn = (joined) => 'height: 44px; border-radius: 22px; border: none; font: 700 14px Inter, sans-serif; transition: background 140ms; ' + (joined ? 'background: #F0EDE6; color: #141218;' : 'background: #141218; color: #FFFFFF;');
+    const clubDefs = [
+      ['c1', 'Corrida Sul de Minas', 'CS', '#FF5B2E', 'Corrida · Treino', 'Varginha, MG', '1.524'],
+      ['c2', 'Inglês do zero', 'IZ', '#2E9C6A', 'Idiomas · Estudo', 'Online · Brasil', '3.871'],
+      ['c3', 'Madrugadores 5h', 'M5', '#3B82C4', 'Hábitos · Rotina', 'Três Corações, MG', '612'],
+      ['c4', 'Projetos de fim de semana', 'PF', '#141218', 'Carreira · Projetos', 'Lavras, MG', '448']
+    ];
+    const clubs = clubDefs.map((d) => {
+      const j = !!s.joined[d[0]];
+      return { name: d[1], initials: d[2], tags: d[4], place: d[5], members: d[6], joined: j,
+        toggle: () => this.setState({ joined: Object.assign({}, s.joined, { [d[0]]: !j }) }),
+        btnLabel: j ? 'Membro ✓' : 'Entrar', btn: btn(j),
+        tile: 'width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: ' + d[3] };
+    });
+    const chDefs = [
+      ['d1', 'Clube do livro de novembro', 'Leitores de BH · 318 participando', '#6C4DFF'],
+      ['d2', '100 km em 30 dias', 'Corrida Sul de Minas · 842 participando', '#FF5B2E'],
+      ['d3', '21 dias de inglês', 'Inglês do zero · 1.105 participando', '#2E9C6A']
+    ];
+    const challenges = chDefs.map((d) => {
+      const j = !!s.dj[d[0]];
+      return { name: d[1], meta: d[2], joined: j,
+        toggle: () => this.setState({ dj: Object.assign({}, s.dj, { [d[0]]: !j }) }),
+        btnLabel: j ? 'Dentro ✓' : 'Participar', btn: btn(j) + ' padding: 0 14px; flex-shrink: 0;',
+        tile: 'width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; background: ' + d[3] };
+    });
+    return { tabs: tabs, isClubes: s.tab === 'clubes', isDesafios: s.tab === 'desafios', clubs: clubs, challenges: challenges };
+  }
+}
+</script>
+</body>
+</html>

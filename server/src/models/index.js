@@ -12,3 +12,6 @@ export { PushSubscription } from './PushSubscription.js';
 export { PushLog } from './PushLog.js';
 export { ShieldUse } from './ShieldUse.js';
 export { Task } from './Task.js';
+export { Club } from './Club.js';
+export { Membership } from './Membership.js';
+export { Report } from './Report.js';

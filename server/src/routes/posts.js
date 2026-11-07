@@ -8,6 +8,7 @@ import { computeStreak } from '../services/streaks.js';
 import { weekStartsOn } from '../services/progress.js';
 import { isOurImage, deleteImages } from '../services/storage.js';
 import { notify } from '../services/push.js';
+import { clubIdsForPost } from '../services/clubs.js';
 import { ensureShields } from '../services/shields.js';
 import { social } from '../services/pushMessages.js';
 
@@ -126,9 +127,11 @@ posts.post('/', async (req, res) => {
     kind = 'milestone';
     title = `Marco: ${String(b.celebration.title || '').slice(0, 80)}`;
   }
+  // Público entra nos clubes da categoria em que a pessoa é membro; Amigos nunca vaza para clube
+  const clubIds = b.audience === 'public' ? await clubIdsForPost(req.user._id, goal.category) : [];
   const post = await Post.create({
     userId: req.user._id, goalId: goal._id, checkinId: checkin?._id, audience: b.audience,
-    kind, category: goal.category, title, metrics, text, photo, date: req.today,
+    kind, category: goal.category, title, metrics, text, photo, date: req.today, clubIds,
   });
   const earned = await award(req.user._id, 'primeiro-post');
   if (kind === 'milestone' && title) {

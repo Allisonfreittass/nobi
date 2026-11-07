@@ -14,6 +14,7 @@ const userSchema = new Schema({
   avatarUrl: { type: String, default: '' }, // '' = inicial, 'broto' = avatar do Broto, data:/https: = foto
   avatarColor: { type: String, default: '#FFD8C7' },
   interests: { type: [String], default: [] },
+  city: { type: String, default: '', maxlength: 60 }, // para "Perto de você" na Comunidade
   xp: { type: Number, default: 0 },
   level: { type: Number, default: 1 },
   privacy: {

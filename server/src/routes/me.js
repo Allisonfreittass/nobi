@@ -7,7 +7,7 @@ import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
 import { weeklySummary } from '../services/weekly.js';
 import { ensureShields } from '../services/shields.js';
-import { ShieldUse, Task } from '../models/index.js';
+import { ShieldUse, Task, Membership, Report } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
@@ -22,6 +22,7 @@ export async function meView(user, today) {
     hasPassword: Boolean(user.passwordHash),
     bio: user.bio,
     interests: user.interests,
+    city: user.city || '',
     xp: user.xp,
     levelProgress: (user.xp % 100) / 100,
     privacy: user.privacy,
@@ -75,6 +76,7 @@ me.patch('/', async (req, res) => {
     u.username = name;
   }
   if (b.bio !== undefined) u.bio = String(b.bio).slice(0, 120);
+  if (b.city !== undefined) u.city = String(b.city).trim().slice(0, 60);
   if (Array.isArray(b.interests)) u.interests = b.interests.map(String).slice(0, 12);
   const oldAvatar = u.avatarUrl;
   if (b.avatarUrl !== undefined) {
@@ -189,6 +191,8 @@ me.delete('/', async (req, res) => {
     XpGrant.deleteMany({ userId: id }),
     ShieldUse.deleteMany({ userId: id }),
     Task.deleteMany({ userId: id }),
+    Membership.deleteMany({ userId: id }),
+    Report.deleteMany({ reporterId: id }),
     User.updateMany({ blocked: id }, { $pull: { blocked: id } }),
   ]);
   // Objetivos com amigos: passa a posse para quem ficou; apaga os que ficaram sem ninguém

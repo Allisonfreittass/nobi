@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Goal, Checkin, User, Streak, Post, Comment, Task, CATEGORIES, KINDS } from '../models/index.js';
+import { Goal, Checkin, User, Streak, Post, Comment, Task, Membership, CATEGORIES, KINDS } from '../models/index.js';
 import { deleteImages } from '../services/storage.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
 import { addDays, weekStart, weekday, isDateStr } from '../lib/dates.js';
@@ -23,8 +23,11 @@ const isInvited = (g, uid) => g.shared?.invited?.some((p) => String(p) === Strin
 async function loadGoal(id, user, { allowInvited = false } = {}) {
   const g = await Goal.findById(id);
   if (!g || g.archivedAt) throw notFound('Objetivo não encontrado.');
-  if (!isMember(g, user._id) && !(allowInvited && isInvited(g, user._id))) throw notFound('Objetivo não encontrado.');
-  return g;
+  if (isMember(g, user._id) || (allowInvited && isInvited(g, user._id))) return g;
+  // Desafio aberto: dá para ver antes de entrar (comunidade, ou clube em que a pessoa está)
+  if (allowInvited && g.shared?.public) return g;
+  if (allowInvited && g.shared?.clubId && await Membership.exists({ clubId: g.shared.clubId, userId: user._id, status: 'active' })) return g;
+  throw notFound('Objetivo não encontrado.');
 }
 
 function parseActiveDays(v) {
@@ -190,6 +193,24 @@ goals.post('/:id/join', async (req, res) => {
   await award(req.user._id, 'juntos');
   if (g.shared.endsAt) await award(req.user._id, 'desafio');
   await notify(g.ownerId, { ...social.joined(req.user.name, g.title), url: `/desafios/${g._id}` }, { type: 'challenges', dedupeKey: `ch:join:${g._id}:${req.user._id}` });
+  res.json(await goalView(g.toObject(), req.user, req.today));
+});
+
+// Desafio da comunidade (público) ou de clube (membros): entra sem convite
+goals.post('/:id/participate', async (req, res) => {
+  const g = await Goal.findById(req.params.id);
+  if (!g || g.archivedAt || !g.shared) throw notFound('Desafio não encontrado.');
+  if (g.shared.endsAt && g.shared.endsAt < req.today) throw bad('Este desafio já terminou.');
+  if (!g.shared.public) {
+    if (!g.shared.clubId) throw forbidden('Este desafio é só para convidados.');
+    const m = await Membership.findOne({ clubId: g.shared.clubId, userId: req.user._id, status: 'active' }).lean();
+    if (!m) throw forbidden('Entre no clube para participar.');
+  }
+  if (!g.shared.participants.some((p) => String(p) === String(req.user._id))) {
+    g.shared.participants.push(req.user._id);
+    await g.save();
+    await award(req.user._id, 'desafio');
+  }
   res.json(await goalView(g.toObject(), req.user, req.today));
 });
 
