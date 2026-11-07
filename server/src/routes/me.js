@@ -6,7 +6,7 @@ import { streakSummary, profileStats } from '../services/progress.js';
 import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
 import { publicUser } from '../services/social.js';
-import { decodeDataUrl, isOurImage, saveImage } from '../services/storage.js';
+import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
 export const me = Router();
 
@@ -65,6 +65,7 @@ me.patch('/', async (req, res) => {
   }
   if (b.bio !== undefined) u.bio = String(b.bio).slice(0, 120);
   if (Array.isArray(b.interests)) u.interests = b.interests.map(String).slice(0, 12);
+  const oldAvatar = u.avatarUrl;
   if (b.avatarUrl !== undefined) {
     let a = String(b.avatarUrl);
     if (a.startsWith('data:')) a = await saveImage(decodeDataUrl(a), 'avatars', u._id); // versões antigas do app
@@ -77,6 +78,7 @@ me.patch('/', async (req, res) => {
     if (b.prefs.notify) Object.assign(u.prefs.notify, pick(b.prefs.notify, ['checkin', 'social', 'challenges']));
   }
   await u.save();
+  if (oldAvatar && oldAvatar !== u.avatarUrl) await deleteImages([oldAvatar]); // foto antiga não fica guardada
   // Quem deixa de exigir aprovação aceita os pedidos pendentes
   if (b.privacy?.approveFollowers === false) await Follow.updateMany({ followeeId: u._id, status: 'pending' }, { status: 'accepted' });
   res.json(await meView(u, req.today));
@@ -142,6 +144,13 @@ me.delete('/', async (req, res) => {
   const { password } = req.body || {};
   if (req.user.passwordHash && !(await bcrypt.compare(String(password || ''), req.user.passwordHash))) {
     throw new HttpError(401, 'Senha não confere.');
+  }
+  // Fotos primeiro: se o armazenamento falhar, a conta ainda existe e a pessoa pode tentar de novo
+  try {
+    await deleteUserImages(id);
+  } catch (e) {
+    console.error('[blob] exclusão de conta:', e.message);
+    throw new HttpError(503, 'Não deu para apagar suas fotos agora. Tente de novo em instantes.');
   }
   const posts = await Post.find({ userId: id }, { _id: 1 }).lean();
   await Promise.all([

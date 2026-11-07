@@ -143,7 +143,7 @@ export default function Login() {
             ) : (
               <>Ainda não tem conta? <button type="button" className="btn-link strong" style={{ border: 'none', background: 'none', minHeight: 44, color: 'var(--nobi-text)' }} onClick={() => go('signup')}>Criar conta</button></>
             )}
-            <br />Ao continuar, você concorda com os <Link to="/termos" style={{ textDecoration: 'underline' }}>Termos e a Política de Privacidade</Link>.
+            <br />Ao continuar, você concorda com os <Link to="/termos" style={{ textDecoration: 'underline' }}>Termos de Uso</Link> e a <Link to="/privacidade" style={{ textDecoration: 'underline' }}>Política de Privacidade</Link>.
           </p>
         </div>
       </div>

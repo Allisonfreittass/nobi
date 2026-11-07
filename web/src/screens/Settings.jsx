@@ -77,7 +77,7 @@ function DeleteSheet({ open, onClose }) {
   return (
     <Sheet open={open} onClose={onClose} title="Excluir conta">
       <form className="stack gap-12" onSubmit={remove}>
-        <p className="t-14 secondary">Isso apaga seu perfil, objetivos, registros, posts e comentários. Não dá para desfazer. Se quiser guardar uma cópia, exporte seus dados antes.</p>
+        <p className="t-14 secondary">Isso apaga seu perfil, objetivos, registros, posts, comentários e fotos. Não dá para desfazer. Se quiser guardar uma cópia, exporte seus dados antes.</p>
         {me.hasPassword && <label className="field">Sua senha<input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>}
         <label className="field">Digite EXCLUIR para confirmar<input className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoCapitalize="characters" /></label>
         <ErrorNote error={error} />
@@ -187,7 +187,8 @@ export default function Settings() {
       <Group title="Conta">
         <Row as="button" type="button" label="E-mail e senha" desc={me.email || undefined} onClick={() => setSheet('account')}><Icon name="chevron" size={18} /></Row>
         <Row as="button" type="button" label="Exportar meus dados" desc="arquivo com tudo que é seu" onClick={exportData}><Icon name="download" size={18} /></Row>
-        <Row as={Link} to="/termos" label="Ajuda e termos"><Icon name="chevron" size={18} /></Row>
+        <Row as={Link} to="/termos" label="Termos de uso"><Icon name="chevron" size={18} /></Row>
+        <Row as={Link} to="/privacidade" label="Política de privacidade"><Icon name="chevron" size={18} /></Row>
         <Row as="button" type="button" label="Sair" onClick={() => { signOut(); navigate('/entrar', { replace: true }); }}><Icon name="logout" size={18} /></Row>
       </Group>
       <button type="button" className="btn btn-danger block" onClick={() => setSheet('delete')}>Excluir conta</button>

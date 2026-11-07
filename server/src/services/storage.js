@@ -59,3 +59,43 @@ export function isOurImage(url) {
   if (/^\/api\/uploads\/(avatars|posts)\/[a-f0-9]{24}\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(u)) return true;
   return /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/(avatars|posts)\/[a-f0-9]{24}\/[a-f0-9-]{36}\.(jpg|png|webp)$/i.test(u);
 }
+
+const pathFromUrl = (url) => {
+  const u = String(url);
+  if (u.startsWith('/api/uploads/')) return u.slice('/api/uploads/'.length);
+  try { return decodeURIComponent(new URL(u).pathname.slice(1)); } catch { return null; }
+};
+
+/** Apaga fotos nossas (troca de foto de perfil, post apagado). Falha não interrompe a ação principal. */
+export async function deleteImages(urls) {
+  const ours = urls.filter(isOurImage);
+  if (!ours.length) return;
+  try {
+    if (blobConfigured()) {
+      const { del } = await import('@vercel/blob');
+      await del(ours);
+    } else {
+      await Promise.all(ours.map((u) => fs.rm(path.join(UPLOAD_DIR, pathFromUrl(u)), { force: true })));
+    }
+  } catch (e) {
+    console.error('[blob] não apagou:', e.message);
+  }
+}
+
+/** Apaga todas as fotos de um usuário (exclusão de conta), inclusive envios que nunca foram usados. */
+export async function deleteUserImages(userId) {
+  const prefixes = [`avatars/${userId}/`, `posts/${userId}/`];
+  if (blobConfigured()) {
+    const { list, del } = await import('@vercel/blob');
+    for (const prefix of prefixes) {
+      let cursor;
+      do {
+        const page = await list({ prefix, cursor, limit: 1000 });
+        if (page.blobs.length) await del(page.blobs.map((b) => b.url));
+        cursor = page.hasMore ? page.cursor : undefined;
+      } while (cursor);
+    }
+    return;
+  }
+  await Promise.all(prefixes.map((p) => fs.rm(path.join(UPLOAD_DIR, p), { recursive: true, force: true })));
+}

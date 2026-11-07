@@ -407,3 +407,13 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .celebrate-art { position: relative; flex-shrink: 0; width: 72px; height: 72px; border-radius: 20px; background: var(--nobi-brasa); display: flex; align-items: flex-end; justify-content: center; overflow: visible; }
 .celebrate-share { background: var(--nobi-brasa); color: var(--nobi-tinta); height: 36px; min-height: 36px; padding: 0 14px; border-radius: 12px; }
 @keyframes celebrate-in { 0% { transform: translateY(40px) scale(0.92); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+/* Páginas legais */
+.legal-text p, .legal-text li { font-size: 15px; line-height: 1.65; color: var(--nobi-text-secondary); }
+.legal-text strong { color: var(--nobi-text); }
+.legal-text ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.legal-text a { text-decoration: underline; text-underline-offset: 3px; color: var(--nobi-text); }
+.legal-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.legal-table th, .legal-table td { text-align: left; vertical-align: top; padding: 10px 8px; border-top: 1px solid var(--nobi-border); line-height: 1.5; }
+.legal-table th { font-weight: 700; color: var(--nobi-text); }
+.legal-table td { color: var(--nobi-text-secondary); }

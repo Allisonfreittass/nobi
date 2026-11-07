@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 // Telas menos usadas baixam sob demanda; depois que o app abre, baixam em segundo plano
 const loadResetPassword = () => import('./screens/ResetPassword.jsx');
 const loadTerms = () => import('./screens/Terms.jsx');
+const loadPrivacy = () => import('./screens/Privacy.jsx');
 const loadExplore = () => import('./screens/Explore.jsx');
 const loadAchievement = () => import('./screens/Achievement.jsx');
 const loadNewGoal = () => import('./screens/NewGoal.jsx');
@@ -24,6 +25,7 @@ const loadInvite = () => import('./screens/Invite.jsx');
 const loadStarted = () => import('./screens/Started.jsx');
 const ResetPassword = lazy(loadResetPassword);
 const Terms = lazy(loadTerms);
+const Privacy = lazy(loadPrivacy);
 const Explore = lazy(loadExplore);
 const Achievement = lazy(loadAchievement);
 const NewGoal = lazy(loadNewGoal);
@@ -36,7 +38,7 @@ const Challenges = lazy(loadChallenges);
 const Notifications = lazy(loadNotifications);
 const Invite = lazy(loadInvite);
 const Started = lazy(loadStarted);
-const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted];
+const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy];
 function usePrefetch() {
   useEffect(() => {
     const go = () => LAZY.forEach((l) => l().catch(() => {}));
@@ -103,7 +105,7 @@ export default function App() {
       <Route path="/entrar" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="/redefinir-senha" element={<ResetPassword />} />
       <Route path="/termos" element={<Terms />} />
-      <Route path="/privacidade" element={<Terms />} />
+      <Route path="/privacidade" element={<Privacy />} />
       <Route path="/convite/:username" element={<Invite />} />
 
       {/* Telas cheias, sem menu */}

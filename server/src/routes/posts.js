@@ -6,7 +6,7 @@ import { friendIds, followingIds, blockedIds, publicUser, relation, allowed } fr
 import { award } from '../services/achievements.js';
 import { computeStreak } from '../services/streaks.js';
 import { weekStartsOn } from '../services/progress.js';
-import { isOurImage } from '../services/storage.js';
+import { isOurImage, deleteImages } from '../services/storage.js';
 
 export const posts = Router();
 
@@ -126,6 +126,7 @@ posts.delete('/:id', async (req, res) => {
   if (!p) throw notFound();
   await Comment.deleteMany({ postId: p._id });
   await p.deleteOne();
+  if (p.photo?.url) await deleteImages([p.photo.url]);
   res.json({ ok: true });
 });
 
