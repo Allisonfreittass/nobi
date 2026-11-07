@@ -63,8 +63,8 @@ export default function GoalCard({ goal, meId, onChange, compact }) {
     if (act.kind === 'link') return navigate(act.to);
     setBusy(true);
     try {
-      if (act.kind === 'undo') await undo(g);
-      else if (!(act.done && g.kind === 'count')) await checkin(g, act.body);
+      if (act.kind === 'undo') await undo(goal);
+      else if (!(act.done && g.kind === 'count')) await checkin({ ...goal, meId }, act.body);
     } catch (e) { toast(e.message); } finally { setBusy(false); }
   }
 

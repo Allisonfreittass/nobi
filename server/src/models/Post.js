@@ -15,6 +15,7 @@ const postSchema = new Schema({
     minutes: Number, pages: Number, km: Number, deltaVsLastMonth: Number, streak: Number, streakUnit: String,
   },
   text: { type: String, default: '', maxlength: 500 },
+  photo: { type: new Schema({ url: String, w: Number, h: Number }, { _id: false }), default: null },
   date: { type: String }, // 'YYYY-MM-DD' local de quem postou (anel "postou hoje")
   reactions: [{ userId: { type: Schema.Types.ObjectId, ref: 'User' }, type: { type: String, default: 'boa' }, at: { type: Date, default: Date.now }, _id: false }],
   commentsCount: { type: Number, default: 0 },

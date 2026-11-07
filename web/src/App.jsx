@@ -1,29 +1,53 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Broto from './components/Broto.jsx';
 import { useSession } from './lib/session.jsx';
 import Login from './screens/Login.jsx';
-import ResetPassword from './screens/ResetPassword.jsx';
-import Terms from './screens/Terms.jsx';
 import Landing from './screens/Landing.jsx';
-import Invite from './screens/Invite.jsx';
 import { useEffect } from 'react';
+
+// Telas menos usadas baixam sob demanda; depois que o app abre, baixam em segundo plano
+const loadResetPassword = () => import('./screens/ResetPassword.jsx');
+const loadTerms = () => import('./screens/Terms.jsx');
+const loadExplore = () => import('./screens/Explore.jsx');
+const loadAchievement = () => import('./screens/Achievement.jsx');
+const loadNewGoal = () => import('./screens/NewGoal.jsx');
+const loadGoalDetail = () => import('./screens/GoalDetail.jsx');
+const loadProfile = () => import('./screens/Profile.jsx');
+const loadEditProfile = () => import('./screens/EditProfile.jsx');
+const loadSettings = () => import('./screens/Settings.jsx');
+const loadChallenge = () => import('./screens/Challenge.jsx');
+const loadChallenges = () => import('./screens/Challenges.jsx');
+const loadNotifications = () => import('./screens/Notifications.jsx');
+const loadInvite = () => import('./screens/Invite.jsx');
+const ResetPassword = lazy(loadResetPassword);
+const Terms = lazy(loadTerms);
+const Explore = lazy(loadExplore);
+const Achievement = lazy(loadAchievement);
+const NewGoal = lazy(loadNewGoal);
+const GoalDetail = lazy(loadGoalDetail);
+const Profile = lazy(loadProfile);
+const EditProfile = lazy(loadEditProfile);
+const Settings = lazy(loadSettings);
+const Challenge = lazy(loadChallenge);
+const Challenges = lazy(loadChallenges);
+const Notifications = lazy(loadNotifications);
+const Invite = lazy(loadInvite);
+const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite];
+function usePrefetch() {
+  useEffect(() => {
+    const go = () => LAZY.forEach((l) => l().catch(() => {}));
+    const id = 'requestIdleCallback' in window ? window.requestIdleCallback(go, { timeout: 4000 }) : setTimeout(go, 2500);
+    return () => ('cancelIdleCallback' in window ? window.cancelIdleCallback(id) : clearTimeout(id));
+  }, []);
+}
 import { acceptPendingInvite } from './lib/invite.js';
 import { isStandalone } from './lib/install.js';
 import { useToast } from './lib/toast.jsx';
 import Feed from './screens/Feed.jsx';
-import Explore from './screens/Explore.jsx';
 import Register from './screens/Register.jsx';
-import Achievement from './screens/Achievement.jsx';
 import Goals from './screens/Goals.jsx';
-import NewGoal from './screens/NewGoal.jsx';
-import GoalDetail from './screens/GoalDetail.jsx';
-import Profile from './screens/Profile.jsx';
-import EditProfile from './screens/EditProfile.jsx';
-import Settings from './screens/Settings.jsx';
-import Challenge from './screens/Challenge.jsx';
-import Challenges from './screens/Challenges.jsx';
-import Notifications from './screens/Notifications.jsx';
 
 function Splash() {
   const { bootError, refresh } = useSession();
@@ -68,9 +92,11 @@ function PendingInvite() {
 }
 
 export default function App() {
+  usePrefetch();
   return (
     <>
     <PendingInvite />
+    <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--nobi-bg)' }} aria-busy="true" />}>
     <Routes>
       <Route path="/entrar" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="/redefinir-senha" element={<ResetPassword />} />
@@ -101,6 +127,7 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
     </>
   );
 }

@@ -5,26 +5,9 @@ import { Avatar, BackButton, Chip, ErrorNote, Segmented } from '../components/ui
 import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
+import { uploadImage } from '../lib/image.js';
 
 const INTERESTS = ['Leitura', 'Corrida', 'Inglês', 'Projeto pessoal', 'Musculação', 'Meditação', 'Carreira', 'Hábitos', 'Estudos', 'Escrita', 'Música', 'Alimentação'];
-
-/** Reduz a foto para 256 px no próprio aparelho antes de enviar. */
-function resizeImage(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const size = 256;
-      const c = document.createElement('canvas');
-      c.width = size; c.height = size;
-      const s = Math.min(img.width, img.height);
-      c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
-      resolve(c.toDataURL('image/jpeg', 0.85));
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => reject(new Error('Não deu para abrir essa imagem.'));
-    img.src = URL.createObjectURL(file);
-  });
-}
 
 export default function EditProfile() {
   const { me, setMe } = useSession();
@@ -51,11 +34,13 @@ export default function EditProfile() {
     return () => clearTimeout(t);
   }, [form.username, me.username]);
 
+  const [uploading, setUploading] = useState(false);
   async function onFile(e) {
     const f = e.target.files?.[0];
-    if (!f) return;
-    try { set('avatarUrl', await resizeImage(f)); } catch (err) { toast(err.message); }
     e.target.value = '';
+    if (!f) return;
+    setUploading(true);
+    try { set('avatarUrl', (await uploadImage(f, 'avatar')).url); } catch (err) { toast(err.message); } finally { setUploading(false); }
   }
 
   async function save() {
@@ -78,18 +63,18 @@ export default function EditProfile() {
       <header className="screen-head">
         <BackButton />
         <h1 className="title t-20">Editar perfil</h1>
-        <button type="button" className="btn btn-primary sm" style={{ height: 44 }} onClick={save} disabled={busy || check.state !== 'ok' || !form.name.trim()}>Salvar</button>
+        <button type="button" className="btn btn-primary sm" style={{ height: 44 }} onClick={save} disabled={busy || uploading || check.state !== 'ok' || !form.name.trim()}>Salvar</button>
       </header>
 
       <section className="stack center gap-10">
         <span style={{ width: 96, height: 96, borderRadius: 32, overflow: 'hidden', display: 'inline-flex' }}><Avatar user={preview} size={96} className="profile-avatar" /></span>
         <span className="t-13 muted">Foto ou avatar do Broto</span>
         <div className="row gap-8 wrap" style={{ justifyContent: 'center' }}>
-          <button type="button" className="btn btn-outline sm" onClick={() => fileRef.current?.click()}><Icon name="camera" size={17} /> Foto</button>
+          <button type="button" className="btn btn-outline sm" disabled={uploading} onClick={() => fileRef.current?.click()}><Icon name="camera" size={17} /> {uploading ? 'Enviando…' : 'Foto'}</button>
           <button type="button" className="btn btn-outline sm" aria-pressed={form.avatarUrl === 'broto'} onClick={() => set('avatarUrl', 'broto')}>Avatar do Broto</button>
           {form.avatarUrl && <button type="button" className="btn btn-ghost sm" onClick={() => set('avatarUrl', '')}>Usar inicial</button>}
         </div>
-        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFile} aria-label="Escolher foto" />
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} aria-label="Escolher foto" />
       </section>
 
       <label className="field">Nome<input className="input" value={form.name} maxLength={60} onChange={(e) => set('name', e.target.value)} autoComplete="name" /></label>

@@ -6,6 +6,7 @@ import { friendIds, followingIds, blockedIds, publicUser, relation, allowed } fr
 import { award } from '../services/achievements.js';
 import { computeStreak } from '../services/streaks.js';
 import { weekStartsOn } from '../services/progress.js';
+import { isOurImage } from '../services/storage.js';
 
 export const posts = Router();
 
@@ -37,6 +38,7 @@ export async function hydratePosts(list, meId) {
       goalTitle: g.get(String(p.goalId)) || null,
       metrics: p.metrics || {},
       text: p.text,
+      photo: p.photo || null,
       reactionsCount: p.reactions.length,
       reacted: p.reactions.some((x) => String(x.userId) === String(meId)),
       reactorNames: others.slice(-2).map((x) => r.get(String(x.userId))).filter(Boolean),
@@ -63,6 +65,12 @@ posts.post('/', async (req, res) => {
   const b = req.body || {};
   if (!AUDIENCES.includes(b.audience)) throw bad('Escolha Amigos ou Público.');
   const text = String(b.text || '').slice(0, 500);
+  let photo = null;
+  if (b.photo) {
+    if (!isOurImage(b.photo.url)) throw bad('Foto inválida.');
+    const dim = (n) => Math.min(10000, Math.max(1, Math.round(Number(n) || 1)));
+    photo = { url: b.photo.url, w: dim(b.photo.w), h: dim(b.photo.h) };
+  }
   let goal = null;
   let checkin = null;
   if (b.checkinId) {
@@ -101,7 +109,7 @@ posts.post('/', async (req, res) => {
   }
   const post = await Post.create({
     userId: req.user._id, goalId: goal._id, checkinId: checkin?._id, audience: b.audience,
-    kind, category: goal.category, title, metrics, text, date: req.today,
+    kind, category: goal.category, title, metrics, text, photo, date: req.today,
   });
   const earned = await award(req.user._id, 'primeiro-post');
   const [view] = await hydratePosts([post.toObject()], req.user._id);

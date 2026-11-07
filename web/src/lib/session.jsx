@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, getToken, setToken } from './api.js';
+import { clearLoadCache } from './useLoad.js';
 
 const SessionCtx = createContext(null);
 
@@ -27,7 +28,7 @@ export function SessionProvider({ children }) {
 
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => {
-    const out = () => { setToken(null); setMe(null); };
+    const out = () => { clearLoadCache(); setToken(null); setMe(null); };
     window.addEventListener('nobi:logout', out);
     return () => window.removeEventListener('nobi:logout', out);
   }, []);
@@ -45,8 +46,8 @@ export function SessionProvider({ children }) {
     refresh,
     next,
     bootError,
-    signIn(token, user, to) { setToken(token); setNext(to || null); setMe(user); },
-    signOut() { setToken(null); setMe(null); },
+    signIn(token, user, to) { clearLoadCache(); setToken(token); setNext(to || null); setMe(user); },
+    signOut() { clearLoadCache(); setToken(null); setMe(null); },
     patchMe: (patch) => setMe((m) => (m ? { ...m, ...patch } : m)),
   }), [me, refresh, next, bootError]);
 

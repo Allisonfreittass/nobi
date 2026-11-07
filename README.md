@@ -44,6 +44,9 @@ Conta de demonstração: `rafalima@nobi.dev` / `nobi1234` (também `marina`, `ca
 - **Notificações:** calculadas na hora, dentro do app (sem push ainda). O lembrete aparece uma vez por dia, depois do horário escolhido, só se faltar algo.
 - **Tema escuro:** não estava no design; foi derivado dos tokens (a cor "Tinta" de objetivo vira cinza no escuro).
 
+### Fotos
+Foto de perfil e foto nos posts ficam no **Vercel Blob** (público), nunca no banco. O app reduz a imagem no aparelho (perfil 256 px, post até 1440 px) e o servidor confere os bytes (só JPG, PNG ou WebP). Em produção é preciso a variável `BLOB_READ_WRITE_TOKEN`, criada ao ligar um Blob Store ao projeto na Vercel. Em desenvolvimento, sem o token, as fotos vão para `server/.uploads`.
+
 ### Ainda não feito
 - Login com Apple (precisa de conta de desenvolvedor Apple). O Google funciona ao preencher `GOOGLE_CLIENT_ID` / `VITE_GOOGLE_CLIENT_ID`.
 - Envio de e-mail para "Esqueci a senha": em desenvolvimento o link aparece no terminal da API.

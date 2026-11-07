@@ -1,21 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api.js';
 
+// Memória das telas: mostra na hora o que já foi carregado e atualiza por trás.
+// Fica só na memória da aba (some ao fechar) e é limpa ao entrar ou sair da conta.
+const cache = new Map();
+export const clearLoadCache = () => cache.clear();
+
 /** Carrega um endpoint e expõe { data, error, loading, reload, setData }. */
 export function useLoad(path, { skip = false } = {}) {
-  const [data, setData] = useState(null);
+  const [data, setDataState] = useState(() => (path ? cache.get(path) ?? null : null));
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(!skip);
+  const [loading, setLoading] = useState(!skip && !(path && cache.has(path)));
   const alive = useRef(true);
+  const setData = useCallback((v) => {
+    setDataState((prev) => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      if (path) cache.set(path, next);
+      return next;
+    });
+  }, [path]);
   const reload = useCallback(async () => {
     if (!path || skip) return;
-    setLoading(true);
+    if (!cache.has(path)) setLoading(true);
     setError(null);
     try {
       const d = await api(path);
-      if (alive.current) setData(d);
+      cache.set(path, d);
+      if (alive.current) setDataState(d);
     } catch (e) {
-      if (alive.current) setError(e);
+      if (alive.current && !cache.has(path)) setError(e);
     } finally {
       if (alive.current) setLoading(false);
     }

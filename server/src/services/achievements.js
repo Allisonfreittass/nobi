@@ -25,8 +25,14 @@ export const CATALOG = [
 
 export const catalogByCode = Object.fromEntries(CATALOG.map((a) => [a.code, a]));
 
+/** Códigos de conquista que o usuário já tem. Passe o Set para award() e evite idas ao banco à toa. */
+export async function ownedCodes(userId) {
+  const rows = await Achievement.find({ userId }, { code: 1 }).lean();
+  return new Set(rows.map((r) => r.code));
+}
+
 /** Soma XP uma única vez por chave. Retorna true se somou. */
-export async function grantXp(userId, key, amount) {
+export async function grantXp(userId, key, amount, { have } = {}) {
   try {
     await XpGrant.create({ userId, key, amount });
   } catch (e) {
@@ -35,22 +41,25 @@ export async function grantXp(userId, key, amount) {
   }
   const user = await User.findByIdAndUpdate(userId, { $inc: { xp: amount } }, { returnDocument: 'after' });
   const level = Math.max(user.level, levelFromXp(user.xp));
-  if (level !== user.level) await User.updateOne({ _id: userId }, { $set: { level } });
-  for (const [min, code] of [[10, 'nivel-10'], [25, 'nivel-25'], [50, 'nivel-50']]) {
-    if (level >= min) await award(userId, code);
+  if (level !== user.level) {
+    await User.updateOne({ _id: userId }, { $set: { level } });
+    for (const [min, code] of [[10, 'nivel-10'], [25, 'nivel-25'], [50, 'nivel-50']]) {
+      if (level >= min) await award(userId, code, undefined, { have });
+    }
   }
   return true;
 }
 
 /** Concede uma conquista se ainda não tiver. Retorna a conquista nova ou null. */
-export async function award(userId, code, seasonId) {
-  if (!catalogByCode[code]) return null;
+export async function award(userId, code, seasonId, { have } = {}) {
+  if (!catalogByCode[code] || have?.has(code)) return null;
   try {
     const a = await Achievement.create({ userId, code, seasonId });
-    await grantXp(userId, `achievement:${code}`, XP.achievement);
+    have?.add(code);
+    await grantXp(userId, `achievement:${code}`, XP.achievement, { have });
     return { code, ...catalogByCode[code], earnedAt: a.earnedAt };
   } catch (e) {
-    if (e.code === 11000) return null;
+    if (e.code === 11000) { have?.add(code); return null; }
     throw e;
   }
 }

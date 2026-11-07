@@ -56,8 +56,8 @@ export function Avatar({ user, size = 40, ring, className = '' }) {
   if (user?.avatarUrl === 'broto') {
     style.background = 'var(--nobi-brasa)';
     inner = <BrotoHead size={Math.round(size * 0.92)} />;
-  } else if (user?.avatarUrl?.startsWith('data:')) {
-    inner = <img src={user.avatarUrl} alt="" />;
+  } else if (user?.avatarUrl) {
+    inner = <img src={user.avatarUrl} alt="" loading="lazy" decoding="async" width={size} height={size} />;
   }
   return <span className={`avatar ${ringClass} ${className}`} style={style} aria-hidden="true">{inner}</span>;
 }

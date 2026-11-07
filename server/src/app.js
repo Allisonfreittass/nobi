@@ -8,10 +8,14 @@ import { users } from './routes/users.js';
 import { goals } from './routes/goals.js';
 import { posts, feed } from './routes/posts.js';
 import { home } from './routes/home.js';
+import { uploads } from './routes/uploads.js';
+import { UPLOAD_DIR } from './services/storage.js';
 
 export function createApp() {
   const app = express();
   app.use(cors({ origin: config.webOrigin, allowedHeaders: ['Content-Type', 'Authorization', 'X-Local-Date', 'X-Local-Time'] }));
+  // Fotos chegam já reduzidas; o limite da Vercel por requisição é 4,5 MB
+  app.use('/api/uploads', express.json({ limit: '4mb' }));
   app.use(express.json({ limit: '600kb' }));
   app.use(localDay);
 
@@ -23,6 +27,8 @@ export function createApp() {
   app.use('/api/posts', requireAuth, posts);
   app.use('/api/feed', requireAuth, feed);
   app.use('/api/home', requireAuth, home);
+  app.use('/api/uploads', express.static(UPLOAD_DIR, { maxAge: '365d', immutable: true, fallthrough: true }));
+  app.use('/api/uploads', requireAuth, uploads);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
   app.use(errorHandler);
   return app;

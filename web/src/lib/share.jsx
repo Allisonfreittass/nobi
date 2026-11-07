@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useState } from 'react';
 import { Sheet, Segmented, ErrorNote } from '../components/ui.jsx';
 import { api } from './api.js';
 import { useToast } from './toast.jsx';
+import PhotoPicker, { sendPostPhoto } from '../components/PhotoPicker.jsx';
 
 const ShareCtx = createContext(() => {});
 
@@ -17,10 +18,12 @@ export function ShareProvider({ children }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [onDone, setOnDone] = useState(null);
+  const [photo, setPhoto] = useState(null);
 
   const open = useCallback((p, done) => {
     setPayload(p);
     setText('');
+    setPhoto(null);
     setError(null);
     setAudience(p.audience || 'friends');
     setOnDone(() => done || null);
@@ -30,7 +33,7 @@ export function ShareProvider({ children }) {
     setBusy(true);
     try {
       const { title, audience: _a, ...body } = payload;
-      const r = await api('/posts', { method: 'POST', body: { ...body, audience, text } });
+      const r = await api('/posts', { method: 'POST', body: { ...body, audience, text, photo: await sendPostPhoto(photo) } });
       setPayload(null);
       toast(audience === 'public' ? 'Publicado para todo mundo.' : 'Publicado para seus amigos.');
       onDone?.(r.post);
@@ -55,6 +58,7 @@ export function ShareProvider({ children }) {
           Legenda (opcional)
           <textarea className="textarea" rows={3} maxLength={500} value={text} onChange={(e) => setText(e.target.value)} placeholder="Conte como foi" />
         </label>
+        <PhotoPicker value={photo} onChange={setPhoto} />
         <ErrorNote error={error} />
         <button type="button" className="btn btn-primary block" onClick={publish} disabled={busy}>{busy ? 'Publicando…' : 'Publicar'}</button>
       </Sheet>

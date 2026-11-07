@@ -55,7 +55,7 @@ export default function Achievement() {
       // A pessoa já escolheu o público ao registrar
       setBusy(true);
       try {
-        await api('/posts', { method: 'POST', body: { ...body, audience: state.audience, text: state.text || '' } });
+        await api('/posts', { method: 'POST', body: { ...body, audience: state.audience, text: state.text || '', photo: state.photo } });
         toast('Compartilhado no feed.');
         done();
       } catch (e) { toast(e.message); setBusy(false); }

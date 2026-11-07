@@ -119,6 +119,10 @@ export default function PostCard({ post: initial, compact = false, onDelete }) {
       )}
       {post.text && <p className={compact ? 't-14' : 't-15'} style={{ lineHeight: 1.5 }}>{post.text}</p>}
 
+      {post.photo && (
+        <img src={post.photo.url} alt={post.text || `Foto de ${post.user.name}`} loading="lazy" decoding="async" width={post.photo.w} height={post.photo.h}
+          style={{ width: '100%', height: 'auto', aspectRatio: `${post.photo.w} / ${post.photo.h}`, maxHeight: compact ? 260 : 520, objectFit: 'cover', borderRadius: 18, background: 'var(--nobi-track)' }} />
+      )}
       {metrics.length > 0 && (
         <div className="row gap-20 wrap" style={{ padding: '12px 14px', borderRadius: 18, background: 'var(--nobi-bg)' }}>{metrics}</div>
       )}

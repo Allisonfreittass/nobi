@@ -3,3 +3,4 @@ dist
 .env
 server/.data
 .DS_Store
+server/.uploads

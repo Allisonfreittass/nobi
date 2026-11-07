@@ -8,6 +8,7 @@ import { useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, CATEGORY_ORDER } from '../lib/format.js';
+import PhotoPicker, { sendPostPhoto } from '../components/PhotoPicker.jsx';
 
 function Stepper({ value, onChange, step, min, unit, label }) {
   return (
@@ -42,6 +43,7 @@ export default function Register() {
   const [note, setNote] = useState('');
   const [share, setShare] = useState(false);
   const [aud, setAud] = useState('friends');
+  const [photo, setPhoto] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -78,11 +80,12 @@ export default function Register() {
       patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
       if (r.celebration) {
         // Fechou um marco: a Conquista oferece postar (com a escolha de público já feita aqui, se houver)
-        navigate('/conquista', { replace: true, state: { celebration: r.celebration, audience: share ? aud : null, text: note.trim() } });
+        const sent = share ? await sendPostPhoto(photo) : undefined;
+        navigate('/conquista', { replace: true, state: { celebration: r.celebration, audience: share ? aud : null, text: note.trim(), photo: sent } });
         return;
       }
       if (share) {
-        await api('/posts', { method: 'POST', body: { checkinId: r.checkin.id, audience: aud, text: note.trim() } });
+        await api('/posts', { method: 'POST', body: { checkinId: r.checkin.id, audience: aud, text: note.trim(), photo: await sendPostPhoto(photo) } });
         toast(aud === 'public' ? 'Registrado e publicado para todo mundo.' : 'Registrado e publicado para seus amigos.');
       } else {
         toast(r.me.leveledUp ? `Registrado. Subiu para o nível ${r.me.level}!` : 'Registrado. Conta nas suas sequências.');
@@ -168,10 +171,13 @@ export default function Register() {
                       <Toggle checked={share} onChange={setShare} label="Publicar no feed" />
                     </div>
                     {share ? (
-                      <div className="row between gap-12">
-                        <span className="t-14 strong">Para quem</span>
-                        <Segmented compact label="Para quem" options={[['friends', 'Amigos'], ['public', 'Público']]} value={aud} onChange={setAud} />
-                      </div>
+                      <>
+                        <div className="row between gap-12">
+                          <span className="t-14 strong">Para quem</span>
+                          <Segmented compact label="Para quem" options={[['friends', 'Amigos'], ['public', 'Público']]} value={aud} onChange={setAud} />
+                        </div>
+                        <PhotoPicker value={photo} onChange={setPhoto} />
+                      </>
                     ) : (
                       <p className="t-13 secondary">Não vai pro feed. Conta normalmente nas suas sequências e estatísticas.</p>
                     )}

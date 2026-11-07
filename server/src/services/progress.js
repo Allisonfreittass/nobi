@@ -140,6 +140,11 @@ export async function userGoals(user, today) {
 export async function streakSummary(user, today) {
   const goals = await Goal.find(goalsQuery(user._id)).lean();
   const checkins = await Checkin.find({ userId: user._id, goalId: { $in: goals.map((g) => g._id) } }).lean();
+  return summarize(user, goals, checkins, today);
+}
+
+/** Mesmo resumo, a partir de dados já carregados (sem ir ao banco). */
+export function summarize(user, goals, checkins, today) {
   const wso = weekStartsOn(user);
   let maxActiveDays = 0; // para o Broto dourado (semanas viram 7 dias cada)
   let maxDays = 0; // para mostrar "N dias seguidos" (só objetivos medidos em dias)

@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { Goal, Checkin, User, CATEGORIES, KINDS } from '../models/index.js';
+import { Goal, Checkin, User, Streak, CATEGORIES, KINDS } from '../models/index.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
 import { addDays, weekStart, weekday } from '../lib/dates.js';
-import { goalView, userGoals, streakSummary, refreshStreakCache, weekStartsOn } from '../services/progress.js';
+import { goalView, userGoals, refreshStreakCache, weekStartsOn, goalsQuery, summarize } from '../services/progress.js';
 import { computeStreak, dayTotals, needFor, CELEBRATE, streakInDays } from '../services/streaks.js';
-import { award, grantXp } from '../services/achievements.js';
+import { award, grantXp, ownedCodes } from '../services/achievements.js';
 import { XP } from '../services/level.js';
 import { friendIds, publicUser } from '../services/social.js';
 import { currentSeason } from '../services/seasons.js';
@@ -168,39 +168,58 @@ goals.post('/:id/checkins', async (req, res) => {
   if (g.kind === 'project' || taskKey) value = 1;
   if (value <= 0 && !minutes && !pages && !km) throw bad('Registre um valor maior que zero.');
 
-  const before = await Checkin.find({ goalId: g._id, userId: req.user._id }).lean();
+  // Uma leitura só: objetivos, registros e conquistas do usuário. Antes e depois saem daqui, em memória.
+  const uid = req.user._id;
+  const [myGoals, myCheckins, have, season] = await Promise.all([
+    Goal.find(goalsQuery(uid)).lean(),
+    Checkin.find({ userId: uid }).lean(),
+    ownedCodes(uid),
+    currentSeason(today),
+  ]);
+  const before = myCheckins.filter((c) => String(c.goalId) === String(g._id));
   const sBefore = computeStreak(g, before, today, wso);
-  const summaryBefore = await streakSummary(req.user, today);
+  const summaryBefore = summarize(req.user, myGoals, myCheckins, today);
 
   const update = { $inc: { value, minutes, pages, km } };
   if (b.note) update.$set = { note: String(b.note).slice(0, 280) };
   const checkin = await Checkin.findOneAndUpdate(
-    { goalId: g._id, userId: req.user._id, date: today, taskKey },
+    { goalId: g._id, userId: uid, date: today, taskKey },
     update,
     { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-  );
+  ).lean();
 
-  await grantXp(req.user._id, `checkin:${g._id}:${today}${taskKey ? `:${taskKey}` : ''}`, XP.checkin);
-  const sAfter = await refreshStreakCache(g, req.user._id, today, wso);
-  const after = await Checkin.find({ goalId: g._id, userId: req.user._id }).lean();
+  const swap = (list) => [...list.filter((c) => String(c._id) !== String(checkin._id)), checkin];
+  const after = swap(before);
+  const allAfter = swap(myCheckins);
+  const sAfter = computeStreak(g, after, today, wso);
 
-  const earned = [];
-  const push = (a) => a && earned.push(a);
-  push(await award(req.user._id, 'primeiro-passo'));
+  await Promise.all([
+    grantXp(uid, `checkin:${g._id}:${today}${taskKey ? `:${taskKey}` : ''}`, XP.checkin, { have }),
+    Streak.updateOne({ goalId: g._id, userId: uid }, { $set: { current: sAfter.current, best: sAfter.best, unit: sAfter.unit, lastDate: sAfter.lastDate } }, { upsert: true }),
+  ]);
+
   const days = streakInDays(sAfter);
+  const wanted = ['primeiro-passo'];
   if (sAfter.unit === 'days') {
-    if (days >= 7) push(await award(req.user._id, 'sequencia-7'));
-    if (days >= 30) push(await award(req.user._id, 'sequencia-30'));
-    if (days >= 100) push(await award(req.user._id, 'sequencia-100'));
+    if (days >= 7) wanted.push('sequencia-7');
+    if (days >= 30) wanted.push('sequencia-30');
+    if (days >= 100) wanted.push('sequencia-100');
   } else {
-    if (sAfter.current >= 1) push(await award(req.user._id, 'semana-fechada'));
-    if (sAfter.current >= 4) push(await award(req.user._id, 'quatro-semanas'));
+    if (sAfter.current >= 1) wanted.push('semana-fechada');
+    if (sAfter.current >= 4) wanted.push('quatro-semanas');
   }
-  const season = await currentSeason(today);
-  if (season && days >= 21) push(await award(req.user._id, 'temporada-21', season._id));
+  const earned = [];
+  for (const code of wanted) {
+    const a = await award(uid, code, undefined, { have });
+    if (a) earned.push(a);
+  }
+  if (season && days >= 21) {
+    const a = await award(uid, 'temporada-21', season._id, { have });
+    if (a) earned.push(a);
+  }
 
-  const fresh = await User.findById(req.user._id);
-  const summaryAfter = await streakSummary(fresh, today);
+  const fresh = await User.findById(uid);
+  const summaryAfter = summarize(fresh, myGoals, allAfter, today);
 
   // Conquista em tela cheia só quando a sequência deste objetivo cruza um marco agora
   let celebration = null;
@@ -216,7 +235,7 @@ goals.post('/:id/checkins', async (req, res) => {
 
   res.status(201).json({
     checkin: { id: String(checkin._id), date: checkin.date, value: checkin.value, minutes: checkin.minutes, pages: checkin.pages, km: checkin.km, note: checkin.note },
-    goal: await goalView(g.toObject(), fresh, today),
+    goal: await goalView(g.toObject(), fresh, today, g.shared ? {} : { all: after }),
     celebration,
     achievements: earned,
     me: { level: fresh.level, xp: fresh.xp, golden: summaryAfter.golden, stage: summaryAfter.stage, leveledUp: fresh.level > req.user.level },

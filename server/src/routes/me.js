@@ -6,6 +6,7 @@ import { streakSummary, profileStats } from '../services/progress.js';
 import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
 import { publicUser } from '../services/social.js';
+import { decodeDataUrl, isOurImage, saveImage } from '../services/storage.js';
 
 export const me = Router();
 
@@ -38,7 +39,16 @@ export async function achievementsView(userId) {
   };
 }
 
-me.get('/', async (req, res) => res.json(await meView(req.user, req.today)));
+me.get('/', async (req, res) => {
+  // Fotos antigas ficavam dentro do banco: move para o armazenamento na primeira abertura
+  if (req.user.avatarUrl?.startsWith('data:')) {
+    try {
+      req.user.avatarUrl = await saveImage(decodeDataUrl(req.user.avatarUrl), 'avatars', req.user._id);
+      await req.user.save();
+    } catch (e) { console.warn('[avatar] não migrou:', e.message); }
+  }
+  res.json(await meView(req.user, req.today));
+});
 
 me.patch('/', async (req, res) => {
   const b = req.body || {};
@@ -56,9 +66,9 @@ me.patch('/', async (req, res) => {
   if (b.bio !== undefined) u.bio = String(b.bio).slice(0, 120);
   if (Array.isArray(b.interests)) u.interests = b.interests.map(String).slice(0, 12);
   if (b.avatarUrl !== undefined) {
-    const a = String(b.avatarUrl);
-    if (a && a !== 'broto' && !/^data:image\/(png|jpeg|webp);base64,/.test(a)) throw bad('Imagem inválida.');
-    if (a.length > 400000) throw bad('Imagem grande demais.');
+    let a = String(b.avatarUrl);
+    if (a.startsWith('data:')) a = await saveImage(decodeDataUrl(a), 'avatars', u._id); // versões antigas do app
+    if (a && a !== 'broto' && !isOurImage(a)) throw bad('Imagem inválida.');
     u.avatarUrl = a;
   }
   if (b.privacy) Object.assign(u.privacy, pick(b.privacy, ['profile', 'approveFollowers', 'stats']));
