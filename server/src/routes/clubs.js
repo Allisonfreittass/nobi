@@ -98,7 +98,7 @@ community.get('/search', async (req, res) => {
   const [cl, ch, people] = await Promise.all([
     Club.find({ ...visible, $and: [{ $or: [{ name: re }, { interest: re }, { city: re }, { region: re }] }] }).limit(10).lean(),
     Goal.find({ ...openChallengeFilter(req.today), title: re }).limit(10).lean(),
-    User.find({ $or: [{ name: re }, { username: re }], _id: { $ne: req.user._id, $nin: blocked }, demo: { $ne: true } }).limit(10).lean(),
+    User.find({ $or: [{ name: re }, { username: re }], _id: { $ne: req.user._id, $nin: blocked }, demo: { $ne: true }, suspendedAt: null }).limit(10).lean(),
   ]);
   res.json({
     clubs: await Promise.all(cl.map((c) => clubSummary(c, { userId: req.user._id, friends }))),
@@ -304,11 +304,12 @@ reports.post('/', async (req, res) => {
     const club = await Club.findOne({ slug: String(b.clubSlug).toLowerCase() }, { _id: 1 }).lean();
     clubId = club?._id || null;
   }
-  try {
-    await Report.create({ reporterId: req.user._id, targetType: b.targetType, targetId: b.targetId, clubId, reason: b.reason, details: String(b.details || '').slice(0, 500) });
-  } catch (e) {
-    if (e.code !== 11000) throw e; // já denunciado por esta pessoa: tudo bem
-  }
+  // Uma denúncia por pessoa e alvo; denunciar de novo algo já resolvido reabre na fila
+  await Report.updateOne(
+    { reporterId: req.user._id, targetType: b.targetType, targetId: b.targetId },
+    { $set: { clubId, reason: b.reason, details: String(b.details || '').slice(0, 500), status: 'open', resolution: '' } },
+    { upsert: true },
+  );
   res.status(201).json({ ok: true });
 });
 

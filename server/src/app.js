@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
-import { localDay, requireAuth, errorHandler } from './lib/http.js';
+import { localDay, requireAuth, errorHandler, requireStaff } from './lib/http.js';
 import { auth } from './routes/auth.js';
 import { me } from './routes/me.js';
 import { users } from './routes/users.js';
@@ -13,6 +13,7 @@ import { push, cron } from './routes/push.js';
 import { tasks } from './routes/tasks.js';
 import { metas } from './routes/metas.js';
 import { clubs, community, reports } from './routes/clubs.js';
+import { admin } from './routes/admin.js';
 import { UPLOAD_DIR } from './services/storage.js';
 
 export function createApp() {
@@ -39,6 +40,7 @@ export function createApp() {
   app.use('/api/clubs', requireAuth, clubs);
   app.use('/api/community', requireAuth, community);
   app.use('/api/reports', requireAuth, reports);
+  app.use('/api/admin', requireAuth, requireStaff, admin);
   app.use('/api/cron', cron);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
   app.use(errorHandler);

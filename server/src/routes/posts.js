@@ -29,7 +29,7 @@ export async function hydratePosts(list, meId) {
   const a = new Map(authors.map((u) => [String(u._id), u]));
   const r = new Map(reactors.map((u) => [String(u._id), u.name.split(' ')[0]]));
   const g = new Map(goalsList.map((x) => [String(x._id), x.title]));
-  return list.map((p) => {
+  return list.filter((p) => !a.get(String(p.userId))?.suspendedAt).map((p) => {
     const others = p.reactions.filter((x) => String(x.userId) !== String(meId));
     return {
       id: String(p._id),

@@ -29,6 +29,19 @@ export function localDay(req, _res, next) {
   next();
 }
 
+/** Equipe Nobi: marcada no banco, ou e-mail verificado listado em STAFF_EMAILS. */
+export const isStaff = (user) => Boolean(user && (user.staff || (user.emailVerified && user.email && config.staffEmails.includes(user.email.toLowerCase()))));
+
+export const SUSPENDED_MSG = 'Esta conta está suspensa por descumprir as regras da comunidade. Fale com a gente pelo e-mail de contato.';
+export function assertActive(user) {
+  if (user?.suspendedAt) throw new HttpError(403, SUSPENDED_MSG, { suspended: true });
+}
+
+export function requireStaff(req, _res, next) {
+  if (!isStaff(req.user)) return next(new HttpError(403, 'Só a Equipe Nobi acessa a moderação.'));
+  next();
+}
+
 export async function requireAuth(req, _res, next) {
   const m = /^Bearer (.+)$/.exec(req.get('Authorization') || '');
   if (!m) return next(new HttpError(401, 'Entre para continuar.'));
@@ -37,6 +50,7 @@ export async function requireAuth(req, _res, next) {
     const user = await User.findById(sub);
     if (!user) return next(new HttpError(401, 'Sessão expirada.'));
     if (user.sessionsValidAfter && iat * 1000 < user.sessionsValidAfter.getTime()) return next(new HttpError(401, 'Sessão expirada.'));
+    if (user.suspendedAt) return next(new HttpError(403, SUSPENDED_MSG, { suspended: true }));
     // Guarda o fuso do aparelho para o lembrete sair no horário certo
     const tz = req.get('X-Time-Zone');
     if (tz && tz !== user.timeZone && tz.length < 64) {

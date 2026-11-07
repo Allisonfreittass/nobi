@@ -176,7 +176,7 @@ await Comment.create({ postId: marinaPost._id, userId: caio._id, text: 'Boa dema
 await Comment.create({ postId: caioPost._id, userId: julia._id, text: 'Voando!' });
 
 // Comunidade: clubes oficiais (curados pela Equipe Nobi), membros, posts públicos e desafios abertos
-const equipe = await mk('Equipe Nobi', 'equipenobi', { bio: 'Clubes oficiais do Nobi.', avatarColor: '#FFF1E4' });
+const equipe = await mk('Equipe Nobi', 'equipenobi', { bio: 'Clubes oficiais do Nobi.', avatarColor: '#FFF1E4', staff: true });
 const paula = await mk('Paula Rezende', 'paularezende', { avatarColor: '#FFE9A8', interests: ['Leitura'] });
 const ana = await mk('Ana Costa', 'anacosta', { avatarColor: '#E9E5DC', interests: ['Leitura'] });
 const club = (name, slug, category, interest, city, region, extra = {}) => Club.create({ name, slug, category, interest, city, region, kind: 'official', createdBy: equipe._id, ...extra });

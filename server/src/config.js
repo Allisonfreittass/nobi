@@ -12,6 +12,8 @@ export const config = {
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:contato@nobievolua.com.br',
   // Tolerante a espaço, quebra de linha ou aspas coladas junto do valor
   cronSecret: (process.env.CRON_SECRET || '').trim().replace(/^["']|["']$/g, '').replace(/^CRON_SECRET=/, ''),
+  // E-mails da Equipe Nobi (separados por vírgula). Só valem com e-mail verificado (entrar com o Google uma vez).
+  staffEmails: (process.env.STAFF_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean),
   isProd: process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production',
 };
 

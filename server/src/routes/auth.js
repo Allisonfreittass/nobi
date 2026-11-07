@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { User } from '../models/index.js';
 import { config } from '../config.js';
-import { bad, signToken, HttpError } from '../lib/http.js';
+import { bad, signToken, HttpError, assertActive } from '../lib/http.js';
 import { meView } from './me.js';
 import { linkGoogle, nowSecond } from '../services/accounts.js';
 
@@ -64,6 +64,7 @@ auth.post('/login', async (req, res) => {
   if (!user?.passwordHash || !(await bcrypt.compare(String(password || ''), user.passwordHash))) {
     throw new HttpError(401, 'E-mail ou senha não conferem.');
   }
+  assertActive(user);
   res.json({ token: signToken(user), me: await meView(user, req.today) });
 });
 
@@ -89,6 +90,7 @@ auth.post('/google', async (req, res) => {
     linkGoogle(user, p.sub);
     await user.save();
   }
+  assertActive(user);
   res.json({ token: signToken(user), me: await meView(user, req.today), created });
 });
 
@@ -117,5 +119,6 @@ auth.post('/reset', async (req, res) => {
   user.resetToken = undefined;
   user.resetTokenExpiresAt = undefined;
   await user.save();
+  assertActive(user);
   res.json({ token: signToken(user), me: await meView(user, req.today) });
 });

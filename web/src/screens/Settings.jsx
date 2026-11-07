@@ -204,6 +204,11 @@ export default function Settings() {
         )}
       </Group>
 
+      {me.staff && (
+        <Group title="Equipe Nobi">
+          <Row as={Link} to="/moderacao" label="Moderação" desc="denúncias, clubes novos e contas suspensas"><Icon name="shield" size={18} /></Row>
+        </Group>
+      )}
       <Group title="Conta">
         <Row as="button" type="button" label="E-mail e senha" desc={me.hasPassword ? me.email || undefined : `${me.email || ''} · entra com Google, sem senha no Nobi`} onClick={() => setSheet('account')}><Icon name="chevron" size={18} /></Row>
         <Row as="button" type="button" label="Exportar meus dados" desc="arquivo com tudo que é seu" onClick={exportData}><Icon name="download" size={18} /></Row>

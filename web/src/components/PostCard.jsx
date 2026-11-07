@@ -23,6 +23,7 @@ function Metric({ value, unit, caption }) {
 
 function Comments({ post, onCount }) {
   const [list, setList] = useState(null);
+  const [reporting, setReporting] = useState(null);
   const [text, setText] = useState('');
   const toast = useToast();
   useEffect(() => {
@@ -56,6 +57,9 @@ function Comments({ post, onCount }) {
           {(c.mine || post.mine) && (
             <button type="button" className="icon-btn plain" aria-label="Apagar comentário" onClick={() => remove(c)}><Icon name="trash" size={16} /></button>
           )}
+          {!c.mine && !post.mine && (
+            <button type="button" className="icon-btn plain" aria-label={`Denunciar comentário de ${c.user.name}`} onClick={() => setReporting(c.id)} style={{ width: 32, opacity: 0.6 }}><Icon name="flag" size={15} /></button>
+          )}
         </div>
       ))}
       <form className="row gap-8" onSubmit={send}>
@@ -63,6 +67,7 @@ function Comments({ post, onCount }) {
         <input id={`c-${post.id}`} className="input" style={{ minHeight: 44, height: 44 }} value={text} maxLength={280} onChange={(e) => setText(e.target.value)} placeholder="Escreva um comentário" />
         <button type="submit" className="btn btn-dark sm" disabled={!text.trim()}>Enviar</button>
       </form>
+      <ReportSheet open={Boolean(reporting)} onClose={() => setReporting(null)} targetType="comment" targetId={reporting} />
     </div>
   );
 }

@@ -64,7 +64,12 @@ Web Push com service worker (`web/public/sw.js`). Funciona no Android e no compu
 - **Ranking do clube**: minutos postados no clube na semana (seg–dom), zera no domingo.
 - **Moderação**: admin/moderador fixa recado, edita regras, remove post do clube, bane e desbane; admin promove moderador. **Denúncias** (`reports`) de post, pessoa, comentário ou clube; a moderação do clube resolve pelo menu ⋯ do clube.
 - **Desafios abertos**: `shared.public` (comunidade, qualquer pessoa) ou `shared.clubId` (membros do clube) entram sem convite em `POST /api/goals/:id/participate`.
-- Denúncias de clube inteiro (sem moderação de clube acima) ficam em `reports` com `clubId` vazio, para a Equipe Nobi revisar no banco.
+
+### Moderação da Equipe Nobi (`/moderacao`)
+- Quem é staff: `users.staff = true` no banco, ou e-mail listado em `STAFF_EMAILS` (variável na Vercel, separada por vírgula) **com e-mail verificado** (entrar com o Google uma vez). Aparece "Moderação" em Configurações.
+- **Denúncias** de todo o app, agrupadas por alvo (mais denunciado e mais grave primeiro): apagar post ou comentário, encerrar clube (não oficial), suspender conta ou manter. Denunciar de novo algo já resolvido reabre na fila.
+- **Clubes novos**: clubes abertos criados pela comunidade, com quem criou; dá para encerrar.
+- **Suspensas**: conta suspensa sai de todos os aparelhos, não entra, some de buscas, perfis e feeds; "Reativar" desfaz.
 
 ### Ainda não feito
 - Login com Apple (precisa de conta de desenvolvedor Apple). O Google funciona ao preencher `GOOGLE_CLIENT_ID` / `VITE_GOOGLE_CLIENT_ID`.

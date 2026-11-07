@@ -35,6 +35,9 @@ const userSchema = new Schema({
   },
   shieldsEarnedSeen: { type: Number, default: 0 }, // quantos escudos ganhos a pessoa já viu (para o aviso)
   timeZone: { type: String, default: 'America/Sao_Paulo' }, // para o lembrete sair no horário de quem usa
+  staff: { type: Boolean, default: false }, // Equipe Nobi: modera denúncias e clubes (ou e-mail em STAFF_EMAILS)
+  suspendedAt: { type: Date, default: null, index: true }, // conta suspensa pela moderação: não entra e some da descoberta
+  suspendedReason: { type: String, default: '' },
   demo: { type: Boolean, default: false, index: true }, // conta do seed: nunca aparece em descoberta
   blocked: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   notificationsSeenAt: { type: Date, default: () => new Date(0) },

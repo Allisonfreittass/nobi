@@ -38,7 +38,7 @@ export async function api(path, { method = 'GET', body, raw = false } = {}) {
   if (raw && res.ok) return res;
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    if (res.status === 401 && token) window.dispatchEvent(new Event('nobi:logout'));
+    if ((res.status === 401 || data?.suspended) && token) window.dispatchEvent(new Event('nobi:logout'));
     throw new ApiError(res.status, data?.error || 'Algo deu errado.', data);
   }
   return data;

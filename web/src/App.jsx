@@ -13,6 +13,7 @@ const loadTerms = () => import('./screens/Terms.jsx');
 const loadPrivacy = () => import('./screens/Privacy.jsx');
 const loadCommunity = () => import('./screens/community/Community.jsx');
 const loadClub = () => import('./screens/community/Club.jsx');
+const loadModeration = () => import('./screens/Moderation.jsx');
 const loadAchievement = () => import('./screens/Achievement.jsx');
 const loadNewGoal = () => import('./screens/NewGoal.jsx');
 const loadGoalDetail = () => import('./screens/GoalDetail.jsx');
@@ -31,6 +32,7 @@ const Terms = lazy(loadTerms);
 const Privacy = lazy(loadPrivacy);
 const Community = lazy(loadCommunity);
 const Club = lazy(loadClub);
+const Moderation = lazy(loadModeration);
 const Achievement = lazy(loadAchievement);
 const NewGoal = lazy(loadNewGoal);
 const GoalDetail = lazy(loadGoalDetail);
@@ -149,6 +151,7 @@ export default function App() {
         <Route path="/perfil/editar" element={<EditProfile />} />
         <Route path="/configuracoes" element={<Settings />} />
         <Route path="/semana" element={<Weekly />} />
+        <Route path="/moderacao" element={<Moderation />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -26,7 +26,7 @@ users.get('/search', async (req, res) => {
   if (q.length < 2) return res.json([]);
   const blocked = await blockedIds(req.user._id);
   const re = new RegExp(escapeRe(q), 'i');
-  const found = await User.find({ $or: [{ name: re }, { username: re }], _id: { $ne: req.user._id, $nin: blocked }, demo: { $ne: true } }).limit(20).lean();
+  const found = await User.find({ $or: [{ name: re }, { username: re }], _id: { $ne: req.user._id, $nin: blocked }, demo: { $ne: true }, suspendedAt: null }).limit(20).lean();
   res.json(await withRelation(req.user._id, found));
 });
 
@@ -36,7 +36,7 @@ users.get('/suggestions', async (req, res) => {
   const pending = await Follow.find({ followerId: req.user._id }, { followeeId: 1 }).lean();
   exclude.push(...pending.map((p) => p.followeeId));
   // Quem me segue e eu não sigo de volta vem primeiro; depois perfis públicos com interesses em comum
-  const demoIds = (await User.find({ demo: true }, { _id: 1 }).lean()).map((u) => u._id);
+  const demoIds = (await User.find({ $or: [{ demo: true }, { suspendedAt: { $ne: null } }] }, { _id: 1 }).lean()).map((u) => u._id);
   exclude.push(...demoIds);
   const followers = await Follow.find({ followeeId: req.user._id, status: 'accepted', followerId: { $nin: exclude } }).limit(10).lean();
   const others = await User.find({
@@ -71,7 +71,7 @@ users.post('/follow-requests/:id/:action', async (req, res) => {
 async function findUser(param) {
   const q = mongoose.isValidObjectId(param) ? { $or: [{ _id: param }, { username: param }] } : { username: String(param).toLowerCase() };
   const u = await User.findOne(q);
-  if (!u) throw notFound('Perfil não encontrado.');
+  if (!u || u.suspendedAt) throw notFound('Perfil não encontrado.');
   return u;
 }
 

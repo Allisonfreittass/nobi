@@ -10,6 +10,7 @@ import { ensureShields } from '../services/shields.js';
 import { ShieldUse, Task, Membership, Report } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { handOverClubs } from '../services/clubs.js';
+import { isStaff } from '../lib/http.js';
 import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
 export const me = Router();
@@ -21,6 +22,7 @@ export async function meView(user, today) {
     ...publicUser(user),
     email: user.email || null,
     hasPassword: Boolean(user.passwordHash),
+    staff: isStaff(user),
     bio: user.bio,
     interests: user.interests,
     city: user.city || '',
