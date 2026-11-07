@@ -381,7 +381,9 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
   --nobi-card: #FFFFFF; --nobi-bg: #F7F5F0; --nobi-track: #EEEAE2; --nobi-border: #E9E5DC; --nobi-text: #141218; --nobi-text-secondary: #4A4752; --nobi-text-muted: #6B6872; --nobi-soft: #FFF1E4; --nobi-text-streak: #B83A12; }
 .lp-goal-icon { width: 32px; height: 32px; border-radius: 11px; flex-shrink: 0; color: #FFFFFF; display: flex; align-items: center; justify-content: center; }
 .lp-done { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border-radius: 10px; background: #F7F5F0; font-size: var(--nobi-text-xs); font-weight: 700; }
-.lp-mascot { position: absolute; left: -18px; bottom: -8px; z-index: 3; }
+.lp-mascot { position: absolute; left: -22px; bottom: -14px; z-index: 3; }
+.lp-mascot.nobi-hop { animation-duration: 2.6s; }
+.lp-mascot .broto-plate { box-shadow: 0 18px 40px -18px rgba(20, 18, 24, 0.45); }
 .lp-toast { position: absolute; right: -14px; top: 92px; z-index: 3; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 18px;
   background: #141218; color: #FFFFFF; box-shadow: 0 18px 34px -16px rgba(20, 18, 24, 0.6); }
 .lp-toast-icon { width: 32px; height: 32px; border-radius: 11px; background: var(--nobi-dourado); color: #141218; display: flex; align-items: center; justify-content: center; }
@@ -408,13 +410,47 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 @media (min-width: 960px) { .lp-band-grid { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 64px; } }
 .lp-stages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 @media (min-width: 600px) { .lp-stages { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.lp-stage-tile { display: flex; justify-content: center; padding: 22px 0 10px; border-radius: 24px; background: var(--nobi-brasa); }
+.lp-stage-tile { display: flex; justify-content: center; padding: 18px 0 8px; border-radius: 24px; background: var(--nobi-creme); }
 
 .lp-principles { display: grid; gap: 32px; }
 .lp-principles li { padding-top: 22px; border-top: 2px solid var(--nobi-text); }
 @media (min-width: 760px) { .lp-principles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; } }
 
 .lp-cta { padding: clamp(72px, 10vw, 140px) 0; border-top: 1px solid var(--nobi-border); }
+.lp-cta-title { font-size: clamp(2.5rem, 6vw, 4.5rem); text-align: center; }
+
+/* Landing: peças reaproveitadas (antes eram estilos inline) */
+.lp-accent { color: var(--nobi-brasa); }
+.lp-center { text-align: center; }
+.lp-soft { opacity: 0.7; }
+.lp-cta-main { padding: 0 28px; }
+.lp-cta-ghost { height: 56px; }
+.lp-nav-cta { border-radius: 22px; padding: 0 18px; }
+.lp-phone-body { padding: 34px 16px 16px; }
+.lp-phone-title { font-size: 1.5rem; font-weight: 800; }
+.lp-preview-card { padding: 12px; border-radius: 20px; }
+.lp-vignette-card { padding: 20px; }
+.lp-swatch { width: 10px; height: 10px; border-radius: 4px; }
+.lp-inert { pointer-events: none; }
+.lp-ranking { padding: 12px; }
+.lp-rank-row { height: 46px; padding: 0 10px; border-radius: 14px; }
+.lp-rank-row.me { background: var(--nobi-tinta); color: #FFFFFF; }
+.lp-rank-pos { width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: var(--nobi-text-sm); font-weight: 800; background: var(--nobi-border); color: var(--nobi-tinta); }
+.lp-rank-pos.first { background: var(--nobi-orbita); color: #FFFFFF; }
+.lp-rank-row.me .lp-rank-pos { background: var(--nobi-creme); }
+.lp-p-sm { font-size: var(--nobi-text-md); }
+
+/* Faixa do Broto (fundo tinta): arte sempre em cartão creme */
+.lp-band .on-dark { color: #FFFFFF; }
+.lp-band .lp-kicker.on-dark { color: rgba(255, 255, 255, 0.6); }
+.lp-band .lp-p.on-dark { color: rgba(255, 255, 255, 0.72); }
+.lp-band-muted { color: rgba(255, 255, 255, 0.6); }
+.lp-band-stack { gap: clamp(40px, 6vw, 72px); }
+.lp-moods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: clamp(32px, 4vw, 48px); border-top: 1px solid rgba(255, 255, 255, 0.12); }
+@media (max-width: 480px) { .lp-moods { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 760px) { .lp-moods { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.lp-mood { display: flex; align-items: center; gap: 14px; }
+.lp-mood-art { flex-shrink: 0; display: flex; justify-content: center; padding: 8px 6px 2px; border-radius: 20px; background: var(--nobi-creme); line-height: 0; }
 .lp-footer { padding: 28px 0 calc(32px + env(safe-area-inset-bottom)); border-top: 1px solid var(--nobi-border); }
 
 /* Comemoração do dia: cartão pequeno que sobe por baixo */
