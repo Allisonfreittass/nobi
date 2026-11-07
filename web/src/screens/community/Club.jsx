@@ -315,10 +315,10 @@ export default function Club() {
   async function leave() {
     setSheet(null);
     if (!(await confirm({ title: `Sair de ${club.name}?`, message: 'Seus posts continuam no seu perfil. Dá para voltar quando quiser.', confirmLabel: 'Sair do clube', danger: true }))) return;
-    await api(`/clubs/${club.slug}/membership`, { method: 'DELETE' });
+    const r = await api(`/clubs/${club.slug}/membership`, { method: 'DELETE' });
     invalidateLoad('/community');
-    toast('Você saiu do clube.');
-    if (club.kind === 'private') navigate('/comunidade', { replace: true });
+    toast(r.deleted ? 'Você era a última pessoa do clube, então ele foi encerrado.' : 'Você saiu do clube.');
+    if (club.kind === 'private' || r.deleted) navigate('/comunidade', { replace: true });
     else reload();
   }
   const Item = ({ icon, label, desc, onClick, danger }) => (

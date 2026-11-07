@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { Club, Membership, Post, User, Goal, Report } from '../models/index.js';
 import { bad, notFound, forbidden, HttpError } from '../lib/http.js';
 import { friendIds, publicUser, blockedIds, relation } from '../services/social.js';
-import { clubSummary, membershipOf, canModerate, visibleClubFilter, clubRanking, openChallengeFilter, isCategory, CATEGORY_LABEL, INTEREST_ORDER } from '../services/clubs.js';
+import { clubSummary, membershipOf, canModerate, visibleClubFilter, clubRanking, openChallengeFilter, isCategory, CATEGORY_LABEL, INTEREST_ORDER, MAX_OPEN_CLUBS } from '../services/clubs.js';
 import { hydratePosts } from './posts.js';
 import { goalView } from '../services/progress.js';
 import { award } from '../services/achievements.js';
@@ -62,7 +62,7 @@ community.get('/', async (req, res) => {
     const list = await Club.find({ ...visible, $or: [{ city: me.city }, ...(regions.length ? [{ region: { $in: regions } }] : [])] }).limit(12).lean();
     nearby = { label: regions[0] || me.city, clubs: await Promise.all(list.map((c) => clubSummary(c, { userId: me._id, friends }))) };
   }
-  const interests = await Club.aggregate([{ $match: { kind: 'official' } }, { $group: { _id: { interest: '$interest', category: '$category' }, n: { $sum: 1 } } }, { $sort: { n: -1 } }]);
+  const interests = await Club.aggregate([{ $match: { kind: { $in: ['official', 'open'] } } }, { $group: { _id: { interest: '$interest', category: '$category' }, n: { $sum: 1 } } }, { $sort: { n: -1 } }]);
   res.json({
     myClubs: myCards,
     nearby,
@@ -118,18 +118,34 @@ clubs.get('/', async (req, res) => {
   res.json(await Promise.all(list.map((c) => clubSummary(c, { userId: req.user._id, friends }))));
 });
 
-// Grupo privado de amigos (clubes abertos só os oficiais, curados)
+// Criar clube: aberto (qualquer pessoa entra; quem cria vira admin) ou grupo privado de amigos
 clubs.post('/', async (req, res) => {
   const b = req.body || {};
-  const name = String(b.name || '').trim();
-  if (!name) throw bad('Dê um nome ao grupo.');
-  if (!isCategory(b.category)) throw bad('Escolha a categoria do grupo.');
-  const friends = new Set((await friendIds(req.user._id)).map(String));
-  const invite = [...new Set((b.invite || []).map(String))].filter((id) => friends.has(id));
-  if (!invite.length) throw bad('Escolha pelo menos 1 amigo.');
+  const open = b.kind === 'open';
+  const word = open ? 'clube' : 'grupo';
+  const name = String(b.name || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  if (name.length < 3) throw bad(`Dê um nome ao ${word} (3 letras ou mais).`);
+  if (!isCategory(b.category)) throw bad(`Escolha a categoria do ${word}.`);
+  const text = (v, max) => String(v || '').trim().slice(0, max);
+  let invite = [];
+  const fields = { name, category: b.category, description: text(b.description, 300), createdBy: req.user._id };
+  if (open) {
+    const mine = await Club.countDocuments({ createdBy: req.user._id, kind: 'open' });
+    if (mine >= MAX_OPEN_CLUBS) throw bad(`Cada pessoa cria até ${MAX_OPEN_CLUBS} clubes abertos.`);
+    if (await Club.exists({ kind: { $in: ['official', 'open'] }, name: new RegExp(`^${escapeRe(name)}$`, 'i') })) throw bad('Já existe um clube com esse nome. Que tal entrar nele?');
+    const city = text(b.city, 60);
+    // Região herdada dos clubes da mesma cidade, para aparecer em "Perto de você" da região
+    const sameCity = city ? await Club.findOne({ city: new RegExp(`^${escapeRe(city)}$`, 'i'), region: { $nin: [null, ''] } }, { region: 1 }).lean() : null;
+    Object.assign(fields, { kind: 'open', interest: text(b.interest, 30) || CATEGORY_LABEL[b.category], city: city || 'Online', region: sameCity?.region || '', rules: text(b.rules, 1500) });
+  } else {
+    const friends = new Set((await friendIds(req.user._id)).map(String));
+    invite = [...new Set((b.invite || []).map(String))].filter((id) => friends.has(id));
+    if (!invite.length) throw bad('Escolha pelo menos 1 amigo.');
+    fields.kind = 'private';
+  }
   let slug = slugify(name);
   if (await Club.exists({ slug })) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
-  const club = await Club.create({ name: name.slice(0, 60), slug, category: b.category, kind: 'private', description: String(b.description || '').slice(0, 300), createdBy: req.user._id });
+  const club = await Club.create({ ...fields, slug });
   await Membership.insertMany([{ clubId: club._id, userId: req.user._id, role: 'admin' }, ...invite.map((u) => ({ clubId: club._id, userId: u }))]);
   res.status(201).json(await clubSummary(club.toObject(), { userId: req.user._id }));
 });
@@ -159,11 +175,18 @@ clubs.delete('/:slug/membership', async (req, res) => {
   if (m.role === 'admin') {
     const otherAdmins = await Membership.countDocuments({ clubId: club._id, role: 'admin', status: 'active', userId: { $ne: req.user._id } });
     if (!otherAdmins) {
-      const next = await Membership.findOne({ clubId: club._id, status: 'active', userId: { $ne: req.user._id } }).sort({ role: 1, joinedAt: 1 });
+      const next = await Membership.findOne({ clubId: club._id, status: 'active', userId: { $ne: req.user._id } }).sort({ role: -1, joinedAt: 1 }); // moderador primeiro
       if (next) { next.role = 'admin'; await next.save(); }
     }
   }
   await Membership.deleteOne({ _id: m._id });
+  // Clube criado por alguém que ficou sem ninguém dentro deixa de existir
+  if (club.kind !== 'official' && !(await Membership.exists({ clubId: club._id, status: 'active' }))) {
+    await Club.deleteOne({ _id: club._id });
+    await Membership.deleteMany({ clubId: club._id });
+    await Post.updateMany({ clubIds: club._id }, { $pull: { clubIds: club._id } });
+    return res.json({ ok: true, deleted: true });
+  }
   res.json({ ok: true });
 });
 

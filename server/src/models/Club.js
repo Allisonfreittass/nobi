@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
-// Clube (DESIGN.md §7): oficial e curado (por interesse/cidade) ou grupo privado de amigos.
+// Clube (DESIGN.md §7): oficial (curado pela Equipe Nobi), aberto (criado por alguém, que vira admin)
+// ou grupo privado de amigos.
 // Só posts Públicos e da categoria do clube aparecem nele.
 const clubSchema = new Schema({
   name: { type: String, required: true, trim: true, maxlength: 60 },
@@ -11,7 +12,7 @@ const clubSchema = new Schema({
   interest: { type: String, default: '' }, // rótulo do interesse (Corrida, Idiomas, Fé e devocional...)
   city: { type: String, default: '' }, // "Varginha, MG" ou "Online"
   region: { type: String, default: '' }, // "Sul de Minas"
-  kind: { type: String, enum: ['official', 'private'], default: 'official' },
+  kind: { type: String, enum: ['official', 'open', 'private'], default: 'official' },
   description: { type: String, default: '', maxlength: 300 },
   rules: { type: String, default: '', maxlength: 1500 },
   pinned: { type: String, default: '', maxlength: 280 }, // aviso fixado

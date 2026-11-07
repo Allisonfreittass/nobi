@@ -9,6 +9,7 @@ import { weeklySummary } from '../services/weekly.js';
 import { ensureShields } from '../services/shields.js';
 import { ShieldUse, Task, Membership, Report } from '../models/index.js';
 import { publicUser } from '../services/social.js';
+import { handOverClubs } from '../services/clubs.js';
 import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
 export const me = Router();
@@ -176,6 +177,7 @@ me.delete('/', async (req, res) => {
     console.error('[blob] exclusão de conta:', e.message);
     throw new HttpError(503, 'Não deu para apagar suas fotos agora. Tente de novo em instantes.');
   }
+  await handOverClubs(id);
   const posts = await Post.find({ userId: id }, { _id: 1 }).lean();
   // Comentários da pessoa em posts de outros somem: desconta da contagem desses posts
   const mine = await Comment.aggregate([{ $match: { userId: id } }, { $group: { _id: '$postId', n: { $sum: 1 } } }]);

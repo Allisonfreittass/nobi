@@ -18,10 +18,10 @@ export async function membershipOf(clubId, userId) {
 }
 export const canModerate = (m) => Boolean(m && m.status === 'active' && (m.role === 'admin' || m.role === 'moderator'));
 
-/** Clubes que a pessoa pode ver: todos os oficiais e os privados em que ela está. */
+/** Clubes que a pessoa pode ver: oficiais e abertos, e os privados em que ela está. */
 export async function visibleClubFilter(userId) {
   const mine = await Membership.find({ userId, status: 'active' }, { clubId: 1 }).lean();
-  return { $or: [{ kind: 'official' }, { _id: { $in: mine.map((m) => m.clubId) } }] };
+  return { $or: [{ kind: { $in: ['official', 'open'] } }, { _id: { $in: mine.map((m) => m.clubId) } }] };
 }
 
 export async function clubSummary(club, { userId, friends = [] } = {}) {
@@ -46,6 +46,25 @@ export async function clubSummary(club, { userId, friends = [] } = {}) {
     banned: mine?.status === 'banned',
     role: mine?.status === 'active' ? mine.role : null,
   };
+}
+
+export const MAX_OPEN_CLUBS = 3; // por pessoa, contra spam
+
+/**
+ * Antes de a pessoa sair de vez (excluir conta): cada clube em que ela é a única admin
+ * passa para o membro mais antigo (moderador primeiro). Clube sem mais ninguém é apagado.
+ */
+export async function handOverClubs(userId) {
+  const admin = await Membership.find({ userId, role: 'admin', status: 'active' }).lean();
+  for (const m of admin) {
+    const others = await Membership.countDocuments({ clubId: m.clubId, role: 'admin', status: 'active', userId: { $ne: userId } });
+    if (others) continue;
+    const next = await Membership.findOne({ clubId: m.clubId, status: 'active', userId: { $ne: userId } }).sort({ role: -1, joinedAt: 1 });
+    if (next) { next.role = 'admin'; await next.save(); continue; }
+    await Club.deleteOne({ _id: m.clubId, kind: { $ne: 'official' } });
+    await Membership.deleteMany({ clubId: m.clubId });
+    await Post.updateMany({ clubIds: m.clubId }, { $pull: { clubIds: m.clubId } });
+  }
 }
 
 /** Clubes em que um post Público entra: os da categoria do post em que a pessoa é membro ativa. */

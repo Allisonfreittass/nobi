@@ -1,6 +1,6 @@
 // Comunidade (substitui o Explorar): busca + Desafios · Clubes.
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icon.jsx';
 import PersonRow from '../../components/PersonRow.jsx';
 import { Chip, ErrorNote, Sheet, Skeleton } from '../../components/ui.jsx';
@@ -24,62 +24,108 @@ function MyClubCard({ club }) {
   );
 }
 
-/** Grupo privado de amigos: nome, categoria e amigos (só quem é amizade dos dois lados). */
-function NewGroupSheet({ open, onClose, onCreated }) {
+const INTEREST_HINTS = {
+  treino: ['Corrida', 'Musculação', 'Ciclismo', 'Yoga'], leitura: ['Leitura', 'Clube do livro'], estudo: ['Idiomas', 'Concursos', 'Faculdade'],
+  habito: ['Hábitos', 'Acordar cedo', 'Meditação'], projeto: ['Carreira', 'Projetos pessoais'], objetivo: ['Fé e devocional', 'Finanças'],
+};
+
+/** Criar clube: Aberto (qualquer pessoa entra, você vira admin) ou Só amigos (grupo privado). */
+function NewClubSheet({ open, onClose, onCreated }) {
   const { me } = useSession();
   const toast = useToast();
+  const [kind, setKind] = useState('open');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('treino');
+  const [interest, setInterest] = useState('');
+  const [online, setOnline] = useState(!me.city);
+  const [city, setCity] = useState(me.city || '');
+  const [description, setDescription] = useState('');
   const [picked, setPicked] = useState([]);
   const [friends, setFriends] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const isOpen = kind === 'open';
   useEffect(() => {
-    if (!open || friends) return;
+    if (!open || isOpen || friends) return;
     api(`/users/${me.username}/following`).then((r) => setFriends(r.people.filter((p) => p.relation?.friends))).catch(() => setFriends([]));
-  }, [open, friends, me.username]);
+  }, [open, isOpen, friends, me.username]);
   const flip = (id) => setPicked((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
   async function create() {
     setBusy(true);
     setError(null);
     try {
-      const c = await api('/clubs', { method: 'POST', body: { name, category, invite: picked } });
+      const body = isOpen
+        ? { kind: 'open', name, category, interest, city: online ? '' : city, description }
+        : { kind: 'private', name, category, invite: picked };
+      const c = await api('/clubs', { method: 'POST', body });
       invalidateLoad('/community');
-      toast('Grupo criado.');
+      toast(isOpen ? 'Clube criado. Você é admin dele.' : 'Grupo criado.');
       onCreated(c);
     } catch (e) { setError(e); } finally { setBusy(false); }
   }
+  const ready = name.trim().length >= 3 && (isOpen ? (online || city.trim()) : picked.length > 0);
   return (
-    <Sheet open={open} onClose={onClose} title="Grupo de amigos">
-      <p className="t-14 secondary">Um clube só de vocês: feed, ranking da semana e desafios. Ninguém de fora vê.</p>
-      <label className="field">Nome<input className="input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Corredores do prédio" /></label>
+    <Sheet open={open} onClose={onClose} title="Criar clube">
+      <div className="segmented" role="group" aria-label="Tipo de clube">
+        <button type="button" aria-pressed={isOpen} onClick={() => setKind('open')}>Aberto</button>
+        <button type="button" aria-pressed={!isOpen} onClick={() => setKind('private')}>Só amigos</button>
+      </div>
+      <p className="t-14 secondary">
+        {isOpen
+          ? 'Qualquer pessoa encontra e entra. Você vira admin: fixa recado, escreve as regras e modera o que aparece.'
+          : 'Um grupo só de vocês: feed, ranking da semana e desafios. Ninguém de fora vê.'}
+      </p>
+      <label className="field">Nome<input className="input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder={isOpen ? 'Corredores de Lavras' : 'Corredores do prédio'} /></label>
       <div className="stack gap-8">
         <span className="t-14 strong">Categoria</span>
+        <span className="t-13 muted">Posts Públicos dessa categoria dos membros aparecem no clube.</span>
         <div className="chips" role="group" aria-label="Categoria">
           {CATEGORY_ORDER.map((c) => (
-            <Chip key={c} small on={category === c} onClick={() => setCategory(c)}>
+            <Chip key={c} small on={category === c} onClick={() => { setCategory(c); setInterest(''); }}>
               <span style={{ width: 9, height: 9, borderRadius: 3, background: CATEGORIES[c].color }} aria-hidden="true" />{CATEGORIES[c].label}
             </Chip>
           ))}
         </div>
       </div>
-      <div className="stack gap-8">
-        <span className="t-14 strong">Amigos {picked.length > 0 && <span className="muted">· {picked.length}</span>}</span>
-        {!friends && <Skeleton height={60} />}
-        {friends?.length === 0 && <p className="t-14 muted">Grupos são entre amigos (vocês se seguem). Convide alguém primeiro.</p>}
-        {friends?.length > 0 && (
-          <div className="card flush card-list">
-            {friends.map((f) => (
-              <label key={f.id} className="list-row" style={{ cursor: 'pointer', minHeight: 52 }}>
-                <input type="checkbox" checked={picked.includes(f.id)} onChange={() => flip(f.id)} style={{ width: 20, height: 20, accentColor: 'var(--nobi-tinta)' }} />
-                <span className="t-15 strong grow ellipsis">{f.name}</span>
-              </label>
-            ))}
+      {isOpen && (
+        <>
+          <div className="stack gap-8">
+            <label className="field">Interesse (opcional)
+              <input className="input" value={interest} maxLength={30} onChange={(e) => setInterest(e.target.value)} placeholder={INTEREST_HINTS[category][0]} />
+            </label>
+            <div className="row gap-6 wrap">
+              {INTEREST_HINTS[category].map((i) => <Chip key={i} small on={interest === i} onClick={() => setInterest(interest === i ? '' : i)}>{i}</Chip>)}
+            </div>
           </div>
-        )}
-      </div>
+          <div className="row-group">
+            <label className="select-row">
+              <span className="grow stack" style={{ gap: 1 }}><span className="t-15" style={{ fontWeight: 500 }}>Online</span><span className="t-13 muted">sem cidade, para gente de qualquer lugar</span></span>
+              <span className="switch"><input type="checkbox" role="switch" checked={online} onChange={(e) => setOnline(e.target.checked)} aria-label="Clube online" /></span>
+            </label>
+          </div>
+          {!online && <label className="field">Cidade<input className="input" value={city} maxLength={60} onChange={(e) => setCity(e.target.value)} placeholder="Lavras, MG" /></label>}
+          <label className="field">Sobre o clube (opcional)<textarea className="textarea" rows={2} maxLength={300} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Treinos de rua no fim de semana, todo ritmo é bem-vindo." /></label>
+        </>
+      )}
+      {!isOpen && (
+        <div className="stack gap-8">
+          <span className="t-14 strong">Amigos {picked.length > 0 && <span className="muted">· {picked.length}</span>}</span>
+          {!friends && <Skeleton height={60} />}
+          {friends?.length === 0 && <p className="t-14 muted">Grupos são entre amigos (vocês se seguem). Convide alguém primeiro.</p>}
+          {friends?.length > 0 && (
+            <div className="card flush card-list">
+              {friends.map((f) => (
+                <label key={f.id} className="list-row" style={{ cursor: 'pointer', minHeight: 52 }}>
+                  <input type="checkbox" checked={picked.includes(f.id)} onChange={() => flip(f.id)} style={{ width: 20, height: 20, accentColor: 'var(--nobi-tinta)' }} />
+                  <span className="t-15 strong grow ellipsis">{f.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <ErrorNote error={error} />
-      <button type="button" className="btn btn-dark block" disabled={busy || !name.trim() || !picked.length} onClick={create}>{busy ? 'Criando…' : 'Criar grupo'}</button>
+      <button type="button" className="btn btn-dark block" disabled={busy || !ready} onClick={create}>{busy ? 'Criando…' : isOpen ? 'Criar clube' : 'Criar grupo'}</button>
     </Sheet>
   );
 }
@@ -102,6 +148,7 @@ function Clubs() {
   const [interest, setInterest] = useState(null);
   const [byInterest, setByInterest] = useState(null);
   const [group, setGroup] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => {
     if (!interest) { setByInterest(null); return; }
     setByInterest(null);
@@ -122,11 +169,11 @@ function Clubs() {
       <section className="stack gap-10" aria-label="Seus clubes">
         <div className="row between">
           <h2 className="title t-20">Seus clubes</h2>
-          <button type="button" className="btn btn-ghost sm" onClick={() => setGroup(true)}><Icon name="plus" size={16} /> Grupo de amigos</button>
+          <button type="button" className="btn btn-ghost sm" onClick={() => setGroup(true)}><Icon name="plus" size={16} /> Criar clube</button>
         </div>
         {data.myClubs.length > 0
           ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>{data.myClubs.map((c) => <MyClubCard key={c.id} club={c} />)}</div>
-          : <p className="t-14 secondary">Você ainda não entrou em nenhum clube. Clubes juntam gente com o mesmo objetivo: seus posts Públicos da categoria aparecem lá.</p>}
+          : <p className="t-14 secondary">Você ainda não entrou em nenhum clube. Clubes juntam gente com o mesmo objetivo: seus posts Públicos da categoria aparecem lá. Não achou o seu? Crie um.</p>}
       </section>
 
       <section className="stack gap-10" aria-label="Perto de você">
@@ -141,7 +188,7 @@ function Clubs() {
             <span className="btn sm btn-dark">Adicionar</span>
           </Link>
         )}
-        {!data.needsCity && data.nearby.clubs.length === 0 && <p className="t-14 secondary">Ainda não tem clube na sua região. Veja por interesse abaixo.</p>}
+        {!data.needsCity && data.nearby.clubs.length === 0 && <p className="t-14 secondary">Ainda não tem clube na sua região. Que tal criar o primeiro?</p>}
         {data.nearby.clubs.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
             {data.nearby.clubs.map((c) => <ClubGridCard key={c.id} club={c} onJoined={joined} />)}
@@ -166,7 +213,7 @@ function Clubs() {
         )}
       </section>
       <Suggestions />
-      <NewGroupSheet open={group} onClose={() => setGroup(false)} onCreated={(c) => { setGroup(false); joined(c); }} />
+      <NewClubSheet open={group} onClose={() => setGroup(false)} onCreated={(c) => { setGroup(false); joined(c); navigate(`/clubes/${c.slug}`); }} />
     </>
   );
 }

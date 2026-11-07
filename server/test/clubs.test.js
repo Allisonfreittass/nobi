@@ -88,3 +88,28 @@ test('desafios abertos: comunidade para todos, de clube só para membros; grupo 
   assert.equal((await call('GET', `/clubs/${group.slug}`, null, caio.token)).status, 404);
   assert.equal((await call('POST', `/clubs/${group.slug}/join`, null, caio.token)).status, 404);
 });
+
+test('qualquer pessoa cria clube aberto e vira admin; limites e saída', async () => {
+  const [ana, beto] = await Promise.all([signup('Ana'), signup('Beto')]);
+  const name = `Corredores ${Date.now()}`;
+  const r = await call('POST', '/clubs', { kind: 'open', name, category: 'treino', interest: 'Corrida', city: 'Lavras, MG' }, ana.token);
+  assert.equal(r.status, 201);
+  assert.equal(r.body.role, 'admin');
+  assert.equal(r.body.kind, 'open');
+  assert.equal((await call('POST', '/clubs', { kind: 'open', name: name.toUpperCase(), category: 'treino' }, beto.token)).status, 400, 'nome repetido');
+
+  // Beto encontra na busca, entra e posta; Ana modera
+  const found = (await call('GET', `/community/search?q=${encodeURIComponent(name.slice(0, 10))}`, null, beto.token)).body.clubs;
+  assert.ok(found.some((c) => c.slug === r.body.slug));
+  assert.equal((await call('POST', `/clubs/${r.body.slug}/join`, null, beto.token)).body.member, true);
+  assert.equal((await call('GET', `/clubs/${r.body.slug}`, null, ana.token)).body.canModerate, true);
+
+  for (let i = 0; i < 2; i += 1) await call('POST', '/clubs', { kind: 'open', name: `${name} ${i}`, category: 'treino' }, ana.token);
+  assert.equal((await call('POST', '/clubs', { kind: 'open', name: `${name} extra`, category: 'treino' }, ana.token)).status, 400, 'até 3 por pessoa');
+
+  // Admin sai: Beto vira admin. Beto sai: clube sem ninguém é encerrado.
+  await call('DELETE', `/clubs/${r.body.slug}/membership`, null, ana.token);
+  assert.equal((await call('GET', `/clubs/${r.body.slug}`, null, beto.token)).body.role, 'admin');
+  assert.equal((await call('DELETE', `/clubs/${r.body.slug}/membership`, null, beto.token)).body.deleted, true);
+  assert.equal((await call('GET', `/clubs/${r.body.slug}`, null, beto.token)).status, 404);
+});
