@@ -138,7 +138,11 @@ export default function Profile() {
         </span>
         <div className="stack grow" style={{ gap: 3 }}>
           <h1 className="title t-22" style={{ fontWeight: 800, fontSize: 24 }}>{p.name}</h1>
-          <span className="t-13 muted">@{p.username} · {p.followers} {p.followers === 1 ? 'seguidor' : 'seguidores'}</span>
+          <span className="t-13 muted">@{p.username}</span>
+          <span className="row gap-14 t-14">
+            <Link to={`/u/${p.username}/seguidores`} className="tap" style={{ minHeight: 32, display: 'inline-flex', alignItems: 'center' }}><strong>{p.followers}</strong>&nbsp;<span className="secondary">{p.followers === 1 ? 'seguidor' : 'seguidores'}</span></Link>
+            <Link to={`/u/${p.username}/seguindo`} className="tap" style={{ minHeight: 32, display: 'inline-flex', alignItems: 'center' }}><strong>{p.following}</strong>&nbsp;<span className="secondary">seguindo</span></Link>
+          </span>
           {p.bio && <span className="t-14 secondary">{p.bio}</span>}
           {p.season && (
             <span className="row gap-6 t-12 strong" style={{ alignSelf: 'flex-start', marginTop: 4, padding: '4px 10px', borderRadius: 12, background: 'var(--nobi-tinta)', color: '#FFFFFF' }}>

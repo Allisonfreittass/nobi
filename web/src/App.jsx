@@ -23,6 +23,7 @@ const loadChallenges = () => import('./screens/Challenges.jsx');
 const loadNotifications = () => import('./screens/Notifications.jsx');
 const loadInvite = () => import('./screens/Invite.jsx');
 const loadStarted = () => import('./screens/Started.jsx');
+const loadConnections = () => import('./screens/Connections.jsx');
 const ResetPassword = lazy(loadResetPassword);
 const Terms = lazy(loadTerms);
 const Privacy = lazy(loadPrivacy);
@@ -38,7 +39,8 @@ const Challenges = lazy(loadChallenges);
 const Notifications = lazy(loadNotifications);
 const Invite = lazy(loadInvite);
 const Started = lazy(loadStarted);
-const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy];
+const Connections = lazy(loadConnections);
+const LAZY = [loadResetPassword, loadTerms, loadExplore, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy, loadConnections];
 function usePrefetch() {
   useEffect(() => {
     const go = () => LAZY.forEach((l) => l().catch(() => {}));
@@ -120,6 +122,7 @@ export default function App() {
         <Route path="/metas" element={<Goals />} />
         <Route path="/perfil" element={<Profile />} />
         <Route path="/u/:username" element={<Profile />} />
+        <Route path="/u/:username/:tab" element={<Connections />} />
         <Route path="/desafios" element={<Challenges />} />
         <Route path="/desafios/:id" element={<Challenge />} />
         <Route path="/notificacoes" element={<Notifications />} />

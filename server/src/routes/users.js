@@ -108,6 +108,30 @@ users.get('/:username', async (req, res) => {
   res.json(out);
 });
 
+// Seguidores e seguindo: só para quem pode ver o perfil (o próprio, amigos, ou todos se for público)
+async function connections(req, res, direction) {
+  const u = await findUser(req.params.username);
+  const blocked = await blockedIds(req.user._id);
+  if (blocked.includes(String(u._id))) throw notFound('Perfil não encontrado.');
+  const rel = await relation(req.user._id, u._id);
+  if (!allowed(rel, u.privacy.profile)) return res.json({ hidden: true, people: [] });
+  const field = direction === 'followers' ? { followeeId: u._id } : { followerId: u._id };
+  const rows = await Follow.find({ ...field, status: 'accepted' }).sort({ createdAt: -1 }).limit(200).lean();
+  const ids = rows.map((r) => (direction === 'followers' ? r.followerId : r.followeeId)).filter((id) => !blocked.includes(String(id)));
+  const people = await User.find({ _id: { $in: ids } }).lean();
+  const byId = new Map(people.map((p) => [String(p._id), p]));
+  const ordered = ids.map((id) => byId.get(String(id))).filter(Boolean);
+  res.json({ hidden: false, people: await withRelation(req.user._id, ordered) });
+}
+users.get('/:username/followers', (req, res) => connections(req, res, 'followers'));
+users.get('/:username/following', (req, res) => connections(req, res, 'following'));
+
+// Remover alguém dos meus seguidores (a pessoa não é avisada)
+users.delete('/me/followers/:id', async (req, res) => {
+  await Follow.deleteOne({ followerId: req.params.id, followeeId: req.user._id });
+  res.json({ ok: true });
+});
+
 users.get('/:username/posts', async (req, res) => {
   const u = await findUser(req.params.username);
   const rel = await relation(req.user._id, u._id);

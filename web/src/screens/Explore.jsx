@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import PostCard from '../components/PostCard.jsx';
+import PersonRow from '../components/PersonRow.jsx';
 import { Avatar, Skeleton } from '../components/ui.jsx';
 import Broto from '../components/Broto.jsx';
 import { useLoad } from '../lib/useLoad.js';
@@ -10,30 +11,6 @@ import { useSession } from '../lib/session.jsx';
 import { shareInvite } from '../lib/invite.js';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
-
-function PersonRow({ u, onRelation }) {
-  const toast = useToast();
-  const rel = u.relation;
-  const label = rel.following === 'accepted' ? (rel.friends ? 'Amigos' : 'Seguindo') : rel.following === 'pending' ? 'Pedido enviado' : rel.followsMe ? 'Seguir de volta' : 'Seguir';
-  async function click() {
-    try {
-      const r = await api(`/users/${u.id}/follow`, { method: rel.following === 'none' ? 'POST' : 'DELETE' });
-      onRelation(r.relation);
-    } catch (e) { toast(e.message); }
-  }
-  return (
-    <div className="list-row">
-      <Link to={`/u/${u.username}`} className="row gap-12 grow" style={{ minWidth: 0 }}>
-        <Avatar user={u} size={44} />
-        <span className="stack grow" style={{ gap: 1, minWidth: 0 }}>
-          <span className="strong t-15 ellipsis">{u.name}</span>
-          <span className="t-13 muted ellipsis">@{u.username}{u.bio ? ` · ${u.bio}` : ''}</span>
-        </span>
-      </Link>
-      <button type="button" className={`btn sm ${rel.following === 'none' ? 'btn-primary' : 'btn-outline'}`} aria-pressed={rel.following !== 'none'} onClick={click}>{label}</button>
-    </div>
-  );
-}
 
 function Invite() {
   const { me } = useSession();
