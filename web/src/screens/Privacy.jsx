@@ -38,6 +38,7 @@ const sections = [
             ['Uso do app', 'Objetivos, registros (data, tempo, páginas, distância, quantidade e notas), marcos de projetos, sequências, nível, XP e conquistas.'],
             ['Social', 'Quem você segue e quem segue você, bloqueios, convites, publicações, fotos dos posts, comentários e reações "Boa!".'],
             ['Preferências', 'Tema, início da semana, horário do lembrete, notificações, animações do Broto e escolhas de privacidade.'],
+            ['Notificações', 'Se você ativar as notificações no celular, guardamos o endereço técnico que o seu navegador gera para receber avisos e o fuso horário do aparelho (para o lembrete chegar na sua hora). Ao desativar, apagamos esse endereço.'],
             ['Técnicos', 'Data e hora do seu aparelho (para saber qual é o seu "hoje"), e registros técnicos de acesso, como endereço IP, data, hora e navegador, gerados pela nossa hospedagem.'],
           ]}
         />
@@ -54,7 +55,7 @@ const sections = [
         rows={[
           ['Criar e manter sua conta, calcular sequências, nível e conquistas, e guardar seus registros', 'Execução do contrato (art. 7º, V)'],
           ['Mostrar seu perfil, publicações e participação em desafios para o público que você escolheu', 'Execução do contrato (art. 7º, V)'],
-          ['Avisos dentro do app: lembrete de check-in, reações, comentários, convites (você pode desligar)', 'Execução do contrato (art. 7º, V)'],
+          ['Avisos dentro do app e notificações no celular, se você ativar: lembrete de check-in, reações, comentários, convites (cada tipo pode ser desligado)', 'Execução do contrato (art. 7º, V)'],
           ['Segurança: proteger contas, impedir fraude e abuso, ligar com segurança o login do Google a uma conta existente', 'Legítimo interesse (art. 7º, IX)'],
           ['Atender pedidos de autoridades e cumprir a lei', 'Obrigação legal (art. 7º, II)'],
         ]}
@@ -84,6 +85,7 @@ const sections = [
             ['Vercel Inc.', 'Hospedagem do site e do servidor, e armazenamento das fotos', 'Servidor em São Paulo; empresa nos EUA'],
             ['MongoDB Inc. (Atlas)', 'Banco de dados onde ficam conta, registros e publicações', 'São Paulo (Brasil)'],
             ['Google LLC', 'Login com Google (só se você usar) e entrega das fontes do site (o navegador baixa as fontes dos servidores do Google, que recebem seu endereço IP)', 'EUA e outros países'],
+            ['Serviço de notificações do seu navegador (Google, Apple ou Mozilla)', 'Entregar as notificações ao seu aparelho, se você ativar. O conteúdo vai criptografado', 'Varia conforme o navegador'],
           ]}
         />
         <p>Também podemos compartilhar dados quando a lei exigir ou por ordem judicial.</p>
@@ -103,7 +105,7 @@ const sections = [
         <p>O {APP_NAME} não usa cookies. No armazenamento local do navegador, guardamos só o necessário:</p>
         <ul>
           <li>sua sessão (para você não precisar entrar toda vez);</li>
-          <li>quantas vezes você abriu o app e se você dispensou o convite para instalar na tela de início;</li>
+          <li>quantas vezes você abriu o app e se você dispensou os convites para instalar na tela de início ou para ativar o lembrete;</li>
           <li>um convite que você abriu antes de criar a conta, até ele ser aceito.</li>
         </ul>
         <p>Ao sair da conta, a sessão é apagada do aparelho.</p>

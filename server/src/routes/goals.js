@@ -8,6 +8,9 @@ import { award, grantXp, ownedCodes } from '../services/achievements.js';
 import { XP } from '../services/level.js';
 import { friendIds, publicUser } from '../services/social.js';
 import { currentSeason } from '../services/seasons.js';
+import { notify, localParts } from '../services/push.js';
+import { social } from '../services/pushMessages.js';
+import { weeklyPoints } from '../services/progress.js';
 
 export const goals = Router();
 
@@ -75,6 +78,9 @@ goals.post('/', async (req, res) => {
     };
   }
   const g = await Goal.create(doc);
+  if (g.shared) {
+    await Promise.all(g.shared.invited.map((u) => notify(u, { ...social.invite(req.user.name, g.title, g.shared.mode), url: `/desafios/${g._id}` }, { type: 'challenges', dedupeKey: `ch:inv:${g._id}` })));
+  }
   if (g.shared) await award(req.user._id, 'juntos');
   if (g.shared?.endsAt) await award(req.user._id, 'desafio');
   res.status(201).json(await goalView(g.toObject(), req.user, req.today));
@@ -127,6 +133,7 @@ goals.post('/:id/join', async (req, res) => {
   await g.save();
   await award(req.user._id, 'juntos');
   if (g.shared.endsAt) await award(req.user._id, 'desafio');
+  await notify(g.ownerId, { ...social.joined(req.user.name, g.title), url: `/desafios/${g._id}` }, { type: 'challenges', dedupeKey: `ch:join:${g._id}:${req.user._id}` });
   res.json(await goalView(g.toObject(), req.user, req.today));
 });
 
@@ -216,6 +223,19 @@ goals.post('/:id/checkins', async (req, res) => {
   if (season && days >= 21) {
     const a = await award(uid, 'temporada-21', season._id, { have });
     if (a) earned.push(a);
+  }
+
+  if (g.shared?.mode === 'versus') {
+    const everyone = await Checkin.find({ goalId: g._id }).lean();
+    const ptsAfter = weeklyPoints(g, everyone, today);
+    const ptsBefore = weeklyPoints(g, everyone.filter((c) => String(c._id) !== String(checkin._id)).concat(before.filter((c) => String(c._id) === String(checkin._id))), today);
+    const meBefore = ptsBefore.get(String(uid)) || 0;
+    const meAfter = ptsAfter.get(String(uid)) || 0;
+    const passed = g.shared.participants.filter((p) => String(p) !== String(uid)).filter((p) => {
+      const theirs = ptsAfter.get(String(p)) || 0;
+      return theirs >= meBefore && theirs < meAfter;
+    });
+    await Promise.all(passed.map((p) => notify(p, { ...social.overtaken(req.user.name, g.title, meAfter - (ptsAfter.get(String(p)) || 0)), url: `/desafios/${g._id}` }, { type: 'challenges', dedupeKey: `ch:ot:${g._id}:${p}:${today}` })));
   }
 
   const fresh = await User.findById(uid);

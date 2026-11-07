@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
 import GoalCard from '../components/GoalCard.jsx';
+import { PushCard } from '../components/PushPrompt.jsx';
 import { Avatar, Chip, ErrorNote, RingProgress, Skeleton } from '../components/ui.jsx';
 import { useLoad } from '../lib/useLoad.js';
 import { useSession } from '../lib/session.jsx';
@@ -77,6 +78,7 @@ export default function Goals() {
       </header>
 
       <Invites onJoined={reload} />
+      <PushCard />
       <ErrorNote error={error} onRetry={reload} />
       {loading && !data && <><Skeleton height={104} /><Skeleton height={180} /><Skeleton height={180} /></>}
 

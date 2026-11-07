@@ -1,0 +1,58 @@
+// Lembrete de check-in: no horário escolhido, um por dia, só se faltar algo (DESIGN.md §8.9).
+// Chamado de 15 em 15 minutos pelo cron-job.org (rota /api/cron/reminders).
+import { PushSubscription, PushLog, User, Checkin } from '../models/index.js';
+import { userGoals, streakSummary } from './progress.js';
+import { friendIds } from './social.js';
+import { localParts, sendPush, recentMessageIds, remember } from './push.js';
+import { REMINDERS, chooseMessage } from './pushMessages.js';
+
+const UNIT_LABEL = { copos: 'copos', treinos: 'treinos', 'lições': 'lições', min: 'min', 'páginas': 'páginas' };
+
+/** Monta o contexto que as mensagens usam: o que falta, sequências, amigos e desafio. */
+export async function reminderContext(user, date, hour) {
+  const goals = await userGoals(user, date);
+  const pending = goals
+    .filter((g) => g.status.activeToday && g.kind !== 'project' && !g.status.periodDone && !(g.shared?.tasks?.length))
+    .map((g) => ({
+      title: g.title, category: g.category, kind: g.kind, streak: g.streak.current, unit: g.streak.unit,
+      need: g.status.need, todayValue: g.status.todayValue, weekValue: g.status.weekValue, unitLabel: UNIT_LABEL[g.target?.unit] || g.target?.unit || '',
+    }));
+  if (!pending.length) return null;
+
+  const [summary, friends] = await Promise.all([streakSummary(user, date), friendIds(user._id)]);
+  const doneIds = friends.length ? await Checkin.distinct('userId', { userId: { $in: friends }, date }) : [];
+  const friendsDone = doneIds.length ? (await User.find({ _id: { $in: doneIds.slice(0, 5) } }, { name: 1 }).lean()).map((u) => u.name.split(' ')[0]) : [];
+
+  let challenge = null;
+  const versus = goals.find((g) => g.shared?.ranking && !g.shared.ended);
+  if (versus) {
+    const mine = versus.shared.ranking.find((r) => r.me);
+    const ahead = versus.shared.ranking[mine.position - 2];
+    challenge = { title: versus.title, position: mine.position, aheadName: ahead?.name.split(' ')[0] || null, gap: ahead ? ahead.points - mine.points : 0 };
+  }
+  const comeback = pending.every((g) => g.streak === 0) && goals.some((g) => g.streak.best >= 3);
+  return { pending, total: goals.filter((g) => g.status.activeToday && g.kind !== 'project').length, maxDays: summary.maxDays, golden: summary.golden, friendsDone, challenge, hour, comeback };
+}
+
+export async function runReminders(now = new Date()) {
+  const ids = await PushSubscription.distinct('userId');
+  const users = await User.find({ _id: { $in: ids }, 'prefs.notify.checkin': { $ne: false } });
+  const result = { checked: users.length, sent: 0, skipped: 0 };
+  for (const user of users) {
+    try {
+      const { date, time, hour } = localParts(user.timeZone, now);
+      // No horário escolhido ou depois, e nunca muito tarde da noite
+      if (time < (user.prefs.reminderTime || '20:00') || time >= '23:30') { result.skipped += 1; continue; }
+      if (await PushLog.exists({ userId: user._id, key: `reminder:${date}` })) { result.skipped += 1; continue; }
+      const ctx = await reminderContext(user, date, hour);
+      if (!ctx) { result.skipped += 1; continue; } // não falta nada hoje: nada de aviso
+      const msg = chooseMessage(REMINDERS, ctx, await recentMessageIds(user._id));
+      const n = await sendPush(user._id, { title: msg.title, body: msg.body, url: '/metas', tag: 'reminder' }, { type: 'reminder', dedupeKey: `reminder:${date}`, quiet: false, user });
+      if (n) { result.sent += 1; await remember(user._id, `msg:${msg.id}:${date}`); }
+    } catch (e) {
+      console.error('[reminder]', String(user._id), e.message);
+    }
+  }
+  return result;
+}
+

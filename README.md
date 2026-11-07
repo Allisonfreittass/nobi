@@ -47,7 +47,12 @@ Conta de demonstração: `rafalima@nobi.dev` / `nobi1234` (também `marina`, `ca
 ### Fotos
 Foto de perfil e foto nos posts ficam no **Vercel Blob** (público), nunca no banco. O app reduz a imagem no aparelho (perfil 256 px, post até 1440 px) e o servidor confere os bytes (só JPG, PNG ou WebP). Em produção basta ligar um Blob Store (público) ao projeto na Vercel: os Blobs novos criam `BLOB_STORE_ID` e autenticam sozinhos (OIDC); os antigos usam `BLOB_READ_WRITE_TOKEN`. Em desenvolvimento, sem nenhum dos dois, as fotos vão para `server/.uploads`.
 
+### Notificações push
+Web Push com service worker (`web/public/sw.js`). Funciona no Android e no computador, e no iPhone (iOS 16.4+) só com o app adicionado à tela de início. Mensagens em `server/src/services/pushMessages.js`: variam com o contexto (sequência, véspera do Broto dourado, amigos que já fizeram, desafio) e nunca culpam. Avisos sociais não saem entre 22h e 8h e são agrupados.
+- Variáveis na Vercel: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`.
+- Lembrete: o cron-job.org chama `GET /api/cron/reminders` a cada 15 min com `Authorization: Bearer <CRON_SECRET>`.
+
 ### Ainda não feito
 - Login com Apple (precisa de conta de desenvolvedor Apple). O Google funciona ao preencher `GOOGLE_CLIENT_ID` / `VITE_GOOGLE_CLIENT_ID`.
 - Envio de e-mail para "Esqueci a senha": em desenvolvimento o link aparece no terminal da API.
-- Push notifications e criação de desafios com checklist pela interface (o "Foco Total" vem do seed).
+- Criação de desafios com checklist pela interface (o "Foco Total" vem do seed).

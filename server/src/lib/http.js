@@ -37,6 +37,15 @@ export async function requireAuth(req, _res, next) {
     const user = await User.findById(sub);
     if (!user) return next(new HttpError(401, 'Sessão expirada.'));
     if (user.sessionsValidAfter && iat * 1000 < user.sessionsValidAfter.getTime()) return next(new HttpError(401, 'Sessão expirada.'));
+    // Guarda o fuso do aparelho para o lembrete sair no horário certo
+    const tz = req.get('X-Time-Zone');
+    if (tz && tz !== user.timeZone && tz.length < 64) {
+      try {
+        new Intl.DateTimeFormat('en-CA', { timeZone: tz });
+        user.timeZone = tz;
+        await User.updateOne({ _id: user._id }, { $set: { timeZone: tz } });
+      } catch { /* fuso inválido: ignora */ }
+    }
     req.user = user;
     next();
   } catch {

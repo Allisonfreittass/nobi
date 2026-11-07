@@ -7,6 +7,8 @@ import { award } from '../services/achievements.js';
 import { computeStreak } from '../services/streaks.js';
 import { weekStartsOn } from '../services/progress.js';
 import { isOurImage, deleteImages } from '../services/storage.js';
+import { notify } from '../services/push.js';
+import { social } from '../services/pushMessages.js';
 
 export const posts = Router();
 
@@ -117,6 +119,10 @@ posts.post('/', async (req, res) => {
     kind, category: goal.category, title, metrics, text, photo, date: req.today,
   });
   const earned = await award(req.user._id, 'primeiro-post');
+  if (kind === 'milestone' && title) {
+    const friends = await friendIds(req.user._id);
+    await Promise.all(friends.slice(0, 50).map((f) => notify(f, { ...social.friendMilestone(req.user.name, title), url: `/u/${req.user.username}` }, { type: 'social', dedupeKey: `social:fm:${post._id}` })));
+  }
   const [view] = await hydratePosts([post.toObject()], req.user._id);
   res.status(201).json({ post: view, achievements: earned ? [earned] : [] });
 });
@@ -148,6 +154,11 @@ posts.post('/:id/react', async (req, res) => {
   if (i < 0) {
     const [received] = await Post.aggregate([{ $match: { userId: p.userId } }, { $project: { n: { $size: '$reactions' } } }, { $group: { _id: null, n: { $sum: '$n' } } }]);
     if ((received?.n || 0) >= 10) await award(p.userId, 'boa-10');
+    if (String(p.userId) !== String(req.user._id)) {
+      const hour = new Date().toISOString().slice(0, 13);
+      const goalTitle = p.goalId ? (await Goal.findById(p.goalId, { title: 1 }).lean())?.title : null;
+      await notify(p.userId, { ...social.reaction(req.user.name, p.reactions.length, p.title || goalTitle), url: `/u/${(await User.findById(p.userId, { username: 1 }).lean())?.username || ''}` }, { type: 'social', dedupeKey: `social:boa:${p._id}:${hour}` });
+    }
     const given = await Post.countDocuments({ 'reactions.userId': req.user._id, userId: { $ne: req.user._id } });
     if (given >= 10) await award(req.user._id, 'torcida');
   }
@@ -169,6 +180,9 @@ posts.post('/:id/comments', async (req, res) => {
   if (!text) throw bad('Escreva algo.');
   const c = await Comment.create({ postId: p._id, userId: req.user._id, text: text.slice(0, 280) });
   await Post.updateOne({ _id: p._id }, { $inc: { commentsCount: 1 } });
+  if (String(p.userId) !== String(req.user._id)) {
+    await notify(p.userId, { ...social.comment(req.user.name, c.text), url: '/notificacoes' }, { type: 'social', dedupeKey: `social:comment:${c._id}` });
+  }
   res.status(201).json({ id: String(c._id), text: c.text, createdAt: c.createdAt, user: publicUser(req.user), mine: true });
 });
 

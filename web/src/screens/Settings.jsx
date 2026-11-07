@@ -10,6 +10,7 @@ import { APP_NAME, APP_VERSION } from '../config.js';
 import { useInstallAction } from '../components/InstallPrompt.jsx';
 import InviteSheet from '../components/InviteSheet.jsx';
 import { shareInvite } from '../lib/invite.js';
+import { usePush } from '../lib/push.js';
 
 function Group({ title, children }) {
   return (
@@ -95,6 +96,15 @@ export default function Settings() {
   const requests = useLoad('/users/follow-requests');
   const [sheet, setSheet] = useState(null);
   const installer = useInstallAction();
+  const push = usePush();
+  async function togglePush(on) {
+    try {
+      if (on) { if (await push.enable()) toast('Notificações ligadas neste aparelho.'); } else await push.disable();
+    } catch (e) { toast(e.message); }
+  }
+  async function testPush() {
+    try { await push.test(); toast('Enviado. Deve chegar em instantes.'); } catch (e) { toast(e.message); }
+  }
   async function invite() {
     if ((await shareInvite(me.username)) === 'unavailable') setSheet('invite');
   }
@@ -139,6 +149,18 @@ export default function Settings() {
       </Link>
 
       <Group title="Notificações">
+        {push.state === 'install' ? (
+          <Row as="button" type="button" label="Notificações no celular" desc="no iPhone, primeiro adicione o app à tela de início" onClick={installer.run}><Icon name="chevron" size={18} /></Row>
+        ) : push.state === 'denied' ? (
+          <Row label="Notificações no celular" desc="bloqueadas neste aparelho: libere nas configurações do navegador ou do celular" />
+        ) : push.state === 'unsupported' ? (
+          <Row label="Notificações no celular" desc="este navegador não oferece notificações" />
+        ) : (
+          <Row label="Notificações no celular" desc={push.state === 'on' ? 'ligadas neste aparelho' : 'avisos mesmo com o app fechado'}>
+            {push.state === 'on' && <button type="button" className="btn btn-soft sm" onClick={testPush}>Testar</button>}
+            <Toggle checked={push.state === 'on'} onChange={togglePush} label="Notificações no celular" disabled={push.busy} />
+          </Row>
+        )}
         <Row label="Lembrete de check-in" desc="um aviso por dia, só se faltar algo"><Toggle checked={n.checkin} onChange={(v) => prefs({ notify: { checkin: v } })} label="Lembrete de check-in" /></Row>
         <Row label="Reações e comentários" desc="quando alguém reage ao seu post"><Toggle checked={n.social} onChange={(v) => prefs({ notify: { social: v } })} label="Reações e comentários" /></Row>
         <Row label="Desafios e ranking" desc="convites e fim de semana do ranking"><Toggle checked={n.challenges} onChange={(v) => prefs({ notify: { challenges: v } })} label="Desafios e ranking" /></Row>

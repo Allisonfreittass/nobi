@@ -25,6 +25,7 @@ export class ApiError extends Error {
 export async function api(path, { method = 'GET', body, raw = false } = {}) {
   const { date, time } = localNow();
   const headers = { 'X-Local-Date': date, 'X-Local-Time': time };
+  try { headers['X-Time-Zone'] = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* sem fuso */ }
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;

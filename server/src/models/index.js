@@ -8,3 +8,5 @@ export { Follow } from './Follow.js';
 export { Season } from './Season.js';
 export { Achievement } from './Achievement.js';
 export { XpGrant } from './XpGrant.js';
+export { PushSubscription } from './PushSubscription.js';
+export { PushLog } from './PushLog.js';

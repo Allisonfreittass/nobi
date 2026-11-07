@@ -7,6 +7,8 @@ import { streakSummary, profileStats } from '../services/progress.js';
 import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { achievementsView } from './me.js';
 import { hydratePosts } from './posts.js';
+import { notify } from '../services/push.js';
+import { social } from '../services/pushMessages.js';
 
 export const users = Router();
 
@@ -125,6 +127,7 @@ users.post('/:id/follow', async (req, res) => {
     { $setOnInsert: { status } },
     { upsert: true },
   );
+  if (status === 'pending') await notify(target._id, { ...social.followRequest(req.user.name), url: '/notificacoes' }, { type: 'social', dedupeKey: `social:fr:${req.user._id}` });
   res.json({ relation: await relation(req.user._id, target._id) });
 });
 
@@ -136,6 +139,7 @@ users.post('/:username/invite', async (req, res) => {
   for (const [a, b] of [[req.user._id, inviter._id], [inviter._id, req.user._id]]) {
     await Follow.updateOne({ followerId: a, followeeId: b }, { $set: { status: 'accepted' } }, { upsert: true });
   }
+  await notify(inviter._id, { ...social.inviteJoined(req.user.name), url: `/u/${req.user.username}` }, { type: 'social', dedupeKey: `social:ij:${req.user._id}` });
   res.json({ relation: await relation(req.user._id, inviter._id), inviter: publicUser(inviter) });
 });
 
