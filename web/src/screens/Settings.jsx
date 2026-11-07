@@ -7,6 +7,9 @@ import { useToast } from '../lib/toast.jsx';
 import { useLoad } from '../lib/useLoad.js';
 import { api } from '../lib/api.js';
 import { APP_NAME, APP_VERSION } from '../config.js';
+import { useInstallAction } from '../components/InstallPrompt.jsx';
+import InviteSheet from '../components/InviteSheet.jsx';
+import { shareInvite } from '../lib/invite.js';
 
 function Group({ title, children }) {
   return (
@@ -91,6 +94,10 @@ export default function Settings() {
   const blocked = useLoad('/me/blocked');
   const requests = useLoad('/users/follow-requests');
   const [sheet, setSheet] = useState(null);
+  const installer = useInstallAction();
+  async function invite() {
+    if ((await shareInvite(me.username)) === 'unavailable') setSheet('invite');
+  }
 
   async function patch(body, optimistic) {
     const prev = me;
@@ -170,6 +177,13 @@ export default function Settings() {
         <Row label="Animações do Broto" desc="pulos e reações ao concluir algo"><Toggle checked={me.prefs.mascotMotion} onChange={(v) => prefs({ mascotMotion: v })} label="Animações do Broto" /></Row>
       </Group>
 
+      <Group title="App">
+        <Row as="button" type="button" label="Convidar amigos" desc="quem entrar pelo seu link vira seu amigo" onClick={invite}><Icon name="share" size={18} /></Row>
+        {installer.install.available && (
+          <Row as="button" type="button" label="Adicionar à tela de início" desc="abre em tela cheia, como app" onClick={installer.run}><Icon name="download" size={18} /></Row>
+        )}
+      </Group>
+
       <Group title="Conta">
         <Row as="button" type="button" label="E-mail e senha" desc={me.email || undefined} onClick={() => setSheet('account')}><Icon name="chevron" size={18} /></Row>
         <Row as="button" type="button" label="Exportar meus dados" desc="arquivo com tudo que é seu" onClick={exportData}><Icon name="download" size={18} /></Row>
@@ -181,6 +195,8 @@ export default function Settings() {
 
       {sheet === 'account' && <AccountSheet open onClose={() => setSheet(null)} />}
       {sheet === 'delete' && <DeleteSheet open onClose={() => setSheet(null)} />}
+      <InviteSheet open={sheet === 'invite'} onClose={() => setSheet(null)} username={me.username} />
+      {installer.sheet}
     </div>
   );
 }

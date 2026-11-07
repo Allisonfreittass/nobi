@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
+import './lib/install.js'; // captura o convite de instalação do Chrome o quanto antes
 import { SessionProvider } from './lib/session.jsx';
 import { ToastProvider } from './lib/toast.jsx';
 import { ShareProvider } from './lib/share.jsx';

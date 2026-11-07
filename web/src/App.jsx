@@ -6,6 +6,10 @@ import Login from './screens/Login.jsx';
 import ResetPassword from './screens/ResetPassword.jsx';
 import Terms from './screens/Terms.jsx';
 import Landing from './screens/Landing.jsx';
+import Invite from './screens/Invite.jsx';
+import { useEffect } from 'react';
+import { acceptPendingInvite } from './lib/invite.js';
+import { useToast } from './lib/toast.jsx';
 import Feed from './screens/Feed.jsx';
 import Explore from './screens/Explore.jsx';
 import Register from './screens/Register.jsx';
@@ -44,13 +48,27 @@ function PublicOnly({ children }) {
   return me ? <Navigate to={next || loc.state?.from || '/'} replace /> : children;
 }
 
+/** Aceita um convite guardado assim que a pessoa entra (por login, cadastro ou Google). */
+function PendingInvite() {
+  const { me } = useSession();
+  const toast = useToast();
+  useEffect(() => {
+    if (!me) return;
+    acceptPendingInvite().then((inviter) => inviter && toast(`Agora você e ${inviter.name.split(' ')[0]} são amigos.`));
+  }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
 export default function App() {
   return (
+    <>
+    <PendingInvite />
     <Routes>
       <Route path="/entrar" element={<PublicOnly><Login /></PublicOnly>} />
       <Route path="/redefinir-senha" element={<ResetPassword />} />
       <Route path="/termos" element={<Terms />} />
       <Route path="/privacidade" element={<Terms />} />
+      <Route path="/convite/:username" element={<Invite />} />
 
       {/* Telas cheias, sem menu */}
       <Route path="/registrar" element={<Private><Register /></Private>} />
@@ -75,5 +93,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

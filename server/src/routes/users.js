@@ -128,6 +128,17 @@ users.post('/:id/follow', async (req, res) => {
   res.json({ relation: await relation(req.user._id, target._id) });
 });
 
+// Quem convida já escolheu: aceitar o convite cria a amizade nos dois sentidos
+users.post('/:username/invite', async (req, res) => {
+  const inviter = await findUser(req.params.username);
+  if (String(inviter._id) === String(req.user._id)) return res.json({ relation: await relation(req.user._id, inviter._id), self: true });
+  if ((await blockedIds(req.user._id)).includes(String(inviter._id))) throw notFound('Convite não encontrado.');
+  for (const [a, b] of [[req.user._id, inviter._id], [inviter._id, req.user._id]]) {
+    await Follow.updateOne({ followerId: a, followeeId: b }, { $set: { status: 'accepted' } }, { upsert: true });
+  }
+  res.json({ relation: await relation(req.user._id, inviter._id), inviter: publicUser(inviter) });
+});
+
 users.delete('/:id/follow', async (req, res) => {
   const target = await findUser(req.params.id);
   await Follow.deleteOne({ followerId: req.user._id, followeeId: target._id });

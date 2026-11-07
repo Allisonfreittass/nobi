@@ -28,6 +28,12 @@ export async function uniqueUsername(base) {
 
 const randomColor = () => AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
 
+auth.get('/invite/:username', async (req, res) => {
+  const u = await User.findOne({ username: String(req.params.username).toLowerCase() }).lean();
+  if (!u) throw new HttpError(404, 'Convite não encontrado.');
+  res.json({ name: u.name, username: u.username, avatarUrl: u.avatarUrl || '', avatarColor: u.avatarColor });
+});
+
 auth.get('/providers', (_req, res) => {
   res.json({ email: true, google: Boolean(config.googleClientId), apple: false });
 });

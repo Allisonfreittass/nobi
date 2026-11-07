@@ -5,7 +5,9 @@ import PostCard from '../components/PostCard.jsx';
 import { Avatar, Skeleton } from '../components/ui.jsx';
 import Broto from '../components/Broto.jsx';
 import { useLoad } from '../lib/useLoad.js';
-import { APP_NAME } from '../config.js';
+import InviteSheet from '../components/InviteSheet.jsx';
+import { useSession } from '../lib/session.jsx';
+import { shareInvite } from '../lib/invite.js';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 
@@ -34,21 +36,18 @@ function PersonRow({ u, onRelation }) {
 }
 
 function Invite() {
-  const toast = useToast();
+  const { me } = useSession();
+  const [sheet, setSheet] = useState(false);
   async function share() {
-    const url = window.location.origin;
-    const text = `Bora evoluir junto no ${APP_NAME}?`;
-    try {
-      if (navigator.share) await navigator.share({ title: APP_NAME, text, url });
-      else { await navigator.clipboard.writeText(`${text} ${url}`); toast('Link copiado.'); }
-    } catch { /* cancelado */ }
+    if ((await shareInvite(me.username)) === 'unavailable') setSheet(true);
   }
   return (
     <div className="card empty">
       <div className="block-brasa" style={{ borderRadius: 24, padding: '16px 24px 6px' }}><Broto size={96} arms="wave" /></div>
       <h2 className="title t-20">Fica melhor com amigos</h2>
-      <p className="secondary t-14" style={{ maxWidth: 300 }}>Chame quem você quer acompanhar. Quando vocês se seguirem, um vê a evolução do outro e dá para criar desafios juntos.</p>
+      <p className="secondary t-14" style={{ maxWidth: 300 }}>Mande seu link. Quem entrar por ele já vira seu amigo: um acompanha a evolução do outro e dá para criar desafios juntos.</p>
       <button type="button" className="btn btn-dark" onClick={share}><Icon name="share" size={18} /> Convidar amigos</button>
+      <InviteSheet open={sheet} onClose={() => setSheet(false)} username={me.username} />
     </div>
   );
 }
