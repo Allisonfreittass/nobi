@@ -6,7 +6,7 @@ import { api } from '../lib/api.js';
 import { useSession } from '../lib/session.jsx';
 import { APP_NAME, BRAND_LINE, GOOGLE_CLIENT_ID } from '../config.js';
 
-function GoogleButton({ onCredential }) {
+function GoogleButton({ onCredential, text = 'continue_with' }) {
   const ref = useRef(null);
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return undefined;
@@ -14,7 +14,7 @@ function GoogleButton({ onCredential }) {
       window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: (r) => onCredential(r.credential) });
       const dark = document.documentElement.dataset.theme === 'dark';
       window.google.accounts.id.renderButton(ref.current, {
-        theme: dark ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale: 'pt-BR',
+        theme: dark ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text, locale: 'pt-BR',
         width: Math.min(400, ref.current.offsetWidth || 320), // o Google aceita no máximo 400 px
       });
     };
@@ -25,7 +25,7 @@ function GoogleButton({ onCredential }) {
     s.onload = render;
     document.head.appendChild(s);
     return () => s.remove();
-  }, [onCredential]);
+  }, [onCredential, text]);
   // Botão oficial do Google (Google Identity Services)
   // colorScheme 'normal': sem isso o navegador pinta um fundo branco atrás do iframe do Google
   return <div ref={ref} style={{ minHeight: 44, display: 'flex', justifyContent: 'center', colorScheme: 'normal' }} />;
@@ -77,10 +77,11 @@ export default function Login() {
   async function google(credential) {
     try {
       const r = await api('/auth/google', { method: 'POST', body: { credential } });
-      signIn(r.token, r.me);
-      navigate('/', { replace: true });
+      // Conta nova pelo Google segue o mesmo caminho do cadastro: criar o primeiro objetivo
+      signIn(r.token, r.me, r.created ? '/metas/novo?primeiro=1' : undefined);
     } catch (err) { setError(err); }
   }
+
 
   const title = { signup: 'Criar conta', forgot: 'Esqueci a senha', email: 'Entrar com e-mail' }[mode];
 
@@ -107,6 +108,14 @@ export default function Login() {
           ) : (
             <form className="stack gap-12" onSubmit={submit} noValidate>
               {title && <h2 className="title t-20">{title}</h2>}
+              {mode === 'signup' && providers.google && (
+                <>
+                  <GoogleButton onCredential={google} text="signup_with" />
+                  <div className="row gap-10 t-13 muted" aria-hidden="true">
+                    <span className="grow" style={{ height: 1, background: 'var(--nobi-border-strong)' }} />ou com e-mail<span className="grow" style={{ height: 1, background: 'var(--nobi-border-strong)' }} />
+                  </div>
+                </>
+              )}
               {mode === 'signup' && (
                 <Field label="Como quer ser chamado">
                   {(id) => <input id={id} className="input" autoComplete="name" value={form.name} onChange={set('name')} placeholder="Seu nome" required />}

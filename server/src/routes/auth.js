@@ -69,8 +69,10 @@ auth.post('/google', async (req, res) => {
   const ticket = await client.verifyIdToken({ idToken: req.body?.credential, audience: config.googleClientId }).catch(() => null);
   const p = ticket?.getPayload();
   if (!p?.sub || !p.email_verified) throw new HttpError(401, 'Não deu para confirmar sua conta Google.');
+  let created = false;
   let user = await User.findOne({ $or: [{ googleId: p.sub }, { email: p.email.toLowerCase() }] });
   if (!user) {
+    created = true;
     user = await User.create({
       name: p.name || p.email.split('@')[0],
       email: p.email,
@@ -83,7 +85,7 @@ auth.post('/google', async (req, res) => {
     linkGoogle(user, p.sub);
     await user.save();
   }
-  res.json({ token: signToken(user), me: await meView(user, req.today) });
+  res.json({ token: signToken(user), me: await meView(user, req.today), created });
 });
 
 // Sem serviço de e-mail ainda: em desenvolvimento o link sai no terminal da API.
