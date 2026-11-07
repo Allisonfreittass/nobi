@@ -82,6 +82,7 @@ me.patch('/account', async (req, res) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw bad('E-mail inválido.');
     if (await User.exists({ email: email.toLowerCase(), _id: { $ne: u._id } })) throw new HttpError(409, 'Esse e-mail já tem conta.');
     u.email = email;
+    u.emailVerified = false;
   }
   if (newPassword) {
     if (newPassword.length < 8) throw bad('A nova senha precisa ter pelo menos 8 caracteres.');

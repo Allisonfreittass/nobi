@@ -7,6 +7,8 @@ const userSchema = new Schema({
   username: { type: String, required: true, unique: true, lowercase: true, trim: true, match: /^[a-z0-9_.]{3,24}$/ },
   email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
   passwordHash: { type: String },
+  emailVerified: { type: Boolean, default: false }, // provado por Google ou por link de e-mail
+  sessionsValidAfter: { type: Date }, // tokens emitidos antes disso deixam de valer
   googleId: { type: String, unique: true, sparse: true },
   bio: { type: String, default: '', maxlength: 120 },
   avatarUrl: { type: String, default: '' }, // '' = inicial, 'broto' = avatar do Broto, data:/https: = foto

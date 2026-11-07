@@ -6,6 +6,7 @@ import { User } from '../models/index.js';
 import { config } from '../config.js';
 import { bad, signToken, HttpError } from '../lib/http.js';
 import { meView } from './me.js';
+import { linkGoogle, nowSecond } from '../services/accounts.js';
 
 export const auth = Router();
 
@@ -68,11 +69,12 @@ auth.post('/google', async (req, res) => {
       name: p.name || p.email.split('@')[0],
       email: p.email,
       googleId: p.sub,
+      emailVerified: true,
       username: await uniqueUsername(p.email.split('@')[0]),
       avatarColor: randomColor(),
     });
   } else if (!user.googleId) {
-    user.googleId = p.sub;
+    linkGoogle(user, p.sub);
     await user.save();
   }
   res.json({ token: signToken(user), me: await meView(user, req.today) });
@@ -98,6 +100,8 @@ auth.post('/reset', async (req, res) => {
   const user = await User.findOne({ resetToken: hash, resetTokenExpiresAt: { $gt: new Date() } });
   if (!user) throw bad('Esse link expirou. Peça outro.');
   user.passwordHash = await bcrypt.hash(password, 10);
+  user.emailVerified = true;
+  user.sessionsValidAfter = nowSecond();
   user.resetToken = undefined;
   user.resetTokenExpiresAt = undefined;
   await user.save();

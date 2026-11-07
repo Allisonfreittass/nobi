@@ -33,9 +33,10 @@ export async function requireAuth(req, _res, next) {
   const m = /^Bearer (.+)$/.exec(req.get('Authorization') || '');
   if (!m) return next(new HttpError(401, 'Entre para continuar.'));
   try {
-    const { sub } = jwt.verify(m[1], config.jwtSecret);
+    const { sub, iat } = jwt.verify(m[1], config.jwtSecret);
     const user = await User.findById(sub);
     if (!user) return next(new HttpError(401, 'Sessão expirada.'));
+    if (user.sessionsValidAfter && iat * 1000 < user.sessionsValidAfter.getTime()) return next(new HttpError(401, 'Sessão expirada.'));
     req.user = user;
     next();
   } catch {
