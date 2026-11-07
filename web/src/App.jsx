@@ -9,6 +9,7 @@ import Landing from './screens/Landing.jsx';
 import Invite from './screens/Invite.jsx';
 import { useEffect } from 'react';
 import { acceptPendingInvite } from './lib/invite.js';
+import { isStandalone } from './lib/install.js';
 import { useToast } from './lib/toast.jsx';
 import Feed from './screens/Feed.jsx';
 import Explore from './screens/Explore.jsx';
@@ -25,9 +26,16 @@ import Challenges from './screens/Challenges.jsx';
 import Notifications from './screens/Notifications.jsx';
 
 function Splash() {
+  const { bootError, refresh } = useSession();
   return (
-    <div className="block-brasa" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-busy="true">
-      <div className="nobi-hop"><Broto size={110} title="Carregando" /></div>
+    <div className="block-brasa stack center gap-16" style={{ minHeight: '100dvh', justifyContent: 'center', padding: 24 }} aria-busy={!bootError}>
+      <div className={bootError ? '' : 'nobi-hop'}><Broto size={110} expression={bootError ? 'saudade' : 'padrao'} title={bootError ? 'Sem conexão' : 'Carregando'} /></div>
+      {bootError && (
+        <>
+          <p className="title t-20" style={{ textAlign: 'center' }}>Não deu para conectar.</p>
+          <button type="button" className="btn btn-dark" style={{ background: 'var(--nobi-tinta)', color: '#FFFFFF' }} onClick={refresh}>Tentar de novo</button>
+        </>
+      )}
     </div>
   );
 }
@@ -36,8 +44,8 @@ function Private({ children }) {
   const { me } = useSession();
   const loc = useLocation();
   if (me === undefined) return <Splash />;
-  // Na raiz, quem não está logado vê a landing page
-  if (!me) return loc.pathname === '/' ? <Landing /> : <Navigate to="/entrar" replace state={{ from: loc.pathname }} />;
+  // Na raiz, visitante vê a landing. Aberto como app instalado, vai direto para o login.
+  if (!me) return loc.pathname === '/' && !isStandalone() ? <Landing /> : <Navigate to="/entrar" replace state={{ from: loc.pathname }} />;
   return children;
 }
 

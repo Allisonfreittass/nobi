@@ -15,10 +15,14 @@ function applyPrefs(prefs) {
 export function SessionProvider({ children }) {
   const [me, setMe] = useState(undefined); // undefined = carregando, null = sem sessão
   const [next, setNext] = useState(null); // para onde ir logo depois de entrar
+  const [bootError, setBootError] = useState(null); // sem conexão ao abrir (a sessão continua guardada)
 
   const refresh = useCallback(async () => {
     if (!getToken()) return setMe(null);
-    try { setMe(await api('/me')); } catch (e) { if (e.status === 401) { setToken(null); setMe(null); } }
+    setBootError(null);
+    try { setMe(await api('/me')); } catch (e) {
+      if (e.status === 401) { setToken(null); setMe(null); } else setBootError(e);
+    }
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -40,10 +44,11 @@ export function SessionProvider({ children }) {
     setMe,
     refresh,
     next,
+    bootError,
     signIn(token, user, to) { setToken(token); setNext(to || null); setMe(user); },
     signOut() { setToken(null); setMe(null); },
     patchMe: (patch) => setMe((m) => (m ? { ...m, ...patch } : m)),
-  }), [me, refresh, next]);
+  }), [me, refresh, next, bootError]);
 
   return <SessionCtx.Provider value={value}>{children}</SessionCtx.Provider>;
 }
