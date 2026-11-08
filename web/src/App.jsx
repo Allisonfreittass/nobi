@@ -1,11 +1,12 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
-import Broto from './components/Broto.jsx';
-import { useSession } from './lib/session.jsx';
+import Broto, { preloadBroto } from './components/Broto.jsx';
+import { brotoOf, useSession } from './lib/session.jsx';
+import { useStatusBar } from './lib/statusBar.js';
 import Login from './screens/Login.jsx';
 import Landing from './screens/Landing.jsx';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 // Telas menos usadas baixam sob demanda; depois que o app abre, baixam em segundo plano
 const loadResetPassword = () => import('./screens/ResetPassword.jsx');
@@ -27,6 +28,7 @@ const loadInvite = () => import('./screens/Invite.jsx');
 const loadStarted = () => import('./screens/Started.jsx');
 const loadConnections = () => import('./screens/Connections.jsx');
 const loadWeekly = () => import('./screens/Weekly.jsx');
+const loadComeback = () => import('./screens/Comeback.jsx');
 const ResetPassword = lazy(loadResetPassword);
 const Terms = lazy(loadTerms);
 const Privacy = lazy(loadPrivacy);
@@ -46,7 +48,8 @@ const Invite = lazy(loadInvite);
 const Started = lazy(loadStarted);
 const Connections = lazy(loadConnections);
 const Weekly = lazy(loadWeekly);
-const LAZY = [loadResetPassword, loadTerms, loadCommunity, loadClub, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy, loadConnections, loadWeekly];
+const Comeback = lazy(loadComeback);
+const LAZY = [loadResetPassword, loadTerms, loadCommunity, loadClub, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy, loadConnections, loadWeekly, loadComeback];
 function usePrefetch() {
   useEffect(() => {
     const go = () => LAZY.forEach((l) => l().catch(() => {}));
@@ -64,6 +67,7 @@ import Goals from './screens/Goals.jsx';
 
 function Splash() {
   const { bootError, refresh } = useSession();
+  useStatusBar('#FF5B2E'); // topo coral também na abertura do app
   return (
     <div className="block-brasa stack center gap-16" style={{ minHeight: '100dvh', justifyContent: 'center', padding: 24 }} aria-busy={!bootError}>
       <div className={bootError ? '' : 'nobi-hop'}><span className="broto-plate round"><Broto size={110} expression={bootError ? 'saudade' : 'padrao'} title={bootError ? 'Broto com saudade: sem conexão' : 'Carregando'} priority /></span></div>
@@ -104,6 +108,25 @@ function PendingInvite() {
   return null;
 }
 
+// Telas em que a volta não interrompe: fluxos cheios e páginas públicas
+const NO_COMEBACK = ['/que-bom-te-ver', '/registrar', '/conquista', '/comecou', '/entrar', '/convite', '/redefinir-senha', '/termos', '/privacidade'];
+
+/** Leva para "Que bom te ver" uma vez, quando o servidor avisa que a pessoa voltou depois de dias. */
+function ComebackGate() {
+  const { me } = useSession();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const shown = useRef(false);
+  const comeback = me?.comeback;
+  useEffect(() => {
+    if (!comeback || shown.current || NO_COMEBACK.some((p) => location.pathname.startsWith(p))) return;
+    shown.current = true;
+    preloadBroto([{ expression: 'saudade', stage: brotoOf(me).stage }]);
+    navigate('/que-bom-te-ver', { state: { from: location } });
+  }, [comeback, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
 export default function App() {
   usePrefetch();
   const location = useLocation();
@@ -114,6 +137,7 @@ export default function App() {
     <>
     <StatusBarShield />
     <PendingInvite />
+    <ComebackGate />
     <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--nobi-bg)' }} aria-busy="true" />}>
     {background && (
       <Routes>
@@ -130,6 +154,7 @@ export default function App() {
       {/* Telas cheias, sem menu */}
       <Route path="/conquista" element={<Private><Achievement /></Private>} />
       <Route path="/comecou/:id" element={<Private><Started /></Private>} />
+      <Route path="/que-bom-te-ver" element={<Private><Comeback /></Private>} />
 
       {/* Com menu lateral no PC e barra inferior no celular */}
       <Route element={<Private><Layout /></Private>}>

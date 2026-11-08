@@ -7,6 +7,7 @@ import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
 import { weeklySummary } from '../services/weekly.js';
 import { ensureShields } from '../services/shields.js';
+import { comebackFor, markComebackSeen } from '../services/comeback.js';
 import { ShieldUse, Task, Membership, Report } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { handOverClubs } from '../services/clubs.js';
@@ -18,6 +19,7 @@ export const me = Router();
 export async function meView(user, today) {
   const [summary, season] = await Promise.all([streakSummary(user, today), currentSeason(today)]);
   const sh = user._shields || (await ensureShields(user, today));
+  const comeback = await comebackFor(user, today, summary);
   return {
     ...publicUser(user),
     email: user.email || null,
@@ -34,6 +36,7 @@ export async function meView(user, today) {
     golden: summary.golden,
     maxActiveDays: summary.maxActiveDays,
     season: seasonInfo(season, today),
+    comeback, // { since, days, streakKept } ou null
     shields: {
       available: sh.available,
       max: sh.max,
@@ -140,6 +143,11 @@ me.post('/shields/seen', async (req, res) => {
   await ShieldUse.updateMany({ userId: req.user._id, seen: false }, { seen: true });
   req.user.shieldsEarnedSeen = sh.earnedTotal;
   await req.user.save();
+  res.json({ ok: true });
+});
+
+me.post('/comeback/seen', async (req, res) => {
+  await markComebackSeen(req.user, req.today);
   res.json({ ok: true });
 });
 

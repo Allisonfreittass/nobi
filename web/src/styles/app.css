@@ -42,6 +42,11 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+/* O iPhone (iOS 26) pinta a área do relógio com o fundo da página, não com a faixa fixa.
+   Por isso o fundo de html/body segue a cor do topo de cada tela (useStatusBar),
+   e o conteúdo do app fica sobre #root, que tem o fundo normal. */
+html, body { background: var(--nobi-statusbar, var(--nobi-bg)); }
+#root { min-height: 100dvh; background: var(--nobi-bg); }
 body {
   min-height: 100dvh;
   font-size: var(--nobi-text-md);
@@ -539,3 +544,13 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
   background: var(--nobi-statusbar, var(--nobi-bg));
   transition: background var(--nobi-dur-fill);
 }
+
+/* Que bom te ver (volta depois de dias): fundo do app, calmo, sem vermelho */
+.comeback { min-height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; max-width: 440px; margin: 0 auto;
+  padding: calc(48px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); }
+.comeback-body { flex: 1; justify-content: center; }
+.comeback-hop { animation-duration: 2.8s; animation-iteration-count: 2; }
+.comeback-card { width: 100%; padding: 14px 16px; }
+.comeback-level { width: 44px; height: 44px; flex-shrink: 0; border-radius: 14px; background: var(--nobi-creme); color: var(--nobi-tinta);
+  display: flex; align-items: center; justify-content: center; font-size: var(--nobi-text-xl); font-weight: 800; }
+.comeback-actions { padding-top: 20px; }

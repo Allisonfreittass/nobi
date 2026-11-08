@@ -22,21 +22,26 @@ function Header({ g, seasonName }) {
       <div style={{ maxWidth: 520, margin: '0 auto', position: 'relative' }}>
         <div className="row between">
           <button type="button" className="icon-btn on-color" aria-label="Voltar" onClick={() => navigate(-1)}><Icon name="back" /></button>
-          <span className="t-13 strong" style={{ padding: '7px 12px', borderRadius: 16, background: 'rgba(255,255,255,0.16)' }}>{s.participants.length} participantes</span>
+          <span className="t-13 strong" style={{ padding: '7px 12px', borderRadius: 16, background: 'rgba(255,255,255,0.16)' }}>{s.participants.length} {s.participants.length === 1 ? 'participante' : 'participantes'}</span>
         </div>
-        <p className="label-caps t-13" style={{ marginTop: 18 }}>
-          {s.totalDays ? `Desafio de ${s.totalDays} dias` : 'Com amigos'}{seasonName ? ` · Temporada ${seasonName}` : ''}
-        </p>
-        <h1 className="display" style={{ fontSize: '2.25rem', marginTop: 6, maxWidth: 240, letterSpacing: '-0.03em', lineHeight: 1 }}>{g.title}</h1>
-        {s.totalDays && (
-          <div className="stack gap-6" style={{ marginTop: 16, width: 220 }}>
-            <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }} role="progressbar" aria-valuemin={0} aria-valuemax={s.totalDays} aria-valuenow={s.day} aria-label="Progresso do desafio">
-              <div style={{ width: `${(s.day / s.totalDays) * 100}%`, height: '100%', borderRadius: 5, background: 'var(--nobi-creme)', transition: 'width var(--nobi-dur-fill)' }} />
-            </div>
-            <span className="t-13">{s.ended ? 'Desafio encerrado' : `Dia ${s.day} de ${s.totalDays} · termina em ${s.daysLeft} ${s.daysLeft === 1 ? 'dia' : 'dias'}`}</span>
+        {/* Texto e Broto lado a lado: o mascote nunca cobre o título (iPhone estreito) */}
+        <div className="row gap-12" style={{ alignItems: 'flex-end', marginTop: 18 }}>
+          <div className="stack grow" style={{ minWidth: 0 }}>
+            <p className="label-caps t-13">
+              {s.totalDays ? `Desafio de ${s.totalDays} dias` : 'Com amigos'}{seasonName ? ` · Temporada ${seasonName}` : ''}
+            </p>
+            <h1 className="display" style={{ fontSize: '2.25rem', marginTop: 6, letterSpacing: '-0.03em', lineHeight: 1, overflowWrap: 'anywhere' }}>{g.title}</h1>
+            {s.totalDays && (
+              <div className="stack gap-6" style={{ marginTop: 16, maxWidth: 220 }}>
+                <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }} role="progressbar" aria-valuemin={0} aria-valuemax={s.totalDays} aria-valuenow={s.day} aria-label="Progresso do desafio">
+                  <div style={{ width: `${(s.day / s.totalDays) * 100}%`, height: '100%', borderRadius: 5, background: 'var(--nobi-creme)', transition: 'width var(--nobi-dur-fill)' }} />
+                </div>
+                <span className="t-13">{s.ended ? 'Desafio encerrado' : `Dia ${s.day} de ${s.totalDays} · termina em ${s.daysLeft} ${s.daysLeft === 1 ? 'dia' : 'dias'}`}</span>
+              </div>
+            )}
           </div>
-        )}
-        <div style={{ position: 'absolute', right: -4, bottom: -34 }}><span className="broto-plate round"><Broto size={112} expression="foco" {...broto} shadow={false} /></span></div>
+          <span className="broto-plate round" style={{ flexShrink: 0, padding: 6 }}><Broto size={84} expression="foco" {...broto} shadow={false} /></span>
+        </div>
       </div>
     </header>
   );
