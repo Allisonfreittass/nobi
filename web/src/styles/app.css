@@ -554,3 +554,20 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .comeback-level { width: 44px; height: 44px; flex-shrink: 0; border-radius: 14px; background: var(--nobi-creme); color: var(--nobi-tinta);
   display: flex; align-items: center; justify-content: center; font-size: var(--nobi-text-xl); font-weight: 800; }
 .comeback-actions { padding-top: 20px; }
+
+/* Abertura: a tela coral escorre para cima e revela o app (OpeningCurtain) */
+.curtain { position: fixed; inset: 0; z-index: 2000; pointer-events: auto; }
+.curtain-panel { position: absolute; inset: 0; background: var(--nobi-brasa); display: flex; align-items: center; justify-content: center; will-change: transform; }
+.curtain-drips { position: absolute; left: 0; right: 0; top: 100%; height: 0; }
+.curtain-drips span { position: absolute; top: -2px; background: var(--nobi-brasa); border-radius: 0 0 999px 999px; transform: scaleY(.25); transform-origin: 50% 0; }
+.curtain.leaving, .curtain.fade { pointer-events: none; }
+.curtain.leaving .curtain-panel { animation: curtain-up 950ms cubic-bezier(.65, 0, .35, 1) forwards; }
+.curtain.leaving .curtain-drips span { animation: curtain-drip 950ms cubic-bezier(.3, .7, .4, 1) forwards; }
+.curtain.leaving .curtain-drips span:nth-child(even) { animation-delay: 60ms; }
+.curtain.leaving .curtain-mascot { animation: curtain-mascot 520ms cubic-bezier(.5, 0, .75, 0) forwards; }
+.curtain.fade { animation: curtain-fade 220ms ease-out forwards; }
+@keyframes curtain-up { 0% { transform: translateY(0); } 18% { transform: translateY(1.5%); } 100% { transform: translateY(calc(-100% - 200px)); } }
+@keyframes curtain-drip { 0% { transform: scaleY(.25); } 55% { transform: scaleY(1.5); } 100% { transform: scaleY(1.9); } }
+@keyframes curtain-mascot { 0% { transform: translateY(0) scale(1); opacity: 1; } 30% { transform: translateY(10px) scale(1.04, .96); } 100% { transform: translateY(-120px) scale(.7); opacity: 0; } }
+@keyframes curtain-fade { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .curtain.leaving .curtain-panel, .curtain.leaving .curtain-mascot, .curtain.leaving .curtain-drips span { animation: none; } }

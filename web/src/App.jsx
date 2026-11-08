@@ -60,6 +60,7 @@ function usePrefetch() {
 import { acceptPendingInvite } from './lib/invite.js';
 import { isStandalone } from './lib/install.js';
 import StatusBarShield from './components/StatusBarShield.jsx';
+import OpeningCurtain from './components/OpeningCurtain.jsx';
 import { useToast } from './lib/toast.jsx';
 import Feed from './screens/Feed.jsx';
 import Register from './screens/Register.jsx';
@@ -138,6 +139,7 @@ export default function App() {
     <StatusBarShield />
     <PendingInvite />
     <ComebackGate />
+    <OpeningCurtain />
     <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--nobi-bg)' }} aria-busy="true" />}>
     {background && (
       <Routes>
