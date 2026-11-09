@@ -24,6 +24,7 @@ export async function meView(user, today) {
     ...publicUser(user),
     email: user.email || null,
     hasPassword: Boolean(user.passwordHash),
+    signInWith: user.appleId && !user.googleId ? 'Apple' : 'Google',
     staff: isStaff(user),
     bio: user.bio,
     interests: user.interests,

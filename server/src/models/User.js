@@ -10,6 +10,7 @@ const userSchema = new Schema({
   emailVerified: { type: Boolean, default: false }, // provado por Google ou por link de e-mail
   sessionsValidAfter: { type: Date }, // tokens emitidos antes disso deixam de valer
   googleId: { type: String, unique: true, sparse: true },
+  appleId: { type: String, unique: true, sparse: true }, // 'sub' do Sign in with Apple
   bio: { type: String, default: '', maxlength: 120 },
   avatarUrl: { type: String, default: '' }, // '' = inicial, 'broto' = avatar do Broto, data:/https: = foto
   avatarColor: { type: String, default: '#FFD8C7' },

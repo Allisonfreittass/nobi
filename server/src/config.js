@@ -6,6 +6,8 @@ export const config = {
   mongoDb: process.env.MONGODB_DB || 'nobi',
   jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-troque-em-producao',
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  // Login com Apple (web): o Services ID criado no Apple Developer, ex.: com.nobievolua.web
+  appleClientId: (process.env.APPLE_CLIENT_ID || '').trim(),
   webOrigin: process.env.WEB_ORIGIN || 'http://localhost:5173',
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',

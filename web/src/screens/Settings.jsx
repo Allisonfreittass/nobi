@@ -210,7 +210,7 @@ export default function Settings() {
         </Group>
       )}
       <Group title="Conta">
-        <Row as="button" type="button" label="E-mail e senha" desc={me.hasPassword ? me.email || undefined : `${me.email || ''} · entra com Google, sem senha no Nobi`} onClick={() => setSheet('account')}><Icon name="chevron" size={18} /></Row>
+        <Row as="button" type="button" label="E-mail e senha" desc={me.hasPassword ? me.email || undefined : `${me.email || ''} · entra com ${me.signInWith || 'Google'}, sem senha no Nobi`} onClick={() => setSheet('account')}><Icon name="chevron" size={18} /></Row>
         <Row as="button" type="button" label="Exportar meus dados" desc="arquivo com tudo que é seu" onClick={exportData}><Icon name="download" size={18} /></Row>
         <Row as={Link} to="/termos" label="Termos de uso"><Icon name="chevron" size={18} /></Row>
         <Row as={Link} to="/privacidade" label="Política de privacidade"><Icon name="chevron" size={18} /></Row>

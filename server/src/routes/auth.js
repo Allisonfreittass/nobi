@@ -6,7 +6,8 @@ import { User, Club, Membership } from '../models/index.js';
 import { config } from '../config.js';
 import { bad, signToken, HttpError, assertActive } from '../lib/http.js';
 import { meView } from './me.js';
-import { linkGoogle, nowSecond } from '../services/accounts.js';
+import { linkGoogle, linkApple, nowSecond } from '../services/accounts.js';
+import { verifyAppleIdToken } from '../services/apple.js';
 import { sendEmail, resetPasswordEmail } from '../services/email.js';
 
 export const auth = Router();
@@ -44,7 +45,7 @@ auth.get('/group-invite/:code', async (req, res) => {
 });
 
 auth.get('/providers', (_req, res) => {
-  res.json({ email: true, google: Boolean(config.googleClientId), apple: false });
+  res.json({ email: true, google: Boolean(config.googleClientId), apple: Boolean(config.appleClientId), appleClientId: config.appleClientId || undefined });
 });
 
 auth.post('/signup', async (req, res) => {
@@ -69,6 +70,9 @@ auth.post('/login', async (req, res) => {
   // Conta criada pelo Google não tem senha no Nobi (a senha do Google fica com o Google)
   if (user && !user.passwordHash && user.googleId) {
     throw new HttpError(401, 'Essa conta entra com o Google. Use o botão do Google ou crie uma senha em Configurações → E-mail e senha.', { googleOnly: true });
+  }
+  if (user && !user.passwordHash && user.appleId) {
+    throw new HttpError(401, 'Essa conta entra com a Apple. Use o botão "Continuar com Apple" ou crie uma senha em "Esqueci a senha".', { appleOnly: true });
   }
   if (!user?.passwordHash || !(await bcrypt.compare(String(password || ''), user.passwordHash))) {
     throw new HttpError(401, 'E-mail ou senha não conferem.');
@@ -97,6 +101,37 @@ auth.post('/google', async (req, res) => {
     });
   } else if (!user.googleId) {
     linkGoogle(user, p.sub);
+    await user.save();
+  }
+  assertActive(user);
+  res.json({ token: signToken(user), me: await meView(user, req.today), created });
+});
+
+// Login com Apple: o navegador manda o id_token, o nonce usado e (só na primeira vez) o nome
+auth.post('/apple', async (req, res) => {
+  if (!config.appleClientId) throw new HttpError(501, 'Login com Apple não está configurado.');
+  const p = await verifyAppleIdToken(req.body?.idToken, { clientId: config.appleClientId, nonce: req.body?.nonce });
+  if (!p) throw new HttpError(401, 'Não deu para confirmar sua conta Apple.');
+  let created = false;
+  let user = await User.findOne({ appleId: p.sub });
+  // Mesma pessoa com conta por e-mail ou Google: liga pelo e-mail, só se a Apple confirmou o e-mail
+  if (!user && p.email && p.emailVerified) user = await User.findOne({ email: p.email });
+  if (!user) {
+    if (!p.email) throw new HttpError(401, 'A Apple não enviou seu e-mail. Tente de novo e permita compartilhar o e-mail (pode ser o oculto).');
+    const n = req.body?.user?.name || {};
+    const name = `${String(n.firstName || '').trim()} ${String(n.lastName || '').trim()}`.trim().slice(0, 60);
+    created = true;
+    const relay = p.email.endsWith('@privaterelay.appleid.com');
+    user = await User.create({
+      name: name || (relay ? 'Pessoa nova' : p.email.split('@')[0]),
+      email: p.email,
+      appleId: p.sub,
+      emailVerified: p.emailVerified,
+      username: await uniqueUsername(relay ? (name || 'nobi') : p.email.split('@')[0]),
+      avatarColor: randomColor(),
+    });
+  } else if (!user.appleId) {
+    linkApple(user, p.sub);
     await user.save();
   }
   assertActive(user);

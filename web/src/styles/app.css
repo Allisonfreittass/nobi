@@ -586,3 +586,7 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .mention-list .list-row { width: 100%; min-height: 48px; border: none; background: none; text-align: left; padding: 6px 12px; cursor: pointer; }
 .mention-list [aria-selected='true'] .list-row { background: var(--nobi-track); }
 .link-btn { border: none; background: none; padding: 0; color: inherit; cursor: pointer; }
+
+/* Botão "Continuar com Apple": preto no claro, branco no escuro (padrão da Apple) */
+.apple-btn { gap: 10px; background: #000000; color: #FFFFFF; }
+:root[data-theme='dark'] .apple-btn { background: #FFFFFF; color: #000000; }

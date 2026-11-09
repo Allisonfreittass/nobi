@@ -1,4 +1,4 @@
-// Ligar uma conta Google a uma conta existente, sem abrir brecha para quem cadastrou o e-mail de outra pessoa.
+// Ligar uma conta Google ou Apple a uma conta existente, sem abrir brecha para quem cadastrou o e-mail de outra pessoa.
 
 /** Momento atual arredondado para baixo ao segundo (o "iat" do JWT é em segundos). */
 export const nowSecond = () => new Date(Math.floor(Date.now() / 1000) * 1000);
@@ -10,6 +10,15 @@ export const nowSecond = () => new Date(Math.floor(Date.now() / 1000) * 1000);
  * Retorna true se removeu a senha.
  */
 export function linkGoogle(user, googleSub) {
+  return linkProvider(user, 'googleId', googleSub);
+}
+
+/** Mesmo cuidado do Google para o login com Apple. */
+export function linkApple(user, appleSub) {
+  return linkProvider(user, 'appleId', appleSub);
+}
+
+function linkProvider(user, field, sub) {
   let removedPassword = false;
   if (!user.emailVerified) {
     if (user.passwordHash) {
@@ -18,7 +27,7 @@ export function linkGoogle(user, googleSub) {
     }
     user.sessionsValidAfter = nowSecond();
   }
-  user.googleId = googleSub;
+  user[field] = sub;
   user.emailVerified = true;
   return removedPassword;
 }

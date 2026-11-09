@@ -32,6 +32,41 @@ function GoogleButton({ onCredential, text = 'continue_with' }) {
   return <div ref={ref} style={{ minHeight: 44, display: 'flex', justifyContent: 'center', colorScheme: 'normal' }} />;
 }
 
+// Sign in with Apple JS (web). O botão segue o padrão da Apple: preto, logo e "Continuar com Apple".
+const APPLE_SDK = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/pt_BR/appleid.auth.js';
+async function sha256Hex(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+function AppleButton({ clientId, onToken, onError }) {
+  const [ready, setReady] = useState(Boolean(window.AppleID));
+  useEffect(() => {
+    if (window.AppleID) return undefined;
+    const s = document.createElement('script');
+    s.src = APPLE_SDK;
+    s.async = true;
+    s.onload = () => setReady(true);
+    document.head.appendChild(s);
+    return () => s.remove();
+  }, []);
+  async function signIn() {
+    try {
+      const nonce = crypto.randomUUID();
+      window.AppleID.auth.init({ clientId, scope: 'name email', redirectURI: `${window.location.origin}/entrar`, usePopup: true, nonce: await sha256Hex(nonce) });
+      const r = await window.AppleID.auth.signIn();
+      onToken({ idToken: r.authorization.id_token, nonce, user: r.user });
+    } catch (e) {
+      if (e?.error !== 'popup_closed_by_user' && e?.error !== 'user_cancelled_authorize') onError(new Error('Não deu para entrar com a Apple. Tente de novo.'));
+    }
+  }
+  return (
+    <button type="button" className="btn btn-dark lg block apple-btn" disabled={!ready} onClick={signIn}>
+      <svg width="18" height="22" viewBox="0 0 17 21" aria-hidden="true" fill="currentColor"><path d="M14.2 11.1c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9C3.7 5.3 2 6.4 1.1 8c-1.9 3.2-.5 8 1.3 10.6.9 1.3 1.9 2.7 3.3 2.6 1.3-.1 1.8-.9 3.4-.9s2 .9 3.4.8c1.4 0 2.3-1.3 3.2-2.6 1-1.5 1.4-2.9 1.4-3-.1 0-2.8-1.1-2.9-4.4zM11.6 3.4c.7-.9 1.2-2.1 1.1-3.4-1 0-2.3.7-3.1 1.6-.7.8-1.3 2-1.1 3.2 1.2.1 2.4-.6 3.1-1.4z" /></svg>
+      Continuar com Apple
+    </button>
+  );
+}
+
 export default function Login() {
   useStatusBar('#FF5B2E'); // topo colorido: faixa do relógio na mesma cor
   const { signIn } = useSession();
@@ -76,6 +111,13 @@ export default function Login() {
     }
   }
 
+  async function apple(body) {
+    try {
+      const r = await api('/auth/apple', { method: 'POST', body });
+      signIn(r.token, r.me, r.created ? '/metas/novo?primeiro=1' : undefined);
+    } catch (err) { setError(err); }
+  }
+
   async function google(credential) {
     try {
       const r = await api('/auth/google', { method: 'POST', body: { credential } });
@@ -103,7 +145,7 @@ export default function Login() {
         <div className="stack gap-12" style={{ maxWidth: 440, margin: '0 auto' }}>
           {mode === 'social' ? (
             <>
-              {providers.apple && <button type="button" className="btn btn-dark lg block">Continuar com Apple</button>}
+              {providers.apple && <AppleButton clientId={providers.appleClientId} onToken={apple} onError={setError} />}
               {providers.google && <GoogleButton onCredential={google} />}
               <button type="button" className="btn btn-link" style={{ height: 52 }} onClick={() => go('email')}>Entrar com e-mail</button>
             </>

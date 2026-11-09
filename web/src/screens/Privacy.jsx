@@ -33,7 +33,7 @@ const sections = [
         <Table
           head={['Tipo', 'O que é']}
           rows={[
-            ['Conta', 'Nome, e-mail, @usuário e senha. A senha é guardada de forma irreversível (hash), e ninguém consegue lê-la. Se você entrar com o Google, recebemos do Google seu nome, e-mail e um identificador da conta.'],
+            ['Conta', 'Nome, e-mail, @usuário e senha. A senha é guardada de forma irreversível (hash), e ninguém consegue lê-la. Se você entrar com o Google ou com a Apple, recebemos deles seu nome, e-mail e um identificador da conta.'],
             ['Perfil', 'Foto de perfil (ou avatar do Broto), bio, interesses e, se você quiser, sua cidade (digitada por você, usada só para sugerir clubes perto).'],
             ['Uso do app', 'Objetivos, registros (data, tempo, páginas, distância, quantidade e notas), marcos de projetos, sequências, nível, XP e conquistas.'],
             ['Social', 'Quem você segue e quem segue você, bloqueios, convites, publicações, fotos dos posts, comentários, reações "Boa!", clubes em que você entrou (e seu papel neles) e denúncias que você fizer.'],
@@ -87,6 +87,7 @@ const sections = [
             ['Vercel Inc.', 'Hospedagem do site e do servidor, e armazenamento das fotos', 'Servidor em São Paulo; empresa nos EUA'],
             ['MongoDB Inc. (Atlas)', 'Banco de dados onde ficam conta, registros e publicações', 'São Paulo (Brasil)'],
             ['Google LLC', 'Login com Google (só se você usar) e entrega das fontes do site (o navegador baixa as fontes dos servidores do Google, que recebem seu endereço IP)', 'EUA e outros países'],
+            ['Apple Inc.', 'Login com Apple (só se você usar): recebemos seu nome, um e-mail (pode ser o e-mail oculto da Apple) e um identificador da conta', 'EUA e outros países'],
             ['Resend Inc.', 'Envio de e-mails da conta, como o link para redefinir a senha (recebe seu nome e e-mail)', 'EUA'],
             ['Serviço de notificações do seu navegador (Google, Apple ou Mozilla)', 'Entregar as notificações ao seu aparelho, se você ativar. O conteúdo vai criptografado', 'Varia conforme o navegador'],
           ]}

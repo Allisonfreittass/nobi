@@ -71,7 +71,12 @@ Web Push com service worker (`web/public/sw.js`). Funciona no Android e no compu
 - **Clubes novos**: clubes abertos criados pela comunidade, com quem criou; dá para encerrar.
 - **Suspensas**: conta suspensa sai de todos os aparelhos, não entra, some de buscas, perfis e feeds; "Reativar" desfaz.
 
+### Login com Google e Apple
+- **Google:** preencha `GOOGLE_CLIENT_ID` (API) e `VITE_GOOGLE_CLIENT_ID` (web).
+- **Apple:** no Apple Developer, crie um **Services ID** (ex.: `com.nobievolua.web`), ligue "Sign in with Apple", cadastre o domínio e a URL de retorno `https://<seu domínio>/entrar`. Depois preencha `APPLE_CLIENT_ID` com esse Services ID. O botão só aparece quando a variável existe. O servidor confere o `id_token` com as chaves públicas da Apple; não precisa de chave privada.
+
+### E-mail
+- "Esqueci a senha" manda o link pelo **Resend**: crie a conta, verifique o domínio e preencha `RESEND_API_KEY` e `EMAIL_FROM` (ex.: `Nobi <nao-responda@nobievolua.com.br>`). Sem a chave, em desenvolvimento o e-mail sai no terminal da API.
+
 ### Ainda não feito
-- Login com Apple (precisa de conta de desenvolvedor Apple). O Google funciona ao preencher `GOOGLE_CLIENT_ID` / `VITE_GOOGLE_CLIENT_ID`.
-- Envio de e-mail para "Esqueci a senha": em desenvolvimento o link aparece no terminal da API.
-- Criação de desafios com checklist pela interface (o "Foco Total" vem do seed).
+- Acessórios colecionáveis do Broto por temporada (DESIGN.md §8.8): falta decidir a arte (§13).
