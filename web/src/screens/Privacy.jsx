@@ -87,6 +87,7 @@ const sections = [
             ['Vercel Inc.', 'Hospedagem do site e do servidor, e armazenamento das fotos', 'Servidor em São Paulo; empresa nos EUA'],
             ['MongoDB Inc. (Atlas)', 'Banco de dados onde ficam conta, registros e publicações', 'São Paulo (Brasil)'],
             ['Google LLC', 'Login com Google (só se você usar) e entrega das fontes do site (o navegador baixa as fontes dos servidores do Google, que recebem seu endereço IP)', 'EUA e outros países'],
+            ['Resend Inc.', 'Envio de e-mails da conta, como o link para redefinir a senha (recebe seu nome e e-mail)', 'EUA'],
             ['Serviço de notificações do seu navegador (Google, Apple ou Mozilla)', 'Entregar as notificações ao seu aparelho, se você ativar. O conteúdo vai criptografado', 'Varia conforme o navegador'],
           ]}
         />

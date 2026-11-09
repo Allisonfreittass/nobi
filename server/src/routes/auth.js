@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { bad, signToken, HttpError, assertActive } from '../lib/http.js';
 import { meView } from './me.js';
 import { linkGoogle, nowSecond } from '../services/accounts.js';
+import { sendEmail, resetPasswordEmail } from '../services/email.js';
 
 export const auth = Router();
 
@@ -102,15 +103,20 @@ auth.post('/google', async (req, res) => {
   res.json({ token: signToken(user), me: await meView(user, req.today), created });
 });
 
-// Sem serviço de e-mail ainda: em desenvolvimento o link sai no terminal da API.
+// Link por e-mail (Resend). Sem RESEND_API_KEY, em desenvolvimento o link sai no terminal da API.
+const RESET_COOLDOWN_MS = 60 * 1000; // um e-mail por minuto por conta, contra abuso
 auth.post('/forgot', async (req, res) => {
-  const user = await User.findOne({ email: String(req.body?.email || '').toLowerCase() });
-  if (user) {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!EMAIL.test(email)) throw bad('E-mail inválido.');
+  const user = await User.findOne({ email });
+  const recent = user?.resetTokenExpiresAt && user.resetTokenExpiresAt.getTime() - 60 * 60 * 1000 > Date.now() - RESET_COOLDOWN_MS;
+  if (user && !user.suspendedAt && !recent) {
     const token = crypto.randomBytes(24).toString('hex');
     user.resetToken = crypto.createHash('sha256').update(token).digest('hex');
     user.resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
-    if (!config.isProd) console.log(`[auth] Link para redefinir a senha de ${user.email}: ${config.webOrigin}/redefinir-senha?token=${token}`);
+    const url = `${config.webOrigin}/redefinir-senha?token=${token}`;
+    await sendEmail({ to: user.email, ...resetPasswordEmail({ name: user.name, url, googleOnly: !user.passwordHash }) });
   }
   res.json({ ok: true }); // mesma resposta exista ou não a conta
 });

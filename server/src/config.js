@@ -14,6 +14,10 @@ export const config = {
   cronSecret: (process.env.CRON_SECRET || '').trim().replace(/^["']|["']$/g, '').replace(/^CRON_SECRET=/, ''),
   // E-mails da Equipe Nobi (separados por vírgula). Só valem com e-mail verificado (entrar com o Google uma vez).
   staffEmails: (process.env.STAFF_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean),
+  appName: process.env.APP_NAME || 'Nobi', // o mesmo APP_NAME do web/src/config.js
+  // E-mail (Resend): sem chave, em desenvolvimento o e-mail sai no terminal da API
+  resendApiKey: (process.env.RESEND_API_KEY || '').trim(),
+  emailFrom: process.env.EMAIL_FROM || 'Nobi <nao-responda@nobievolua.com.br>',
   isProd: process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production',
 };
 
