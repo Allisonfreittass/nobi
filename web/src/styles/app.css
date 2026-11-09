@@ -590,3 +590,12 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 /* Botão "Continuar com Apple": preto no claro, branco no escuro (padrão da Apple) */
 .apple-btn { gap: 10px; background: #000000; color: #FFFFFF; }
 :root[data-theme='dark'] .apple-btn { background: #FFFFFF; color: #000000; }
+
+/* Coleção de acessórios do Broto */
+.closet-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.closet-item { position: relative; width: 100%; border: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 8px 12px; text-align: center; cursor: pointer; min-height: 150px; }
+.closet-item[aria-pressed='true'] { box-shadow: inset 0 0 0 2.5px var(--nobi-text); }
+.closet-item:disabled { cursor: default; }
+.closet-art { display: flex; margin-bottom: 4px; }
+.closet-lock { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--nobi-track); color: var(--nobi-text-secondary); }
+.closet-lock.on { background: var(--nobi-tinta); color: #FFFFFF; }

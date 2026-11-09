@@ -97,6 +97,7 @@ users.get('/:username', async (req, res) => {
     statsAudience: u.privacy.stats,
     stage: summary.stage,
     golden: summary.golden,
+    brotoAccessory: u.brotoAccessory || null,
     followers,
     following,
     season: seasonInfo(season, req.today),

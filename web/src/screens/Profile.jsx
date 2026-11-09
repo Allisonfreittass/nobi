@@ -11,6 +11,7 @@ import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { capitalize, monthName, signed, weekOrder } from '../lib/format.js';
 import ReportSheet from '../components/ReportSheet.jsx';
+import BrotoCloset from '../components/BrotoCloset.jsx';
 import { useConfirm } from '../lib/confirm.jsx';
 
 const STAGE_NAME = { broto: 'Broto', muda: 'Muda', botao: 'Botão', flor: 'Flor' };
@@ -93,6 +94,7 @@ export default function Profile() {
   const { me } = useSession();
   const toast = useToast();
   const [report, setReport] = useState(false);
+  const [closet, setCloset] = useState(false);
   const username = params.username || me.username;
   const isMe = username === me.username;
   const { data: p, error, reload, setData } = useLoad(`/users/${username}`);
@@ -104,7 +106,7 @@ export default function Profile() {
 
   const s = p.stats;
   const level = isMe ? me.level : p.level;
-  const { stage, golden } = brotoOf(isMe ? me : p);
+  const { stage, golden, accessory } = brotoOf(isMe ? me : p);
   const xpPct = isMe ? me.levelProgress : null;
 
   async function block() {
@@ -163,7 +165,7 @@ export default function Profile() {
 
       <section className="card row gap-14 block-creme" aria-label={`${STAGE_NAME[stage]}, nível ${level}`} style={{ color: 'var(--nobi-tinta)' }}>
         <span style={{ display: 'flex', flexShrink: 0 }}>
-          <Broto size={64} expression="padrao" stage={stage} golden={golden} shadow={false} />
+          <Broto size={64} expression="padrao" stage={stage} golden={golden} accessory={accessory} shadow={false} />
         </span>
         <div className="stack gap-6 grow">
           <span className="title t-18">{STAGE_NAME[stage]}{golden ? ' dourado' : ''}</span>
@@ -172,6 +174,7 @@ export default function Profile() {
             {golden ? ' Folhas douradas: sequência de 7+ dias viva.' : ''}
           </span>
           {xpPct != null && <ProgressBar value={xpPct} color="var(--nobi-tinta)" height={6} label="Progresso até o próximo nível" />}
+          {isMe && <button type="button" className="btn sm btn-dark" style={{ alignSelf: 'flex-start' }} onClick={() => setCloset(true)}>Acessórios do Broto</button>}
         </div>
       </section>
 
@@ -218,6 +221,7 @@ export default function Profile() {
           {(posts.data || []).map((post) => <PostCard key={post.id} post={post} onDelete={(id) => posts.setData((l) => l.filter((x) => x.id !== id))} />)}
         </section>
       )}
+      {isMe && <BrotoCloset open={closet} onClose={() => setCloset(false)} />}
     </div>
   );
 }

@@ -8,9 +8,10 @@ import { CATALOG } from '../services/achievements.js';
 import { weeklySummary } from '../services/weekly.js';
 import { ensureShields } from '../services/shields.js';
 import { comebackFor, markComebackSeen } from '../services/comeback.js';
-import { ShieldUse, Task, Membership, Report } from '../models/index.js';
+import { ShieldUse, Task, Membership, Report, Collectible } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { handOverClubs } from '../services/clubs.js';
+import { ACCESSORIES, isAccessory, ownedAccessories } from '../services/collectibles.js';
 import { isStaff } from '../lib/http.js';
 import { decodeDataUrl, isOurImage, saveImage, deleteImages, deleteUserImages } from '../services/storage.js';
 
@@ -25,6 +26,7 @@ export async function meView(user, today) {
     email: user.email || null,
     hasPassword: Boolean(user.passwordHash),
     signInWith: user.appleId && !user.googleId ? 'Apple' : 'Google',
+    brotoAccessory: user.brotoAccessory || null,
     staff: isStaff(user),
     bio: user.bio,
     interests: user.interests,
@@ -128,6 +130,26 @@ me.get('/stats', async (req, res) => res.json(await profileStats(req.user, req.t
 me.get('/weekly', async (req, res) => res.json(await weeklySummary(req.user, req.today, req.query.start)));
 me.get('/achievements', async (req, res) => res.json(await achievementsView(req.user._id)));
 
+// Coleção de acessórios do Broto: todos, com os que a pessoa já tem e o que está vestindo
+me.get('/collection', async (req, res) => {
+  const owned = await ownedAccessories(req.user._id);
+  res.json({
+    equipped: owned.has(req.user.brotoAccessory) ? req.user.brotoAccessory : null,
+    items: ACCESSORIES.map((a) => ({ id: a.id, name: a.name, how: a.how, season: a.season || null, earnedAt: owned.get(a.id) || null })),
+  });
+});
+
+me.put('/broto', async (req, res) => {
+  const id = req.body?.accessory ?? null;
+  if (id !== null) {
+    if (!isAccessory(id)) throw bad('Acessório inválido.');
+    if (!(await ownedAccessories(req.user._id)).has(id)) throw bad('Esse acessório ainda não é seu.');
+  }
+  req.user.brotoAccessory = id;
+  await req.user.save();
+  res.json({ brotoAccessory: id });
+});
+
 me.get('/blocked', async (req, res) => {
   const users = await User.find({ _id: { $in: req.user.blocked } }).lean();
   res.json(users.map(publicUser));
@@ -172,7 +194,8 @@ me.get('/export', async (req, res) => {
   ]);
   const { passwordHash, resetToken, resetTokenExpiresAt, ...profile } = req.user.toObject();
   res.setHeader('Content-Disposition', `attachment; filename="nobi-${req.user.username}.json"`);
-  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements, tasks, shieldsUsed: shields.map((s) => s.date) });
+  const broto = [...(await ownedAccessories(id)).entries()].map(([item, earnedAt]) => ({ item, earnedAt }));
+  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements, brotoAccessories: broto, tasks, shieldsUsed: shields.map((s) => s.date) });
 });
 
 me.delete('/', async (req, res) => {
@@ -208,6 +231,7 @@ me.delete('/', async (req, res) => {
     ShieldUse.deleteMany({ userId: id }),
     Task.deleteMany({ userId: id }),
     Membership.deleteMany({ userId: id }),
+    Collectible.deleteMany({ userId: id }),
     Report.deleteMany({ reporterId: id }),
     User.updateMany({ blocked: id }, { $pull: { blocked: id } }),
   ]);

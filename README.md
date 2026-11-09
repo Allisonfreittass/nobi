@@ -78,5 +78,5 @@ Web Push com service worker (`web/public/sw.js`). Funciona no Android e no compu
 ### E-mail
 - "Esqueci a senha" manda o link pelo **Resend**: crie a conta, verifique o domínio e preencha `RESEND_API_KEY` e `EMAIL_FROM` (ex.: `Nobi <nao-responda@nobievolua.com.br>`). Sem a chave, em desenvolvimento o e-mail sai no terminal da API.
 
-### Ainda não feito
-- Acessórios colecionáveis do Broto por temporada (DESIGN.md §8.8): falta decidir a arte (§13).
+### Acessórios do Broto
+- 7 acessórios (DESIGN.md §6): camadas SVG em `web/public/broto/acessorios/` por cima da arte oficial. Três vêm das conquistas de sequência (7, 30 e 100 dias) e quatro são de temporada (21 dias seguidos durante Primavera, Verão, Outono ou Inverno; coleção `collectibles`). Perfil → **Acessórios do Broto** para vestir ou tirar.

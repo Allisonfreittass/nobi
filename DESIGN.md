@@ -78,6 +78,17 @@ Arquivos:
 - **Forma = nível (permanente, nunca regride):** `broto` (nível 1–9, 2 folhas) → `muda` (10–24, terceira folha) → `botao` (25–49, botão coral) → `flor` (50+, flor coral com miolo dourado).
 - **Cor = sequência (muda dia a dia):** folhas verdes por padrão; **douradas com brilho** quando a maior sequência ativa é ≥ 7 dias. Quando a sequência zera, volta ao verde com a expressão `saudade` ("que bom te ver") — sem tristeza, sem aviso vermelho.
 
+**Acessórios colecionáveis (nov/2026):** `design/broto/acessorios/<id>.svg` (cópia em `web/public/broto/acessorios/`). Cada um é uma camada SVG transparente 768×768 que fica **por cima** da arte, no mesmo traço (contorno `#211B16` de 6 px, cores chapadas da paleta) — a arte oficial não é alterada. Cabeça centrada em (383, 381), raios 180 × 150; olhos em y = 408; pescoço em y ≈ 515–560. Funciona em todas as formas e expressões. Uso: `<Broto accessory="faixa" … />`.
+
+| Acessório | Como ganha |
+|---|---|
+| `faixa` Faixa da constância | 7 dias seguidos em um objetivo |
+| `oculos-redondos` Óculos de sábio | 30 dias seguidos |
+| `medalha` Medalha dos três dígitos | 100 dias seguidos |
+| `coroa-flores` / `oculos-sol` / `cachecol` / `protetor-orelha` | 21 dias seguidos durante a Temporada Primavera / Verão / Outono / Inverno |
+
+Ganhou, é seu para sempre; o Broto veste um por vez (Perfil → Acessórios do Broto). Os outros veem o acessório no seu perfil.
+
 **Expressões e onde usar:**
 | Expressão | Onde |
 |---|---|
@@ -295,5 +306,5 @@ Se um dia virar React Native: usar tab bar, sheets, alerts, switches e haptics d
 
 - Validar com usuários: lembrança do ícone, percepção de "premium" vs. "infantil".
 - Tipografia final e animações ainda não foram testadas em dispositivo.
-- Definir nomes e arte das temporadas e dos colecionáveis.
+- Temporadas e colecionáveis: primeira leva de 7 acessórios feita (§6). Validar com usuários e ampliar a cada temporada.
 - Sequência do grupo no modo "Juntos": confirmar a regra da maioria.

@@ -14,6 +14,8 @@ import React from 'react';
 
 export const STAGES = ['broto', 'muda', 'botao', 'flor'];
 export const EXPRESSIONS = ['padrao', 'comemorando', 'foco', 'saudade', 'descanso'];
+// Acessórios colecionáveis: camada SVG transparente 768×768 por cima da arte, sem alterar a arte (DESIGN.md §6)
+export const ACCESSORIES = ['faixa', 'oculos-redondos', 'medalha', 'coroa-flores', 'oculos-sol', 'cachecol', 'protetor-orelha'];
 
 export function stageFromLevel(level) {
   if (level >= 50) return 'flor';
@@ -49,6 +51,7 @@ const ALT = {
  * @param {boolean} [props.shadow=true] sombra suave no chão
  * @param {string} [props.title] se informado, vira imagem acessível com esse texto; senão é decorativa
  * @param {boolean} [props.priority=false] true na tela de Conquista/Login para carregar antes
+ * @param {string|null} [props.accessory] acessório vestido (ver ACCESSORIES)
  * @param {string} [props.basePath='/broto/']
  * @param {string} [props.className]
  */
@@ -62,6 +65,7 @@ export default function Broto({
   priority = false,
   basePath = '/broto/',
   className,
+  accessory = null,
 }) {
   const src = brotoSrc({ stage, golden, expression, basePath });
   return (
@@ -89,6 +93,18 @@ export default function Broto({
         draggable={false}
         style={{ position: 'relative', width: size, height: size, objectFit: 'contain' }}
       />
+      {ACCESSORIES.includes(accessory) && (
+        <img
+          src={`${basePath}acessorios/${accessory}.svg`}
+          width={size}
+          height={size}
+          alt=""
+          aria-hidden="true"
+          loading={priority ? 'eager' : 'lazy'}
+          draggable={false}
+          style={{ position: 'absolute', inset: 0, width: size, height: size }}
+        />
+      )}
     </span>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
+import { useWearAccessory } from '../components/BrotoCloset.jsx';
 import Icon from '../components/Icon.jsx';
 import { brotoOf, useSession, useMascotMotion } from '../lib/session.jsx';
 import { useShare } from '../lib/share.jsx';
@@ -34,6 +35,22 @@ function texts(c) {
       ? `Você ${cat.verb} todos os dias desta semana${c.becameGolden ? ' e seu Broto ficou dourado' : ''}. Mantenha a sequência pra ele continuar assim.`
       : `${c.count} dias seguidos de ${cat.label.toLowerCase()}. ${c.golden ? 'O Broto segue dourado.' : ''}`;
   return { title: [`${c.count} ${weeks ? 'semanas' : 'dias'}`, 'seguidos!'], body, share: `${c.count} ${weeks ? 'semanas' : 'dias'} seguidos · ${c.goalTitle}` };
+}
+
+/** Acessório novo junto com a conquista: o Broto já aparece vestindo; dá para manter ou tirar. */
+function NewAccessory({ item }) {
+  const { me } = useSession();
+  const wear = useWearAccessory();
+  const [state, setState] = useState(me?.brotoAccessory === item.id ? 'on' : 'off');
+  async function toggle() {
+    if (await wear(state === 'on' ? null : item.id)) setState(state === 'on' ? 'off' : 'on');
+  }
+  return (
+    <div className="row gap-10" style={{ marginTop: 16, padding: '10px 10px 10px 16px', borderRadius: 18, background: 'rgba(20,18,24,0.12)' }}>
+      <span className="t-14 grow"><strong>Acessório novo:</strong> {item.name}</span>
+      <button type="button" className="btn sm btn-dark" onClick={toggle}>{state === 'on' ? 'Tirar' : 'Vestir'}</button>
+    </div>
+  );
 }
 
 export default function Achievement() {
@@ -76,11 +93,12 @@ export default function Achievement() {
       <div className="stack center" style={{ maxWidth: 440, margin: '0 auto', minHeight: '100dvh', padding: 'calc(56px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom))', position: 'relative' }}>
         <span className="label-caps" style={{ padding: '7px 14px', borderRadius: 16, background: 'rgba(20,18,24,0.12)' }}>Nova conquista</span>
         <div className={motion ? 'nobi-hop' : ''} style={{ marginTop: 24 }}>
-          <span className="broto-plate round"><Broto size={210} stage={brotoOf(me).stage} golden={c.golden ?? brotoOf(me).golden} expression="comemorando" shadow={false} title={c.golden ? 'Broto dourado comemorando sua sequência' : 'Broto comemorando sua conquista'} priority /></span>
+          <span className="broto-plate round"><Broto size={210} stage={brotoOf(me).stage} golden={c.golden ?? brotoOf(me).golden} accessory={c.accessory?.id || brotoOf(me).accessory} expression="comemorando" shadow={false} title={c.golden ? 'Broto dourado comemorando sua sequência' : 'Broto comemorando sua conquista'} priority /></span>
         </div>
         <div aria-hidden="true" style={{ width: 150, height: 14, borderRadius: '50%', background: 'rgba(20,18,24,0.18)', marginTop: 4 }} />
         <h1 className="display t-64 nobi-pop" style={{ marginTop: 26, textAlign: 'center' }}>{t.title[0]}<br />{t.title[1]}</h1>
         <p className="t-16" style={{ marginTop: 14, textAlign: 'center', maxWidth: 320, fontSize: '1.0625rem', lineHeight: 1.45 }}>{t.body}</p>
+        {c.accessory && <NewAccessory item={c.accessory} />}
 
         {c.kind === 'streak' && c.unit === 'days' && week.length === 7 && (
           <ol className="row gap-8" style={{ listStyle: 'none', padding: 0, margin: '24px 0 0' }} aria-label="Esta semana">

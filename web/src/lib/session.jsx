@@ -74,10 +74,10 @@ export function useMascotMotion() {
 export function brotoOf(user) {
   // O servidor já manda golden = isGolden(maxActiveDays); ele é atualizado a cada registro.
   const golden = typeof user?.golden === 'boolean' ? user.golden : isGolden(user?.maxActiveDays || 0);
-  return { stage: stageFromLevel(user?.level || 1), golden };
+  return { stage: stageFromLevel(user?.level || 1), golden, accessory: user?.brotoAccessory || null };
 }
 
-/** Broto da pessoa logada: { stage, golden }. */
+/** Broto da pessoa logada: { stage, golden, accessory }. */
 export function useBroto() {
   const { me } = useSession();
   return brotoOf(me);

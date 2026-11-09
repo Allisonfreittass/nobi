@@ -54,9 +54,17 @@ export function useCheckin(onGoal) {
     onGoal?.(r.goal);
     afterCheckin(r.goal);
     patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
+    const accessory = r.accessories?.[0] || null;
     if (r.celebration) {
-      openAchievement({ celebration: r.celebration });
+      openAchievement({ celebration: { ...r.celebration, accessory } });
       return r;
+    }
+    if (accessory) {
+      // Sem tela de conquista agora: avisa e oferece vestir
+      toast(`Acessório novo para o Broto: ${accessory.name}`, {
+        action: 'Vestir',
+        onAction: () => api('/me/broto', { method: 'PUT', body: { accessory: accessory.id } }).then((x) => patchMe({ brotoAccessory: x.brotoAccessory })).catch(() => {}),
+      });
     }
     if (closedTheDay(goal, r.goal)) {
       // Todo dia concluído é uma comemoração

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Goal, Checkin, User, Streak, Post, Comment, Task, Membership, Club, CATEGORIES, KINDS } from '../models/index.js';
 import { canModerate } from '../services/clubs.js';
+import { accessoriesFromAchievements, grantSeasonAccessory, accessoryView, SEASON_STREAK_DAYS } from '../services/collectibles.js';
 import { deleteImages } from '../services/storage.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
 import { addDays, weekStart, weekday, isDateStr } from '../lib/dates.js';
@@ -319,9 +320,13 @@ goals.post('/:id/checkins', async (req, res) => {
     const a = await award(uid, code, undefined, { have });
     if (a) earned.push(a);
   }
-  if (season && days >= 21) {
+  const newAccessories = accessoriesFromAchievements(earned.map((a) => a.code));
+  if (season && days >= SEASON_STREAK_DAYS) {
     const a = await award(uid, 'temporada-21', season._id, { have });
     if (a) earned.push(a);
+    // Acessório de cada temporada: vale mesmo para quem já tem a conquista de outra temporada
+    const acc = await grantSeasonAccessory(uid, season);
+    if (acc) newAccessories.push(acc);
   }
 
   if (g.shared?.mode === 'versus') {
@@ -358,6 +363,7 @@ goals.post('/:id/checkins', async (req, res) => {
     goal: await goalView(g.toObject(), fresh, today, g.shared ? {} : { all: after }),
     celebration,
     achievements: earned,
+    accessories: newAccessories.map(accessoryView),
     me: { level: fresh.level, xp: fresh.xp, golden: summaryAfter.golden, stage: summaryAfter.stage, leveledUp: fresh.level > req.user.level },
   });
 });
