@@ -103,6 +103,17 @@ home.get('/notifications', async (req, res) => {
       if (!pu.get(String(c.userId))) continue;
       items.push({ id: `comment:${c._id}`, type: 'comment', at: c.createdAt, user: publicUser(pu.get(String(c.userId))), text: c.text, post: { id: String(c.postId) } });
     }
+
+    // Menções em comentários de posts de outras pessoas (no próprio post já chega como "comentou")
+    const mentions = await Comment.find({ mentions: me._id, userId: { $ne: me._id }, createdAt: { $gte: since } }).sort({ createdAt: -1 }).limit(30).lean();
+    const mPosts = new Map((await Post.find({ _id: { $in: mentions.map((c) => c.postId) } }, { userId: 1 }).lean()).map((p) => [String(p._id), p]));
+    const mUsers = new Map((await User.find({ _id: { $in: [...mentions.map((c) => c.userId), ...[...mPosts.values()].map((p) => p.userId)] } }).lean()).map((u) => [String(u._id), u]));
+    for (const c of mentions) {
+      const p = mPosts.get(String(c.postId));
+      const by = mUsers.get(String(c.userId));
+      if (!p || !by || String(p.userId) === String(me._id)) continue;
+      items.push({ id: `mention:${c._id}`, type: 'mention', at: c.createdAt, user: publicUser(by), text: c.text, post: { id: String(c.postId), author: mUsers.get(String(p.userId))?.username || null } });
+    }
   }
 
   if (me.prefs.notify.checkin && req.localTime && req.localTime >= me.prefs.reminderTime) {

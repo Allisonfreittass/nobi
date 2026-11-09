@@ -151,14 +151,37 @@ posts.delete('/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+async function canSeePost(p, userId) {
+  if ((await blockedIds(userId)).includes(String(p.userId))) return false;
+  return allowed(await relation(userId, p.userId), p.audience);
+}
+
 async function visiblePost(id, meId) {
   const p = await Post.findById(id);
-  if (!p) throw notFound('Post não encontrado.');
-  if ((await blockedIds(meId)).includes(String(p.userId))) throw notFound('Post não encontrado.');
-  const rel = await relation(meId, p.userId);
-  if (!allowed(rel, p.audience)) throw notFound('Post não encontrado.');
+  if (!p || !(await canSeePost(p, meId))) throw notFound('Post não encontrado.');
   return p;
 }
+
+// --- Menções (@username) ---
+const MENTION = /(^|[^a-z0-9_.@])@([a-z0-9_.]{3,24})/gi;
+export const mentionedUsernames = (text) => [...new Set([...String(text).matchAll(MENTION)].map((m) => m[2].toLowerCase().replace(/\.+$/, '')))];
+
+/** Quem pode ser mencionado: existe, não bloqueou nem foi bloqueado por quem escreve, e consegue ver o post. */
+async function mentionable(p, author, usernames) {
+  if (!usernames.length) return [];
+  const blocked = new Set(await blockedIds(author._id));
+  const people = await User.find({ username: { $in: usernames.slice(0, 10) }, suspendedAt: null, _id: { $ne: author._id } }).lean();
+  const out = [];
+  for (const u of people) {
+    if (!blocked.has(String(u._id)) && (await canSeePost(p, u._id))) out.push(u);
+  }
+  return out;
+}
+
+const commentView = (c, by, meId) => ({
+  id: String(c._id), text: c.text, createdAt: c.createdAt, user: publicUser(by.get(String(c.userId))), mine: String(c.userId) === String(meId),
+  mentions: (c.mentions || []).map((id) => by.get(String(id))).filter(Boolean).map((u) => u.username),
+});
 
 posts.post('/:id/react', async (req, res) => {
   const p = await visiblePost(req.params.id, req.user._id);
@@ -185,21 +208,52 @@ posts.get('/:id/comments', async (req, res) => {
   const p = await visiblePost(req.params.id, req.user._id);
   const blocked = await blockedIds(req.user._id);
   const list = await Comment.find({ postId: p._id, userId: { $nin: blocked } }).sort({ createdAt: 1 }).limit(100).lean();
-  const people = await User.find({ _id: { $in: list.map((c) => c.userId) } }).lean();
+  const people = await User.find({ _id: { $in: [...list.map((c) => c.userId), ...list.flatMap((c) => c.mentions || [])] } }).lean();
   const by = new Map(people.map((u) => [String(u._id), u]));
-  res.json(list.map((c) => ({ id: String(c._id), text: c.text, createdAt: c.createdAt, user: publicUser(by.get(String(c.userId))), mine: String(c.userId) === String(req.user._id) })).filter((c) => c.user));
+  res.json(list.map((c) => commentView(c, by, req.user._id)).filter((c) => c.user));
+});
+
+/** Sugestões para o @ do comentário: quem está na conversa e amigos primeiro, depois busca por nome. Só quem vê o post. */
+posts.get('/:id/mentionable', async (req, res) => {
+  const p = await visiblePost(req.params.id, req.user._id);
+  const q = String(req.query.q || '').trim().toLowerCase().replace(/^@/, '').slice(0, 24);
+  const blocked = await blockedIds(req.user._id);
+  const commenters = await Comment.distinct('userId', { postId: p._id });
+  const close = [String(p.userId), ...commenters.map(String), ...(await friendIds(req.user._id)).map(String)];
+  const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = q ? new RegExp(`^${esc}|\\s${esc}`, 'i') : null; // começo do @usuário ou de qualquer palavra do nome
+  const base = { _id: { $ne: req.user._id, $nin: blocked }, suspendedAt: null };
+  const match = re ? { $or: [{ username: re }, { name: re }] } : {};
+  const near = await User.find({ ...base, ...match, _id: { $in: close, $ne: req.user._id, $nin: blocked } }).limit(20).lean();
+  const far = re && near.length < 8 ? await User.find({ ...base, ...match, _id: { $nin: [...blocked, ...close, String(req.user._id)] }, demo: { $ne: true } }).limit(12).lean() : [];
+  const rank = new Map(close.map((id, i) => [id, i]));
+  near.sort((a, b) => rank.get(String(a._id)) - rank.get(String(b._id)));
+  const out = [];
+  for (const u of [...near, ...far]) {
+    if (out.length >= 8) break;
+    if (await canSeePost(p, u._id)) out.push(publicUser(u));
+  }
+  res.json(out);
 });
 
 posts.post('/:id/comments', async (req, res) => {
   const p = await visiblePost(req.params.id, req.user._id);
   const text = String(req.body?.text || '').trim();
   if (!text) throw bad('Escreva algo.');
-  const c = await Comment.create({ postId: p._id, userId: req.user._id, text: text.slice(0, 280) });
+  const clean = text.slice(0, 280);
+  const tagged = await mentionable(p, req.user, mentionedUsernames(clean));
+  const c = await Comment.create({ postId: p._id, userId: req.user._id, text: clean, mentions: tagged.map((u) => u._id) });
   await Post.updateOne({ _id: p._id }, { $inc: { commentsCount: 1 } });
-  if (String(p.userId) !== String(req.user._id)) {
+  const owner = String(p.userId);
+  if (owner !== String(req.user._id)) {
     await notify(p.userId, { ...social.comment(req.user.name, c.text), url: '/notificacoes' }, { type: 'social', dedupeKey: `social:comment:${c._id}` });
   }
-  res.status(201).json({ id: String(c._id), text: c.text, createdAt: c.createdAt, user: publicUser(req.user), mine: true });
+  // Dono do post já recebeu "comentou"; os outros citados recebem "mencionou você"
+  for (const u of tagged.filter((x) => String(x._id) !== owner)) {
+    await notify(u._id, { ...social.mention(req.user.name, c.text), url: '/notificacoes' }, { type: 'social', dedupeKey: `social:mention:${c._id}:${u._id}` });
+  }
+  const by = new Map([[String(req.user._id), req.user], ...tagged.map((u) => [String(u._id), u])]);
+  res.status(201).json(commentView(c.toObject(), by, req.user._id));
 });
 
 posts.delete('/:id/comments/:cid', async (req, res) => {

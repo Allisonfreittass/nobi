@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from './Icon.jsx';
 import { Avatar, Sheet, StreakPill } from './ui.jsx';
 import ReportSheet from './ReportSheet.jsx';
+import { MentionInput, MentionText } from './Mentions.jsx';
 import { api } from '../lib/api.js';
 import { CATEGORIES, timeAgo, fmtNum, signed, unitShort } from '../lib/format.js';
 import { useToast } from '../lib/toast.jsx';
@@ -25,6 +26,7 @@ function Comments({ post, onCount }) {
   const [list, setList] = useState(null);
   const [reporting, setReporting] = useState(null);
   const [text, setText] = useState('');
+  const field = useRef(null);
   const toast = useToast();
   useEffect(() => {
     api(`/posts/${post.id}/comments`).then(setList).catch(() => setList([]));
@@ -51,8 +53,11 @@ function Comments({ post, onCount }) {
         <div key={c.id} className="row gap-10" style={{ alignItems: 'flex-start' }}>
           <Avatar user={c.user} size={30} />
           <div className="grow t-14" style={{ background: 'var(--nobi-bg)', borderRadius: 14, padding: '8px 12px' }}>
-            <Link to={`/u/${c.user.username}`} className="strong">{c.user.name.split(' ')[0]}</Link> {c.text}
-            <span className="t-12 muted" style={{ display: 'block', marginTop: 2 }}>{timeAgo(c.createdAt)}</span>
+            <Link to={`/u/${c.user.username}`} className="strong">{c.user.name.split(' ')[0]}</Link> <MentionText text={c.text} mentions={c.mentions} />
+            <span className="row gap-10 t-12 muted" style={{ marginTop: 2 }}>
+              {timeAgo(c.createdAt)}
+              {!c.mine && <button type="button" className="link-btn t-12 strong" onClick={() => field.current?.insertMention(c.user.username)}>Responder</button>}
+            </span>
           </div>
           {(c.mine || post.mine) && (
             <button type="button" className="icon-btn plain" aria-label="Apagar comentário" onClick={() => remove(c)}><Icon name="trash" size={16} /></button>
@@ -64,7 +69,7 @@ function Comments({ post, onCount }) {
       ))}
       <form className="row gap-8" onSubmit={send}>
         <label className="sr-only" htmlFor={`c-${post.id}`}>Comentar</label>
-        <input id={`c-${post.id}`} className="input" style={{ minHeight: 44, height: 44 }} value={text} maxLength={280} onChange={(e) => setText(e.target.value)} placeholder="Escreva um comentário" />
+        <MentionInput ref={field} postId={post.id} id={`c-${post.id}`} value={text} onChange={setText} placeholder="Comente ou marque alguém com @" />
         <button type="submit" className="btn btn-dark sm" disabled={!text.trim()}>Enviar</button>
       </form>
       <ReportSheet open={Boolean(reporting)} onClose={() => setReporting(null)} targetType="comment" targetId={reporting} />

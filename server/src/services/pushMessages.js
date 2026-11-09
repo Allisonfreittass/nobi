@@ -169,6 +169,7 @@ export const social = {
     { title: count > 1 ? `${first(who)} e mais ${count - 1} disseram Boa!` : `${first(who)} disse Boa!`, body: what ? `No seu post: ${what}` : 'Pro seu registro de hoje.' },
     { title: count > 1 ? `${count} Boa! no seu post` : `Boa! de ${first(who)}`, body: what || 'Sua evolução está inspirando gente.' },
   ]),
+  mention: (who, text) => ({ title: `${first(who)} mencionou você`, body: text.length > 120 ? `${text.slice(0, 117)}...` : text }),
   comment: (who, text) => ({ title: `${first(who)} comentou`, body: text.length > 120 ? `${text.slice(0, 117)}...` : text }),
   followRequest: (who) => ({ title: `${first(who)} quer te seguir`, body: 'Aceite para acompanharem a evolução um do outro.' }),
   invite: (who, goal, mode) => pick([

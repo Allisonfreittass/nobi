@@ -79,6 +79,14 @@ export default function Notifications() {
             <Icon name="clap" size={18} />
           </Link>
         );
+      case 'mention':
+        return (
+          <Link to={i.post.author ? `/u/${i.post.author}` : `/u/${i.user.username}`} className="list-row">
+            <Avatar user={i.user} size={44} />
+            <span className="grow t-14"><strong>{firstName(i.user.name)}</strong> mencionou você: “{i.text}” <span className="muted">· {timeAgo(i.at)}</span></span>
+            <Icon name="comment" size={18} />
+          </Link>
+        );
       case 'comment':
         return (
           <Link to={`/u/${me.username}`} className="list-row">
