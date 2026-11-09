@@ -62,6 +62,14 @@ export default function Notifications() {
             <button type="button" className="btn btn-orbita sm" onClick={() => invite(i, true)}>Topar</button>
           </div>
         );
+      case 'nudge':
+        return (
+          <Link to={i.goal.challenge ? `/desafios/${i.goal.id}` : `/metas/${i.goal.id}`} className="list-row">
+            <Avatar user={i.user} size={44} />
+            <span className="grow t-14"><strong>{firstName(i.user.name)}</strong> lembrou de você: falta você hoje em <strong>{i.goal.title}</strong> <span className="muted">· {timeAgo(i.at)}</span></span>
+            <Icon name="chevron" size={18} />
+          </Link>
+        );
       case 'group-invite':
         return (
           <div className="list-row">

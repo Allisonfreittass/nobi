@@ -114,6 +114,15 @@ function Together({ g, meId, onGoal }) {
   const toast = useToast();
   const s = g.shared;
   const mine = s.participants.find((p) => p.id === meId);
+  const amIn = Boolean(mine);
+  const [nudged, setNudged] = useState(() => new Set());
+  async function nudge(p) {
+    try {
+      await api(`/goals/${g.id}/nudge/${p.id}`, { method: 'POST' });
+      toast(`${firstName(p.name)} vai receber um lembrete.`);
+    } catch (e) { toast(e.message); }
+    setNudged((n) => new Set(n).add(p.id)); // já cutucou hoje (ou deu certo agora): não repete
+  }
   return (
     <>
       {s.mode === 'together' && (
@@ -135,10 +144,17 @@ function Together({ g, meId, onGoal }) {
         <div className="section-head"><h2 className="title t-20">Quem já fez hoje</h2><span className="t-13 muted">{s.doneTodayCount} de {s.participants.length}</span></div>
         <div className="row gap-12 wrap">
           {s.participants.map((p) => (
-            <Link key={p.id} to={`/u/${p.username}`} className="stack center gap-6" style={{ width: 60 }} aria-label={`${p.name}: ${p.doneToday ? 'fez hoje' : 'ainda não'}`}>
-              <Avatar user={p} size={48} ring={p.doneToday ? 'posted' : 'none'} />
-              <span className="t-12 secondary ellipsis" style={{ maxWidth: 60 }}>{p.id === meId ? 'Você' : firstName(p.name)}</span>
-            </Link>
+            <div key={p.id} className="stack center gap-6" style={{ width: 64 }}>
+              <Link to={`/u/${p.username}`} className="stack center gap-6" aria-label={`${p.name}: ${p.doneToday ? 'fez hoje' : 'ainda não'}`}>
+                <Avatar user={p} size={48} ring={p.doneToday ? 'posted' : 'none'} />
+                <span className="t-12 secondary ellipsis" style={{ maxWidth: 64 }}>{p.id === meId ? 'Você' : firstName(p.name)}</span>
+              </Link>
+              {p.id !== meId && !p.doneToday && amIn && (
+                <button type="button" className="nudge-btn" disabled={nudged.has(p.id)} onClick={() => nudge(p)} aria-label={nudged.has(p.id) ? `${firstName(p.name)} já foi cutucado hoje` : `Cutucar ${firstName(p.name)}`}>
+                  {nudged.has(p.id) ? 'Cutucado' : 'Cutucar'}
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </section>

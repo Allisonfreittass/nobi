@@ -185,6 +185,10 @@ export const social = {
     { title: `${first(who)}: ${lower(title)}`, body: 'Manda um Boa! pra comemorar junto.' },
     { title: `${first(who)} chegou num marco`, body: `${title}. Que tal um Boa!?` },
   ]),
+  nudge: (who, goal) => pick([
+    { title: `${first(who)} lembrou de você`, body: `Falta você hoje no ${goal}. Sem pressão: um pouco já conta.` },
+    { title: `Bora, ${goal}?`, body: `${first(who)} já fez e está te esperando.` },
+  ]),
   overtaken: (who, goal, gap) => pick([
     { title: `${first(who)} passou você no ${goal}`, body: gap <= 20 ? `Diferença de ${gap} pts. Um check-in e você volta.` : 'A semana ainda não acabou. Bora retomar?' },
     { title: `Movimento no ${goal}`, body: `${first(who)} subiu no ranking e passou você. Ainda dá tempo.` },

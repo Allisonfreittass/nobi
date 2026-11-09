@@ -599,3 +599,8 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .closet-art { display: flex; margin-bottom: 4px; }
 .closet-lock { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--nobi-track); color: var(--nobi-text-secondary); }
 .closet-lock.on { background: var(--nobi-tinta); color: #FFFFFF; }
+
+/* Cutucar (desafio e sequência a dois) */
+.nudge-btn { border: none; border-radius: 12px; padding: 4px 8px; min-height: 28px; font-size: var(--nobi-text-xs); font-weight: 700; background: var(--nobi-tinta); color: #FFFFFF; cursor: pointer; }
+:root[data-theme='dark'] .nudge-btn { background: var(--nobi-creme); color: var(--nobi-tinta); }
+.nudge-btn:disabled { background: var(--nobi-track); color: var(--nobi-text-muted); cursor: default; }

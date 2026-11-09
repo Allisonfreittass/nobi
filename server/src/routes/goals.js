@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Goal, Checkin, User, Streak, Post, Comment, Task, Membership, Club, CATEGORIES, KINDS } from '../models/index.js';
+import { Goal, Checkin, User, Streak, Post, Comment, Task, Membership, Club, Nudge, CATEGORIES, KINDS } from '../models/index.js';
 import { canModerate } from '../services/clubs.js';
 import { accessoriesFromAchievements, grantSeasonAccessory, accessoryView, SEASON_STREAK_DAYS } from '../services/collectibles.js';
 import { deleteImages } from '../services/storage.js';
@@ -9,7 +9,7 @@ import { goalView, userGoals, refreshStreakCache, weekStartsOn, goalsQuery, summ
 import { computeStreak, dayTotals, needFor, CELEBRATE, streakInDays } from '../services/streaks.js';
 import { award, grantXp, ownedCodes } from '../services/achievements.js';
 import { XP } from '../services/level.js';
-import { friendIds, publicUser } from '../services/social.js';
+import { friendIds, publicUser, blockedIds } from '../services/social.js';
 import { currentSeason } from '../services/seasons.js';
 import { notify, localParts } from '../services/push.js';
 import { ensureShields } from '../services/shields.js';
@@ -366,6 +366,25 @@ goals.post('/:id/checkins', async (req, res) => {
     accessories: newAccessories.map(accessoryView),
     me: { level: fresh.level, xp: fresh.xp, golden: summaryAfter.golden, stage: summaryAfter.stage, leveledUp: fresh.level > req.user.level },
   });
+});
+
+// Cutucar quem divide o objetivo e ainda não fez hoje. Uma cutucada por pessoa e dia; nunca para quem bloqueou.
+goals.post('/:id/nudge/:userId', async (req, res) => {
+  const g = await Goal.findById(req.params.id).lean();
+  const ids = (g?.shared?.participants || []).map(String);
+  if (!g || !ids.includes(String(req.user._id))) throw notFound();
+  const to = String(req.params.userId);
+  if (!ids.includes(to) || to === String(req.user._id)) throw bad('Só dá para cutucar quem está com você nesse objetivo.');
+  if ((await blockedIds(req.user._id)).includes(to)) throw notFound();
+  if (await Checkin.exists({ goalId: g._id, userId: to, date: req.today })) throw bad('Essa pessoa já fez hoje.');
+  try {
+    await Nudge.create({ fromId: req.user._id, toId: to, goalId: g._id, date: req.today });
+  } catch (e) {
+    if (e.code === 11000) throw bad('Você já cutucou hoje. Amanhã dá de novo.');
+    throw e;
+  }
+  await notify(to, { ...social.nudge(req.user.name, g.title), url: g.shared.endsAt ? `/desafios/${g._id}` : `/metas/${g._id}` }, { type: 'challenges', dedupeKey: `nudge:${g._id}:${to}:${req.today}` });
+  res.json({ ok: true });
 });
 
 // Desfazer o registro de hoje. O XP já ganho fica (o nível nunca regride).

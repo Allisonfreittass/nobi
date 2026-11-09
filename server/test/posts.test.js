@@ -31,3 +31,19 @@ test('editar post: só o dono; trocar para Público entra no clube, para Amigos 
   assert.equal((await Post.findById(p.id)).clubIds.length, 0, 'Amigos nunca vaza para clube');
   assert.equal((await call('PATCH', `/posts/${p.id}`, { audience: 'todos' }, ana.token)).status, 400);
 });
+
+test('cutucar: só quem divide o objetivo, quem ainda não fez, uma vez por dia', async () => {
+  const [ana, beto, caio] = await Promise.all([signup('Ana'), signup('Beto'), signup('Caio')]);
+  await call('POST', `/users/${ana.me.username}/invite`, {}, beto.token);
+  const g = (await call('POST', '/goals', { title: 'Ler juntos', category: 'leitura', kind: 'daily', target: { amount: 1, unit: '' }, shared: { mode: 'together', invite: [beto.me.id], durationDays: 30 } }, ana.token)).body;
+  await call('POST', `/goals/${g.id}/join`, null, beto.token);
+  assert.equal((await call('POST', `/goals/${g.id}/nudge/${beto.me.id}`, null, caio.token)).status, 404, 'quem está fora não cutuca');
+  assert.equal((await call('POST', `/goals/${g.id}/nudge/${caio.me.id}`, null, ana.token)).status, 400, 'só quem está no objetivo');
+  assert.equal((await call('POST', `/goals/${g.id}/nudge/${beto.me.id}`, null, ana.token)).status, 200);
+  assert.equal((await call('POST', `/goals/${g.id}/nudge/${beto.me.id}`, null, ana.token)).status, 400, 'uma por dia');
+  const n = (await call('GET', '/home/notifications', null, beto.token)).body.items.find((i) => i.type === 'nudge');
+  assert.equal(n.user.name, 'Ana');
+  assert.equal(n.goal.title, 'Ler juntos');
+  await call('POST', `/goals/${g.id}/checkins`, { value: 1 }, ana.token);
+  assert.equal((await call('POST', `/goals/${g.id}/nudge/${ana.me.id}`, null, beto.token)).status, 400, 'quem já fez hoje não recebe');
+});

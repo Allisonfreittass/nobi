@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { Goal, Post, User, Follow, Comment, Club, Membership } from '../models/index.js';
+import { addDays } from '../lib/dates.js';
+import { Goal, Post, User, Follow, Comment, Club, Membership, Nudge } from '../models/index.js';
 import { friendIds, publicUser } from '../services/social.js';
 import { goalsQuery, goalView, streakSummary, userGoals } from '../services/progress.js';
 
@@ -79,6 +80,21 @@ home.get('/notifications', async (req, res) => {
   }
 
   if (me.prefs.notify.challenges) {
+    // Cutucadas de hoje e ontem (as de dias passados perdem o sentido)
+    const nudges = await Nudge.find({ toId: me._id, date: { $gte: addDays(req.today, -1) } }).sort({ createdAt: -1 }).limit(20).lean();
+    const [nUsers, nGoals] = await Promise.all([
+      User.find({ _id: { $in: nudges.map((n) => n.fromId) } }).lean(),
+      Goal.find({ _id: { $in: nudges.map((n) => n.goalId) } }, { title: 1, shared: 1 }).lean(),
+    ]);
+    const nu = new Map(nUsers.map((u) => [String(u._id), u]));
+    const ng = new Map(nGoals.map((x) => [String(x._id), x]));
+    for (const n of nudges) {
+      const by = nu.get(String(n.fromId));
+      const goal = ng.get(String(n.goalId));
+      if (!by || !goal) continue;
+      items.push({ id: `nudge:${n._id}`, type: 'nudge', at: n.createdAt, user: publicUser(by), goal: { id: String(goal._id), title: goal.title, challenge: Boolean(goal.shared?.endsAt) } });
+    }
+
     const invites = await Goal.find({ 'shared.invited': me._id, archivedAt: null }).lean();
     const owners = await User.find({ _id: { $in: invites.map((g) => g.ownerId) } }).lean();
     const ow = new Map(owners.map((u) => [String(u._id), u]));
