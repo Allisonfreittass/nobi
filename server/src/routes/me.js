@@ -9,7 +9,7 @@ import { weeklySummary } from '../services/weekly.js';
 import { yearSummary } from '../services/yearly.js';
 import { ensureShields } from '../services/shields.js';
 import { comebackFor, markComebackSeen } from '../services/comeback.js';
-import { ShieldUse, Task, Membership, Report, Collectible, Nudge, Pair, Book, ClubMessage } from '../models/index.js';
+import { ShieldUse, Task, Membership, Report, Collectible, Nudge, Pair, Book, ClubMessage, StravaImport } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { handOverClubs } from '../services/clubs.js';
 import { ACCESSORIES, isAccessory, ownedAccessories } from '../services/collectibles.js';
@@ -194,7 +194,8 @@ me.get('/export', async (req, res) => {
     Follow.find({ $or: [{ followerId: id }, { followeeId: id }] }).lean(),
     Achievement.find({ userId: id }).lean(),
   ]);
-  const { passwordHash, resetToken, resetTokenExpiresAt, ...profile } = req.user.toObject();
+  const { passwordHash, resetToken, resetTokenExpiresAt, strava: stravaTokens, ...profile } = req.user.toObject();
+  if (stravaTokens) profile.strava = { name: stravaTokens.name, connectedAt: stravaTokens.connectedAt };
   res.setHeader('Content-Disposition', `attachment; filename="nobi-${req.user.username}.json"`);
   const books = await Book.find({ userId: id }).lean();
   const broto = [...(await ownedAccessories(id)).entries()].map(([item, earnedAt]) => ({ item, earnedAt }));
@@ -239,6 +240,7 @@ me.delete('/', async (req, res) => {
     Pair.deleteMany({ users: id }),
     Book.deleteMany({ userId: id }),
     ClubMessage.deleteMany({ userId: id }),
+    StravaImport.deleteMany({ userId: id }),
     Report.deleteMany({ reporterId: id }),
     User.updateMany({ blocked: id }, { $pull: { blocked: id } }),
   ]);

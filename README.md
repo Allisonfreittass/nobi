@@ -75,6 +75,11 @@ Web Push com service worker (`web/public/sw.js`). Funciona no Android e no compu
 - **Google:** preencha `GOOGLE_CLIENT_ID` (API) e `VITE_GOOGLE_CLIENT_ID` (web).
 - **Apple:** no Apple Developer, crie um **Services ID** (ex.: `com.nobievolua.web`), ligue "Sign in with Apple", cadastre o domínio e a URL de retorno `https://<seu domínio>/entrar`. Depois preencha `APPLE_CLIENT_ID` com esse Services ID. O botão só aparece quando a variável existe. O servidor confere o `id_token` com as chaves públicas da Apple; não precisa de chave privada.
 
+### Strava (importar treinos)
+- Crie o app em https://www.strava.com/settings/api. Em "Authorization Callback Domain" coloque o domínio do site (ex.: `nobievolua.com.br`). Preencha `STRAVA_CLIENT_ID` e `STRAVA_CLIENT_SECRET`. A seção "Strava" aparece em Configurações só quando as duas existem.
+- A pessoa conecta, escolhe o objetivo de Treino e as atividades viram registros no dia delas (minutos e km), uma vez só. Sincroniza ao abrir o app (no máximo 1 vez por hora) e no botão "Sincronizar agora". Os tokens ficam só no servidor.
+- Antes de abrir para muita gente, o Strava exige revisão do app (limite inicial de atletas conectados).
+
 ### E-mail
 - "Esqueci a senha" manda o link pelo **Resend**: crie a conta, verifique o domínio e preencha `RESEND_API_KEY` e `EMAIL_FROM` (ex.: `Nobi <nao-responda@nobievolua.com.br>`). Sem a chave, em desenvolvimento o e-mail sai no terminal da API.
 

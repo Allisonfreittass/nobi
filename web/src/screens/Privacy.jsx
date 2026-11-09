@@ -89,6 +89,7 @@ const sections = [
             ['Google LLC', 'Login com Google (só se você usar) e entrega das fontes do site (o navegador baixa as fontes dos servidores do Google, que recebem seu endereço IP)', 'EUA e outros países'],
             ['Apple Inc.', 'Login com Apple (só se você usar): recebemos seu nome, um e-mail (pode ser o e-mail oculto da Apple) e um identificador da conta', 'EUA e outros países'],
             ['Internet Archive (Open Library)', 'Busca de livros e capas na Estante: o servidor envia só o termo buscado; seu navegador baixa as capas de lá (recebem seu endereço IP)', 'EUA'],
+            ['Strava, Inc.', 'Importar seus treinos (só se você conectar): lemos suas atividades (data, tipo, tempo e distância); você pode desconectar quando quiser', 'EUA'],
             ['Resend Inc.', 'Envio de e-mails da conta, como o link para redefinir a senha (recebe seu nome e e-mail)', 'EUA'],
             ['Serviço de notificações do seu navegador (Google, Apple ou Mozilla)', 'Entregar as notificações ao seu aparelho, se você ativar. O conteúdo vai criptografado', 'Varia conforme o navegador'],
           ]}

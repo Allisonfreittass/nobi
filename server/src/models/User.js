@@ -13,7 +13,15 @@ const userSchema = new Schema({
   appleId: { type: String, unique: true, sparse: true }, // 'sub' do Sign in with Apple
   brotoAccessory: { type: String, default: null },
   onboardingDismissedAt: { type: Date, default: null },
-  readingGoal: { type: new Schema({ year: Number, books: Number }, { _id: false }), default: null }, // meta de livros no ano // fechou o cartão "Primeiros passos" // acessório que o Broto está vestindo (ver services/collectibles.js)
+  readingGoal: { type: new Schema({ year: Number, books: Number }, { _id: false }), default: null }, // meta de livros no ano
+  // Strava conectado: tokens (nunca vão para o app) e o objetivo de treino que recebe as atividades
+  strava: {
+    type: new Schema({
+      athleteId: String, name: String, accessToken: String, refreshToken: String, expiresAt: Number,
+      goalId: { type: Schema.Types.ObjectId, ref: 'Goal', default: null }, lastSyncAt: Date, connectedAt: Date,
+    }, { _id: false }),
+    default: null,
+  }, // fechou o cartão "Primeiros passos" // acessório que o Broto está vestindo (ver services/collectibles.js)
   bio: { type: String, default: '', maxlength: 120 },
   avatarUrl: { type: String, default: '' }, // '' = inicial, 'broto' = avatar do Broto, data:/https: = foto
   avatarColor: { type: String, default: '#FFD8C7' },

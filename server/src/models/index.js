@@ -13,6 +13,7 @@ export { Pair } from './Pair.js';
 export { ClubEvent } from './ClubEvent.js';
 export { Book } from './Book.js';
 export { ClubMessage } from './ClubMessage.js';
+export { StravaImport } from './StravaImport.js';
 export { XpGrant } from './XpGrant.js';
 export { PushSubscription } from './PushSubscription.js';
 export { PushLog } from './PushLog.js';

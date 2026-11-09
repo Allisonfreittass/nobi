@@ -28,6 +28,7 @@ const loadInvite = () => import('./screens/Invite.jsx');
 const loadGroupInvite = () => import('./screens/GroupInvite.jsx');
 const loadYear = () => import('./screens/Year.jsx');
 const loadShelf = () => import('./screens/Shelf.jsx');
+const loadStravaReturn = () => import('./screens/StravaReturn.jsx');
 const loadStarted = () => import('./screens/Started.jsx');
 const loadConnections = () => import('./screens/Connections.jsx');
 const loadWeekly = () => import('./screens/Weekly.jsx');
@@ -51,6 +52,7 @@ const Invite = lazy(loadInvite);
 const GroupInvite = lazy(loadGroupInvite);
 const Year = lazy(loadYear);
 const Shelf = lazy(loadShelf);
+const StravaReturn = lazy(loadStravaReturn);
 const Started = lazy(loadStarted);
 const Connections = lazy(loadConnections);
 const Weekly = lazy(loadWeekly);
@@ -64,6 +66,7 @@ function usePrefetch() {
   }, []);
 }
 import { acceptPendingInvite, acceptPendingGroupInvite } from './lib/invite.js';
+import { StravaAutoSync } from './components/StravaSettings.jsx';
 import { invalidateLoad } from './lib/useLoad.js';
 import { isStandalone } from './lib/install.js';
 import StatusBarShield from './components/StatusBarShield.jsx';
@@ -153,6 +156,7 @@ export default function App() {
     <>
     <StatusBarShield />
     <PendingInvite />
+    <StravaAutoSync />
     <ComebackGate />
     <OpeningCurtain />
     <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--nobi-bg)' }} aria-busy="true" />}>
@@ -196,6 +200,7 @@ export default function App() {
         <Route path="/semana" element={<Weekly />} />
         <Route path="/ano" element={<Year />} />
         <Route path="/estante" element={<Shelf />} />
+        <Route path="/strava/retorno" element={<StravaReturn />} />
         <Route path="/moderacao" element={<Moderation />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -9,6 +9,7 @@ import { api } from '../lib/api.js';
 import { APP_NAME, APP_VERSION } from '../config.js';
 import { useInstallAction } from '../components/InstallPrompt.jsx';
 import InviteSheet from '../components/InviteSheet.jsx';
+import StravaSettings from '../components/StravaSettings.jsx';
 import { shareInvite } from '../lib/invite.js';
 import { usePush } from '../lib/push.js';
 
@@ -197,6 +198,7 @@ export default function Settings() {
         <Row label="Animações do Broto" desc="pulos e reações ao concluir algo"><Toggle checked={me.prefs.mascotMotion} onChange={(v) => prefs({ mascotMotion: v })} label="Animações do Broto" /></Row>
       </Group>
 
+      <StravaSettings />
       <Group title="App">
         <Row as="button" type="button" label="Convidar amigos" desc="quem entrar pelo seu link vira seu amigo" onClick={invite}><Icon name="share" size={18} /></Row>
         {installer.install.available && (

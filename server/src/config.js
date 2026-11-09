@@ -8,6 +8,9 @@ export const config = {
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   // Login com Apple (web): o Services ID criado no Apple Developer, ex.: com.nobievolua.web
   appleClientId: (process.env.APPLE_CLIENT_ID || '').trim(),
+  // Strava (importar treinos): app criado em https://www.strava.com/settings/api
+  stravaClientId: (process.env.STRAVA_CLIENT_ID || '').trim(),
+  stravaClientSecret: (process.env.STRAVA_CLIENT_SECRET || '').trim(),
   webOrigin: process.env.WEB_ORIGIN || 'http://localhost:5173',
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',

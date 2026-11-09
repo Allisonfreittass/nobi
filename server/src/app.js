@@ -16,6 +16,7 @@ import { clubs, community, reports } from './routes/clubs.js';
 import { admin } from './routes/admin.js';
 import { pairs } from './routes/pairs.js';
 import { books } from './routes/books.js';
+import { strava } from './routes/strava.js';
 import { UPLOAD_DIR } from './services/storage.js';
 
 export function createApp() {
@@ -44,6 +45,7 @@ export function createApp() {
   app.use('/api/reports', requireAuth, reports);
   app.use('/api/pairs', requireAuth, pairs);
   app.use('/api/books', requireAuth, books);
+  app.use('/api/strava', requireAuth, strava);
   app.use('/api/admin', requireAuth, requireStaff, admin);
   app.use('/api/cron', cron);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
