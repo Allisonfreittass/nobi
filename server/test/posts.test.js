@@ -67,3 +67,17 @@ test('marcar amigos no post: só quem vê é marcado, aparece no feed dela e é 
   const sug = (await call('GET', '/posts/mentionable/new?audience=friends&q=', null, ana.token)).body.map((u) => u.name);
   assert.deepEqual(sug, ['Beto']);
 });
+
+test('primeiros passos: mostra o que falta, some ao fechar', async () => {
+  const ana = await signup('Ana');
+  const ob = async () => (await call('GET', '/home/onboarding', null, ana.token)).body;
+  let o = await ob();
+  assert.equal(o.show, true);
+  assert.deepEqual(o.steps.map((s) => [s.id, s.done]), [['goal', false], ['checkin', false], ['follow', false], ['club', false], ['friend', false]]);
+  const g = await goal(ana.token);
+  await call('POST', `/goals/${g.id}/checkins`, { value: 1 }, ana.token);
+  o = await ob();
+  assert.deepEqual(o.steps.filter((s) => s.done).map((s) => s.id), ['goal', 'checkin']);
+  await call('POST', '/home/onboarding/dismiss', null, ana.token);
+  assert.equal((await ob()).show, false);
+});

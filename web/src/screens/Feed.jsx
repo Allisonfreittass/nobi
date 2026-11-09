@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
+import FirstSteps from '../components/FirstSteps.jsx';
 import PostCard from '../components/PostCard.jsx';
 import GoalCard from '../components/GoalCard.jsx';
 import FriendsRing from '../components/FriendsRing.jsx';
@@ -67,6 +68,7 @@ function MobileFeed() {
         <Logo size={34} />
         <Bell />
       </header>
+      <FirstSteps />
       <ShieldNotice />
       <WeeklyCard />
       <SmartPrompt />
@@ -205,6 +207,7 @@ function DesktopFeed() {
         {stats.data && <Consistency12 stats={stats.data} />}
       </div>
       <aside className="stack gap-16" style={{ position: 'sticky', top: 24 }}>
+        <FirstSteps />
         <h2 className="title t-20">Seus amigos agora</h2>
         <div className="stack gap-12" style={{ maxHeight: 'calc(100dvh - 300px)', overflowY: 'auto', paddingRight: 4 }}>
           {feed.data && feed.posts.length === 0 && <EmptyFeed />}

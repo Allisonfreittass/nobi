@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { addDays } from '../lib/dates.js';
 import { Goal, Post, User, Follow, Comment, Club, Membership, Nudge } from '../models/index.js';
-import { friendIds, publicUser } from '../services/social.js';
+import { friendIds, followingIds, publicUser } from '../services/social.js';
+import { clubSummary, visibleClubFilter } from '../services/clubs.js';
+import { Checkin } from '../models/index.js';
 import { goalsQuery, goalView, streakSummary, userGoals } from '../services/progress.js';
 
 export const home = Router();
@@ -41,6 +43,51 @@ home.get('/', async (req, res) => {
   const goals = await userGoals(me, req.today);
   const dueToday = goals.filter((g) => g.status.activeToday && g.kind !== 'project' && !g.status.periodDone);
   res.json({ ring, challenge, pendingToday: dueToday.length, goalsToday: goals.length });
+});
+
+/**
+ * "Primeiros passos" de quem chegou: objetivo, primeiro registro, seguir gente, entrar num clube, chamar um amigo.
+ * Some quando tudo foi feito, quando a pessoa fecha ou depois de 30 dias de conta.
+ */
+const ONBOARDING_DAYS = 30;
+home.get('/onboarding', async (req, res) => {
+  const me = req.user;
+  const old = Date.now() - new Date(me.createdAt).getTime() > ONBOARDING_DAYS * 86400000;
+  if (me.onboardingDismissedAt || old) return res.json({ show: false });
+  const [goal, checkin, following, club, invited] = await Promise.all([
+    Goal.exists({ ownerId: me._id }),
+    Checkin.exists({ userId: me._id }),
+    followingIds(me._id),
+    Membership.exists({ userId: me._id, status: 'active' }),
+    Follow.exists({ followeeId: me._id, status: 'accepted' }),
+  ]);
+  const steps = [
+    { id: 'goal', label: 'Criar seu primeiro objetivo', done: Boolean(goal), to: '/metas/novo' },
+    { id: 'checkin', label: 'Fazer o primeiro registro', done: Boolean(checkin), to: '/metas' },
+    { id: 'follow', label: 'Seguir 3 pessoas', done: following.length >= 3, to: '/comunidade' },
+    { id: 'club', label: 'Entrar num clube', done: Boolean(club), to: '/comunidade' },
+    { id: 'friend', label: 'Chamar um amigo', done: Boolean(invited), to: null }, // abre o convite
+  ];
+  if (steps.every((s) => s.done)) return res.json({ show: false, steps });
+  // Clubes para começar: da cidade, depois do interesse, depois os maiores
+  let clubs = [];
+  if (!club) {
+    const visible = await visibleClubFilter(me._id);
+    const base = { ...visible, kind: { $in: ['official', 'open'] } };
+    const city = me.city ? await Club.find({ ...base, city: me.city }).limit(3).lean() : [];
+    const interest = me.interests?.length ? await Club.find({ ...base, interest: { $in: me.interests }, _id: { $nin: city.map((c) => c._id) } }).limit(3).lean() : [];
+    clubs = [...city, ...interest];
+    if (clubs.length < 3) clubs.push(...await Club.find({ ...base, _id: { $nin: clubs.map((c) => c._id) } }).limit(3 - clubs.length).lean());
+    const friends = await friendIds(me._id);
+    clubs = await Promise.all(clubs.slice(0, 3).map((c) => clubSummary(c, { userId: me._id, friends })));
+  }
+  res.json({ show: true, steps, clubs });
+});
+
+home.post('/onboarding/dismiss', async (req, res) => {
+  req.user.onboardingDismissedAt = new Date();
+  await req.user.save();
+  res.json({ ok: true });
 });
 
 home.get('/challenges', async (req, res) => {
