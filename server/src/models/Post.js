@@ -20,6 +20,7 @@ const postSchema = new Schema({
   date: { type: String }, // 'YYYY-MM-DD' local de quem postou (anel "postou hoje")
   reactions: [{ userId: { type: Schema.Types.ObjectId, ref: 'User' }, type: { type: String, default: 'boa' }, at: { type: Date, default: Date.now }, _id: false }],
   commentsCount: { type: Number, default: 0 },
+  editedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 postSchema.index({ createdAt: -1 });

@@ -48,6 +48,7 @@ export async function hydratePosts(list, meId) {
       reactorNames: others.slice(-2).map((x) => r.get(String(x.userId))).filter(Boolean),
       commentsCount: p.commentsCount,
       createdAt: p.createdAt,
+      edited: Boolean(p.editedAt),
     };
   }).filter((p) => p.user);
 }
@@ -140,6 +141,29 @@ posts.post('/', async (req, res) => {
   }
   const [view] = await hydratePosts([post.toObject()], req.user._id);
   res.status(201).json({ post: view, achievements: earned ? [earned] : [] });
+});
+
+// Editar o próprio post: texto e público. Público → entra nos clubes da categoria; Amigos → sai de todos.
+posts.patch('/:id', async (req, res) => {
+  const p = await Post.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!p) throw notFound();
+  const b = req.body || {};
+  if (b.text !== undefined) p.text = String(b.text).slice(0, 500);
+  if (b.audience !== undefined) {
+    if (!AUDIENCES.includes(b.audience)) throw bad('Escolha Amigos ou Público.');
+    if (b.audience !== p.audience) {
+      p.audience = b.audience;
+      p.clubIds = b.audience === 'public' && p.goalId ? await clubIdsForPost(req.user._id, p.category) : [];
+    }
+  }
+  if (b.photo === null && p.photo?.url && p.kind !== 'weekly') {
+    await deleteImages([p.photo.url]);
+    p.photo = null;
+  }
+  p.editedAt = new Date();
+  await p.save();
+  const [view] = await hydratePosts([p.toObject()], req.user._id);
+  res.json(view);
 });
 
 posts.delete('/:id', async (req, res) => {

@@ -77,6 +77,47 @@ function Comments({ post, onCount }) {
   );
 }
 
+/** Editar o próprio post: texto, público e (se tiver) tirar a foto. */
+function EditPostSheet({ post, open, onClose, onSaved }) {
+  const toast = useToast();
+  const [text, setText] = useState(post.text || '');
+  const [audience, setAudience] = useState(post.audience);
+  const [dropPhoto, setDropPhoto] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (open) { setText(post.text || ''); setAudience(post.audience); setDropPhoto(false); } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function save() {
+    setBusy(true);
+    try {
+      const v = await api(`/posts/${post.id}`, { method: 'PATCH', body: { text, audience, ...(dropPhoto ? { photo: null } : {}) } });
+      onSaved(v);
+      toast('Post atualizado.');
+      onClose();
+    } catch (e) { toast(e.message); } finally { setBusy(false); }
+  }
+  return (
+    <Sheet open={open} onClose={onClose} title="Editar post">
+      <label className="field">Texto
+        <textarea className="textarea" rows={4} maxLength={500} value={text} onChange={(e) => setText(e.target.value)} placeholder="Conte como foi" />
+      </label>
+      <div className="stack gap-8">
+        <span className="t-14 strong">Quem vê</span>
+        <div className="segmented" role="group" aria-label="Quem vê">
+          <button type="button" aria-pressed={audience === 'friends'} onClick={() => setAudience('friends')}>Amigos</button>
+          <button type="button" aria-pressed={audience === 'public'} onClick={() => setAudience('public')}>Público</button>
+        </div>
+        <span className="t-13 muted">{audience === 'public' ? 'Público também aparece nos clubes da categoria em que você está.' : 'Amigos: só quem vocês se seguem. Sai dos clubes.'}</span>
+      </div>
+      {post.photo && post.kind !== 'weekly' && (
+        <label className="select-row" style={{ padding: 0 }}>
+          <span className="grow t-15">Tirar a foto do post</span>
+          <span className="switch"><input type="checkbox" role="switch" checked={dropPhoto} onChange={(e) => setDropPhoto(e.target.checked)} aria-label="Tirar a foto do post" /></span>
+        </label>
+      )}
+      <button type="button" className="btn btn-dark block" disabled={busy} onClick={save}>{busy ? 'Salvando…' : 'Salvar'}</button>
+    </Sheet>
+  );
+}
+
 /**
  * club = { slug, canModerate } quando o post aparece num clube; note = texto extra na linha de cima
  * ("fora dos seus amigos"). O ⋯ junta apagar (meu), denunciar (dos outros) e remover do clube (moderação).
@@ -94,6 +135,7 @@ export default function PostCard({ post: initial, compact = false, onDelete, clu
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [report, setReport] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [pop, setPop] = useState(false);
   const confirm = useConfirm();
   const toast = useToast();
@@ -121,9 +163,10 @@ export default function PostCard({ post: initial, compact = false, onDelete, clu
     } catch (e) { toast(e.message); }
   }
   const canDelete = post.mine && onDelete;
+  const canEdit = post.mine;
   const canReport = !post.mine;
   const canRemove = club?.canModerate;
-  const hasMenu = canDelete || canReport || canRemove;
+  const hasMenu = canDelete || canEdit || canReport || canRemove;
 
   const metrics = [];
   if (m.km) metrics.push(<Metric key="km" value={fmtNum(m.km)} unit="km" caption={m.minutes ? `${m.minutes} min` : undefined} />);
@@ -146,6 +189,7 @@ export default function PostCard({ post: initial, compact = false, onDelete, clu
             {post.kind === 'weekly' ? 'Resumo da semana' : cat.label}<span aria-hidden="true">·</span>{timeAgo(post.createdAt)}
             {post.audience === 'public' ? <Icon name="globe" size={13} /> : <Icon name="users" size={13} />}
             <span className="sr-only">{post.audience === 'public' ? 'Público' : 'Amigos'}</span>
+            {post.edited && <><span aria-hidden="true">·</span>editado</>}
             {note && <><span aria-hidden="true">·</span>{note}</>}
           </span>
         </div>
@@ -188,12 +232,14 @@ export default function PostCard({ post: initial, compact = false, onDelete, clu
       {hasMenu && (
         <Sheet open={menu} onClose={() => setMenu(false)} title="Post">
           <div className="card flush card-list">
+            {canEdit && <button type="button" className="list-row" onClick={() => { setMenu(false); setEditing(true); }}><Icon name="edit" size={20} /><span className="t-15 strong grow">Editar post</span></button>}
             {canDelete && <button type="button" className="list-row" onClick={() => { setMenu(false); remove(); }}><Icon name="trash" size={20} /><span className="t-15 strong grow">Apagar post</span></button>}
             {canRemove && !post.mine && <button type="button" className="list-row" onClick={removeFromClub}><Icon name="close" size={20} /><span className="grow stack" style={{ gap: 1 }}><span className="t-15 strong">Remover do clube</span><span className="t-13 muted">moderação</span></span></button>}
             {canReport && <button type="button" className="list-row" style={{ color: 'var(--nobi-danger)' }} onClick={() => { setMenu(false); setReport(true); }}><Icon name="flag" size={20} /><span className="t-15 strong grow">Denunciar</span></button>}
           </div>
         </Sheet>
       )}
+      {canEdit && <EditPostSheet post={post} open={editing} onClose={() => setEditing(false)} onSaved={(v) => setPost((p) => ({ ...p, ...v }))} />}
       {canReport && <ReportSheet open={report} onClose={() => setReport(false)} targetType="post" targetId={post.id} clubSlug={club?.slug} />}
     </article>
   );
