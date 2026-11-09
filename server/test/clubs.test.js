@@ -81,9 +81,10 @@ test('desafios abertos: comunidade para todos, de clube só para membros; grupo 
 
   // Grupo privado: só amigos entram, e quem é de fora nem vê
   await call('POST', `/users/${ana.me.username}/invite`, {}, beto.token);
-  assert.equal((await call('POST', '/clubs', { name: 'Só nós', category: 'treino', invite: [caio.me.id] }, ana.token)).status, 400, 'Caio não é amigo');
-  const group = (await call('POST', '/clubs', { name: 'Só nós', category: 'treino', invite: [beto.me.id] }, ana.token)).body;
+  const group = (await call('POST', '/clubs', { name: 'Só nós', category: 'treino', invite: [beto.me.id, caio.me.id] }, ana.token)).body;
   assert.equal(group.role, 'admin');
+  assert.equal((await call('POST', `/clubs/${group.slug}/invite/accept`, null, caio.token)).status, 404, 'Caio não é amigo: nem recebe convite');
+  await call('POST', `/clubs/${group.slug}/invite/accept`, null, beto.token);
   assert.equal((await call('GET', `/clubs/${group.slug}`, null, beto.token)).body.member, true);
   assert.equal((await call('GET', `/clubs/${group.slug}`, null, caio.token)).status, 404);
   assert.equal((await call('POST', `/clubs/${group.slug}/join`, null, caio.token)).status, 404);
@@ -114,18 +115,42 @@ test('qualquer pessoa cria clube aberto e vira admin; limites e saída', async (
   assert.equal((await call('GET', `/clubs/${r.body.slug}`, null, beto.token)).status, 404);
 });
 
-test('grupo privado: quem está dentro convida amigos depois de criado', async () => {
-  const [ana, beto, caio, duda] = await Promise.all([signup('Ana'), signup('Beto'), signup('Caio'), signup('Duda')]);
+test('grupo privado: amigo recebe convite e decide; link entra só quem toca em Entrar', async () => {
+  const [ana, beto, caio, duda, edu] = await Promise.all([signup('Ana'), signup('Beto'), signup('Caio'), signup('Duda'), signup('Edu')]);
   await call('POST', `/users/${ana.me.username}/invite`, {}, beto.token); // Ana e Beto amigos
   await call('POST', `/users/${ana.me.username}/invite`, {}, caio.token); // Ana e Caio amigos
   const g = (await call('POST', '/clubs', { kind: 'private', name: 'Grupo da Ana', category: 'leitura', invite: [beto.me.id] }, ana.token)).body;
-  assert.equal((await call('GET', `/clubs/${g.slug}`, null, caio.token)).status, 404, 'fora do grupo não vê');
+  assert.equal(g.membersCount, 1, 'na criação, amigo só é convidado');
+  assert.equal((await call('GET', `/clubs/${g.slug}`, null, beto.token)).status, 404, 'convidado ainda não vê o grupo');
+  const note = (await call('GET', '/home/notifications', null, beto.token)).body.items.find((i) => i.type === 'group-invite');
+  assert.equal(note.club.slug, g.slug);
+  assert.equal(note.user.name, 'Ana');
+  assert.equal((await call('POST', `/clubs/${g.slug}/invite/accept`, null, beto.token)).body.member, true);
+  assert.equal((await call('GET', '/home/notifications', null, beto.token)).body.items.filter((i) => i.type === 'group-invite').length, 0);
 
+  // Depois de criado: só quem está dentro convida, só amigos, sem repetir
   assert.equal((await call('POST', `/clubs/${g.slug}/invite`, { invite: [caio.me.id] }, duda.token)).status, 404, 'quem está fora não convida');
   assert.equal((await call('POST', `/clubs/${g.slug}/invite`, { invite: [duda.me.id] }, ana.token)).status, 400, 'só amigos');
-  const r = await call('POST', `/clubs/${g.slug}/invite`, { invite: [caio.me.id, beto.me.id] }, ana.token);
-  assert.equal(r.status, 200);
-  assert.equal(r.body.added, 1, 'Beto já estava');
-  assert.equal((await call('GET', `/clubs/${g.slug}`, null, caio.token)).body.member, true);
-  assert.equal((await call('GET', `/clubs/${g.slug}`, null, ana.token)).body.membersCount, 3);
+  assert.equal((await call('POST', `/clubs/${g.slug}/invite`, { invite: [caio.me.id, beto.me.id] }, ana.token)).body.invited, 1, 'Beto já está');
+  assert.equal((await call('POST', `/clubs/${g.slug}/invite`, { invite: [caio.me.id] }, ana.token)).body.invited, 0, 'convite não duplica');
+  const invitable = (await call('GET', `/clubs/${g.slug}/invitable`, null, ana.token)).body;
+  assert.deepEqual(Object.fromEntries(invitable.map((u) => [u.name, u.state])), { Beto: 'active', Caio: 'invited' });
+  assert.equal((await call('POST', `/clubs/${g.slug}/invite/decline`, null, caio.token)).body.ok, true);
+  assert.equal((await call('GET', `/clubs/${g.slug}`, null, caio.token)).status, 404, 'recusou, fica fora');
+  assert.equal((await call('POST', `/clubs/${g.slug}/invite/accept`, null, caio.token)).status, 404, 'convite recusado não volta');
+
+  // Link: prévia pública, entrar por escolha, admin redefine e o antigo morre
+  const { code } = (await call('GET', `/clubs/${g.slug}/link`, null, beto.token)).body;
+  assert.equal((await call('GET', `/clubs/${g.slug}/link`, null, ana.token)).body.code, code, 'mesmo link para todos');
+  assert.deepEqual((await call('GET', `/auth/group-invite/${code}`)).body, { name: 'Grupo da Ana', category: 'leitura', membersCount: 2 });
+  const joined = (await call('POST', `/clubs/link/${code}/join`, null, duda.token)).body;
+  assert.equal(joined.member, true);
+  assert.equal(joined.slug, g.slug);
+  assert.equal((await call('POST', `/clubs/${g.slug}/link/reset`, null, beto.token)).status, 403, 'membro comum não redefine');
+  const fresh = (await call('POST', `/clubs/${g.slug}/link/reset`, null, ana.token)).body.code;
+  assert.notEqual(fresh, code);
+  assert.equal((await call('POST', `/clubs/link/${code}/join`, null, edu.token)).status, 404, 'link antigo não vale');
+  await call('POST', `/clubs/${g.slug}/members/${duda.me.id}/ban`, null, ana.token);
+  assert.equal((await call('POST', `/clubs/link/${fresh}/join`, null, duda.token)).status, 403, 'banido não volta pelo link');
+  assert.equal((await call('POST', `/clubs/link/${fresh}/join`, null, edu.token)).body.member, true);
 });

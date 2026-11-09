@@ -21,6 +21,38 @@ export async function acceptPendingInvite() {
   } catch { return null; }
 }
 
+// --- Link de convite de grupo privado (/grupo/:code) ---
+const GROUP_KEY = 'nobi.groupInvite';
+export const groupInviteUrl = (code) => `${window.location.origin}/grupo/${code}`;
+
+export function savePendingGroupInvite(code) {
+  try { localStorage.setItem(GROUP_KEY, code); } catch { /* sem storage */ }
+}
+export function clearPendingGroupInvite() {
+  try { localStorage.removeItem(GROUP_KEY); } catch { /* ok */ }
+}
+
+/** Depois de entrar ou criar conta: entra no grupo do link guardado. Retorna o grupo ou null. */
+export async function acceptPendingGroupInvite() {
+  let code = null;
+  try { code = localStorage.getItem(GROUP_KEY); } catch { return null; }
+  if (!code) return null;
+  clearPendingGroupInvite();
+  try { return await api(`/clubs/link/${encodeURIComponent(code)}/join`, { method: 'POST' }); } catch { return null; }
+}
+
+/** Compartilha o link do grupo; sem compartilhar do sistema, copia. Retorna 'shared' | 'copied' | 'cancelled' | 'failed'. */
+export async function shareGroupLink(name, code) {
+  const url = groupInviteUrl(code);
+  if (navigator.share && window.isSecureContext) {
+    try {
+      await navigator.share({ title: name, text: `Entra no grupo ${name} comigo no ${APP_NAME}`, url });
+      return 'shared';
+    } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
+  }
+  return (await copyText(url)) ? 'copied' : 'failed';
+}
+
 /** Copia texto mesmo fora de https (onde navigator.clipboard não existe). */
 export async function copyText(text) {
   try {

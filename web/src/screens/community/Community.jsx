@@ -60,11 +60,11 @@ function NewClubSheet({ open, onClose, onCreated }) {
         : { kind: 'private', name, category, invite: picked };
       const c = await api('/clubs', { method: 'POST', body });
       invalidateLoad('/community');
-      toast(isOpen ? 'Clube criado. Você é admin dele.' : 'Grupo criado.');
+      toast(isOpen ? 'Clube criado. Você é admin dele.' : picked.length ? `Grupo criado. ${picked.length === 1 ? 'Convite enviado' : 'Convites enviados'}.` : 'Grupo criado. Chame a galera pelo link.');
       onCreated(c);
     } catch (e) { setError(e); } finally { setBusy(false); }
   }
-  const ready = name.trim().length >= 3 && (isOpen ? (online || city.trim()) : picked.length > 0);
+  const ready = name.trim().length >= 3 && (isOpen ? (online || city.trim()) : true);
   return (
     <Sheet open={open} onClose={onClose} title="Criar clube">
       <div className="segmented" role="group" aria-label="Tipo de clube">
@@ -110,9 +110,10 @@ function NewClubSheet({ open, onClose, onCreated }) {
       )}
       {!isOpen && (
         <div className="stack gap-8">
-          <span className="t-14 strong">Amigos {picked.length > 0 && <span className="muted">· {picked.length}</span>}</span>
+          <span className="t-14 strong">Convidar amigos (opcional) {picked.length > 0 && <span className="muted">· {picked.length}</span>}</span>
+          <span className="t-13 muted">Eles recebem um convite e decidem se entram. Depois de criar, você também ganha um link do grupo para mandar a quem quiser.</span>
           {!friends && <Skeleton height={60} />}
-          {friends?.length === 0 && <p className="t-14 muted">Grupos são entre amigos (vocês se seguem). Convide alguém primeiro.</p>}
+          {friends?.length === 0 && <p className="t-14 muted">Você ainda não tem amigos no app. Sem problema: mande o link do grupo depois de criar.</p>}
           {friends?.length > 0 && (
             <div className="card flush card-list">
               {friends.map((f) => (

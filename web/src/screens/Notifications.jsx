@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import Broto, { BrotoHead } from '../components/Broto.jsx';
 import { Avatar, BackButton, ErrorNote, Skeleton } from '../components/ui.jsx';
-import { useLoad } from '../lib/useLoad.js';
+import { invalidateLoad, useLoad } from '../lib/useLoad.js';
+import { useToast } from '../lib/toast.jsx';
 import { brotoOf, useSession } from '../lib/session.jsx';
 import { api } from '../lib/api.js';
 import { firstName, timeAgo } from '../lib/format.js';
@@ -11,6 +12,7 @@ import { firstName, timeAgo } from '../lib/format.js';
 export default function Notifications() {
   const { me } = useSession();
   const navigate = useNavigate();
+  const toast = useToast();
   const { data, error, reload, setData } = useLoad('/home/notifications');
   useEffect(() => { api('/me/notifications/seen', { method: 'POST' }).catch(() => {}); }, []);
   const drop = (id) => setData((d) => ({ ...d, items: d.items.filter((i) => i.id !== id) }));
@@ -23,6 +25,15 @@ export default function Notifications() {
     await api(`/goals/${item.goal.id}/${yes ? 'join' : 'decline'}`, { method: 'POST' });
     drop(item.id);
     if (yes) navigate(`/desafios/${item.goal.id}`);
+  }
+
+  async function group(item, yes) {
+    try {
+      await api(`/clubs/${item.club.slug}/invite/${yes ? 'accept' : 'decline'}`, { method: 'POST' });
+      drop(item.id);
+      invalidateLoad('/community');
+      if (yes) navigate(`/clubes/${item.club.slug}`);
+    } catch (e) { toast(e.message); drop(item.id); }
   }
 
   function render(i) {
@@ -49,6 +60,15 @@ export default function Notifications() {
             <Avatar user={i.user} size={44} />
             <span className="grow t-14"><strong>{firstName(i.user?.name)}</strong> chamou você para <strong>{i.goal.title}</strong> · {i.goal.mode === 'together' ? 'Juntos' : 'Disputa'}</span>
             <button type="button" className="btn btn-orbita sm" onClick={() => invite(i, true)}>Topar</button>
+          </div>
+        );
+      case 'group-invite':
+        return (
+          <div className="list-row">
+            {i.user ? <Avatar user={i.user} size={44} /> : <Icon name="users" size={28} />}
+            <span className="grow t-14">{i.user ? <strong>{firstName(i.user.name)}</strong> : 'Alguém'} chamou você para o grupo <strong>{i.club.name}</strong></span>
+            <button type="button" className="btn btn-dark sm" onClick={() => group(i, true)}>Entrar</button>
+            <button type="button" className="icon-btn plain" aria-label={`Recusar convite para ${i.club.name}`} onClick={() => group(i, false)}><Icon name="close" /></button>
           </div>
         );
       case 'reaction':

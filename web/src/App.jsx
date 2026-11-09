@@ -25,6 +25,7 @@ const loadChallenge = () => import('./screens/Challenge.jsx');
 const loadChallenges = () => import('./screens/Challenges.jsx');
 const loadNotifications = () => import('./screens/Notifications.jsx');
 const loadInvite = () => import('./screens/Invite.jsx');
+const loadGroupInvite = () => import('./screens/GroupInvite.jsx');
 const loadStarted = () => import('./screens/Started.jsx');
 const loadConnections = () => import('./screens/Connections.jsx');
 const loadWeekly = () => import('./screens/Weekly.jsx');
@@ -45,6 +46,7 @@ const Challenge = lazy(loadChallenge);
 const Challenges = lazy(loadChallenges);
 const Notifications = lazy(loadNotifications);
 const Invite = lazy(loadInvite);
+const GroupInvite = lazy(loadGroupInvite);
 const Started = lazy(loadStarted);
 const Connections = lazy(loadConnections);
 const Weekly = lazy(loadWeekly);
@@ -57,7 +59,8 @@ function usePrefetch() {
     return () => ('cancelIdleCallback' in window ? window.cancelIdleCallback(id) : clearTimeout(id));
   }, []);
 }
-import { acceptPendingInvite } from './lib/invite.js';
+import { acceptPendingInvite, acceptPendingGroupInvite } from './lib/invite.js';
+import { invalidateLoad } from './lib/useLoad.js';
 import { isStandalone } from './lib/install.js';
 import StatusBarShield from './components/StatusBarShield.jsx';
 import OpeningCurtain from './components/OpeningCurtain.jsx';
@@ -102,15 +105,23 @@ function PublicOnly({ children }) {
 function PendingInvite() {
   const { me } = useSession();
   const toast = useToast();
+  const navigate = useNavigate();
   useEffect(() => {
     if (!me) return;
     acceptPendingInvite().then((inviter) => inviter && toast(`Agora você e ${inviter.name.split(' ')[0]} são amigos.`));
+    // Veio pelo link de um grupo e tocou em criar conta/entrar: já entra no grupo que escolheu
+    acceptPendingGroupInvite().then((c) => {
+      if (!c) return;
+      invalidateLoad('/community');
+      toast(`Você entrou em ${c.name}.`);
+      navigate(`/clubes/${c.slug}`);
+    });
   }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
 // Telas em que a volta não interrompe: fluxos cheios e páginas públicas
-const NO_COMEBACK = ['/que-bom-te-ver', '/registrar', '/conquista', '/comecou', '/entrar', '/convite', '/redefinir-senha', '/termos', '/privacidade'];
+const NO_COMEBACK = ['/que-bom-te-ver', '/registrar', '/conquista', '/comecou', '/entrar', '/convite', '/grupo/', '/redefinir-senha', '/termos', '/privacidade'];
 
 /** Leva para "Que bom te ver" uma vez, quando o servidor avisa que a pessoa voltou depois de dias. */
 function ComebackGate() {
@@ -152,6 +163,7 @@ export default function App() {
       <Route path="/termos" element={<Terms />} />
       <Route path="/privacidade" element={<Privacy />} />
       <Route path="/convite/:username" element={<Invite />} />
+      <Route path="/grupo/:code" element={<GroupInvite />} />
 
       {/* Telas cheias, sem menu */}
       <Route path="/conquista" element={<Private><Achievement /></Private>} />

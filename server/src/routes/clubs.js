@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
+import crypto from 'node:crypto';
 import { Club, Membership, Post, User, Goal, Report } from '../models/index.js';
 import { bad, notFound, forbidden, HttpError } from '../lib/http.js';
 import { friendIds, publicUser, blockedIds, relation } from '../services/social.js';
@@ -140,13 +141,13 @@ clubs.post('/', async (req, res) => {
   } else {
     const friends = new Set((await friendIds(req.user._id)).map(String));
     invite = [...new Set((b.invite || []).map(String))].filter((id) => friends.has(id));
-    if (!invite.length) throw bad('Escolha pelo menos 1 amigo.');
     fields.kind = 'private';
   }
   let slug = slugify(name);
   if (await Club.exists({ slug })) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
   const club = await Club.create({ ...fields, slug });
-  await Membership.insertMany([{ clubId: club._id, userId: req.user._id, role: 'admin' }, ...invite.map((u) => ({ clubId: club._id, userId: u }))]);
+  // Amigos escolhidos recebem convite e decidem se entram
+  await Membership.insertMany([{ clubId: club._id, userId: req.user._id, role: 'admin' }, ...invite.map((u) => ({ clubId: club._id, userId: u, status: 'invited', invitedBy: req.user._id }))]);
   res.status(201).json(await clubSummary(club.toObject(), { userId: req.user._id }));
 });
 
@@ -169,20 +170,94 @@ clubs.post('/:slug/join', async (req, res) => {
   res.json(await clubSummary(club, { userId: req.user._id }));
 });
 
-// Grupo privado: quem está dentro chama mais amigos depois de criado (como na criação, entram direto).
-// Clubes abertos não precisam: qualquer pessoa entra pelo link.
-clubs.post('/:slug/invite', async (req, res) => {
-  const { club, m } = await loadClub(req.params.slug, req.user._id);
+// --- Convites de grupo privado ---
+// Ninguém entra sem querer: amigo recebe convite (aceita ou recusa) e quem tem o link toca em "Entrar".
+const newInviteCode = () => crypto.randomBytes(6).toString('base64url');
+async function ensureInviteCode(club) {
+  if (club.inviteCode) return club.inviteCode;
+  for (;;) {
+    const code = newInviteCode();
+    try {
+      const r = await Club.findOneAndUpdate({ _id: club._id, inviteCode: { $exists: false } }, { $set: { inviteCode: code } }, { new: true }).lean();
+      return r ? r.inviteCode : (await Club.findById(club._id, { inviteCode: 1 }).lean()).inviteCode;
+    } catch (e) { if (e.code !== 11000) throw e; } // código repetido: tenta outro
+  }
+}
+async function privateMember(slug, userId) {
+  const { club, m } = await loadClub(slug, userId);
   if (club.kind !== 'private') throw bad('Clubes abertos não precisam de convite: compartilhe o link.');
   if (m?.status !== 'active') throw forbidden('Só quem está no grupo convida.');
+  return { club, m };
+}
+
+// Entrar pelo link (antes das rotas /:slug para não confundir "link" com um slug)
+clubs.post('/link/:code/join', async (req, res) => {
+  const club = await Club.findOne({ inviteCode: String(req.params.code), kind: 'private' }).lean();
+  if (!club) throw notFound('Esse convite não vale mais. Peça um link novo.');
+  const m = await membershipOf(club._id, req.user._id);
+  if (m?.status === 'banned') throw forbidden('Você não pode entrar neste grupo.');
+  if (m?.status !== 'active') {
+    await Membership.updateOne({ clubId: club._id, userId: req.user._id }, { $set: { status: 'active', role: 'member', joinedAt: new Date(), lastSeenAt: new Date() } }, { upsert: true });
+  }
+  res.json({ ...(await clubSummary(club, { userId: req.user._id })), already: m?.status === 'active' });
+});
+
+clubs.get('/:slug/link', async (req, res) => {
+  const { club } = await privateMember(req.params.slug, req.user._id);
+  res.json({ code: await ensureInviteCode(club) });
+});
+
+clubs.post('/:slug/link/reset', async (req, res) => {
+  const { club, m } = await privateMember(req.params.slug, req.user._id);
+  requireMod(m);
+  for (;;) {
+    try {
+      const code = newInviteCode();
+      await Club.updateOne({ _id: club._id }, { $set: { inviteCode: code } });
+      return res.json({ code });
+    } catch (e) { if (e.code !== 11000) throw e; }
+  }
+});
+
+/** Amigos para convidar, com a situação de cada um no grupo. */
+clubs.get('/:slug/invitable', async (req, res) => {
+  const { club } = await privateMember(req.params.slug, req.user._id);
+  const ids = await friendIds(req.user._id);
+  const [people, rows] = await Promise.all([
+    User.find({ _id: { $in: ids }, suspendedAt: null }).sort({ name: 1 }).lean(),
+    Membership.find({ clubId: club._id, userId: { $in: ids } }, { userId: 1, status: 1 }).lean(),
+  ]);
+  const state = new Map(rows.map((r) => [String(r.userId), r.status]));
+  res.json(people.filter((u) => state.get(String(u._id)) !== 'banned').map((u) => ({ ...publicUser(u), state: state.get(String(u._id)) || null })));
+});
+
+clubs.post('/:slug/invite', async (req, res) => {
+  const { club } = await privateMember(req.params.slug, req.user._id);
   const friends = new Set((await friendIds(req.user._id)).map(String));
   const wanted = [...new Set((req.body?.invite || []).map(String))].filter((id) => friends.has(id));
   if (!wanted.length) throw bad('Escolha pelo menos 1 amigo.');
-  // Quem já está (ou foi banido) não é mexido
+  // Quem já está, já foi convidado ou foi banido não é mexido
   const existing = new Set((await Membership.find({ clubId: club._id, userId: { $in: wanted } }, { userId: 1 }).lean()).map((x) => String(x.userId)));
   const add = wanted.filter((id) => !existing.has(id));
-  if (add.length) await Membership.insertMany(add.map((u) => ({ clubId: club._id, userId: u })));
-  res.json({ added: add.length });
+  if (add.length) await Membership.insertMany(add.map((u) => ({ clubId: club._id, userId: u, status: 'invited', invitedBy: req.user._id })));
+  res.json({ invited: add.length });
+});
+
+// Responder ao convite (a pessoa ainda não vê o grupo, então não passa por loadClub)
+clubs.post('/:slug/invite/:answer', async (req, res) => {
+  const club = await Club.findOne({ slug: String(req.params.slug).toLowerCase(), kind: 'private' }).lean();
+  const m = club ? await Membership.findOne({ clubId: club._id, userId: req.user._id, status: 'invited' }) : null;
+  if (!m) throw notFound('Convite não encontrado.');
+  if (req.params.answer === 'accept') {
+    m.status = 'active';
+    m.joinedAt = new Date();
+    m.lastSeenAt = new Date();
+    await m.save();
+    return res.json(await clubSummary(club, { userId: req.user._id }));
+  }
+  if (req.params.answer !== 'decline') throw bad('Resposta inválida.');
+  await m.deleteOne();
+  res.json({ ok: true });
 });
 
 clubs.delete('/:slug/membership', async (req, res) => {

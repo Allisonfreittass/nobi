@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
-import { User } from '../models/index.js';
+import { User, Club, Membership } from '../models/index.js';
 import { config } from '../config.js';
 import { bad, signToken, HttpError, assertActive } from '../lib/http.js';
 import { meView } from './me.js';
@@ -32,6 +32,14 @@ auth.get('/invite/:username', async (req, res) => {
   const u = await User.findOne({ username: String(req.params.username).toLowerCase() }).lean();
   if (!u) throw new HttpError(404, 'Convite não encontrado.');
   res.json({ name: u.name, username: u.username, avatarUrl: u.avatarUrl || '', avatarColor: u.avatarColor });
+});
+
+// Prévia pública do link de convite de grupo privado: só o básico, nada do que rola dentro
+auth.get('/group-invite/:code', async (req, res) => {
+  const club = await Club.findOne({ inviteCode: String(req.params.code), kind: 'private' }).lean();
+  if (!club) throw new HttpError(404, 'Esse convite não vale mais. Peça um link novo.');
+  const membersCount = await Membership.countDocuments({ clubId: club._id, status: 'active' });
+  res.json({ name: club.name, category: club.category, membersCount });
 });
 
 auth.get('/providers', (_req, res) => {

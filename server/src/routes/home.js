@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Goal, Post, User, Follow, Comment } from '../models/index.js';
+import { Goal, Post, User, Follow, Comment, Club, Membership } from '../models/index.js';
 import { friendIds, publicUser } from '../services/social.js';
 import { goalsQuery, goalView, streakSummary, userGoals } from '../services/progress.js';
 
@@ -59,6 +59,23 @@ home.get('/notifications', async (req, res) => {
   for (const r of requests) {
     const u = ru.get(String(r.followerId));
     if (u) items.push({ id: `follow:${r._id}`, type: 'follow-request', at: r.createdAt, user: publicUser(u), requestId: String(r._id) });
+  }
+
+  // Convites para grupos privados: aparecem sempre, como pedidos para seguir
+  const groupInvites = await Membership.find({ userId: me._id, status: 'invited' }).lean();
+  if (groupInvites.length) {
+    const [gClubs, gUsers] = await Promise.all([
+      Club.find({ _id: { $in: groupInvites.map((m) => m.clubId) } }).lean(),
+      User.find({ _id: { $in: groupInvites.map((m) => m.invitedBy).filter(Boolean) } }).lean(),
+    ]);
+    const gc = new Map(gClubs.map((c) => [String(c._id), c]));
+    const gu = new Map(gUsers.map((u) => [String(u._id), u]));
+    for (const m of groupInvites) {
+      const c = gc.get(String(m.clubId));
+      if (!c) continue;
+      const by = gu.get(String(m.invitedBy));
+      items.push({ id: `group:${m._id}`, type: 'group-invite', at: m.joinedAt, user: by ? publicUser(by) : null, club: { slug: c.slug, name: c.name, category: c.category } });
+    }
   }
 
   if (me.prefs.notify.challenges) {

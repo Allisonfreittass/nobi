@@ -14,6 +14,7 @@ import { useToast } from '../../lib/toast.jsx';
 import { useConfirm } from '../../lib/confirm.jsx';
 import { useStatusBar } from '../../lib/statusBar.js';
 import { CATEGORIES, firstName } from '../../lib/format.js';
+import { groupInviteUrl, shareGroupLink } from '../../lib/invite.js';
 import { ChallengeRow, clubColor, people, useJoin } from './parts.jsx';
 
 const TABS = [['feed', 'Feed'], ['desafios', 'Desafios'], ['ranking', 'Ranking'], ['membros', 'Membros']];
@@ -38,7 +39,7 @@ function Header({ club, onJoin, joining, onMenu, onShare }) {
         <div className="row between">
           <button type="button" className="icon-btn on-color" aria-label="Voltar" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/comunidade'))}><Icon name="back" /></button>
           <div className="row gap-8">
-            <button type="button" className="icon-btn on-color" aria-label={club.kind === 'private' ? 'Convidar amigos' : 'Compartilhar clube'} onClick={onShare}><Icon name="share" /></button>
+            <button type="button" className="icon-btn on-color" aria-label={club.kind === 'private' ? 'Convidar para o grupo' : 'Compartilhar clube'} onClick={onShare}><Icon name="share" /></button>
             <button type="button" className="icon-btn on-color" aria-label="Mais opções: regras, denunciar, sair do clube" onClick={onMenu}><Icon name="more" /></button>
           </div>
         </div>
@@ -211,7 +212,7 @@ function Members({ club, onInvite }) {
   return (
     <>
       {club.kind === 'private' && club.member && (
-        <button type="button" className="btn btn-soft block" onClick={onInvite}><Icon name="plus" size={16} /> Convidar amigos</button>
+        <button type="button" className="btn btn-soft block" onClick={onInvite}><Icon name="plus" size={16} /> Convidar para o grupo</button>
       )}
       {club.canModerate && (
         <div className="segmented compact bg-segment" role="group" aria-label="Lista">
@@ -239,53 +240,88 @@ function Members({ club, onInvite }) {
   );
 }
 
-/** Grupo privado: escolher amigos que ainda não estão no grupo e trazê-los para dentro. */
-function InviteSheet({ club, open, onClose, onInvited }) {
-  const { me } = useSession();
+/** Grupo privado: link do grupo para mandar a qualquer pessoa e convite para amigos. Ninguém entra sem aceitar. */
+function InviteSheet({ club, open, onClose }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [friends, setFriends] = useState(null);
+  const [code, setCode] = useState(null);
   const [picked, setPicked] = useState([]);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!open) return;
     setPicked([]);
     setFriends(null);
-    Promise.all([api(`/users/${me.username}/following`), api(`/clubs/${club.slug}/members`)])
-      .then(([f, members]) => {
-        const inside = new Set(members.map((u) => u.id));
-        setFriends(f.people.filter((p) => p.relation?.friends && !inside.has(p.id)));
-      })
-      .catch(() => setFriends([]));
-  }, [open, me.username, club.slug]);
+    api(`/clubs/${club.slug}/invitable`).then(setFriends).catch(() => setFriends([]));
+    api(`/clubs/${club.slug}/link`).then((r) => setCode(r.code)).catch(() => setCode(null));
+  }, [open, club.slug]);
   const flip = (id) => setPicked((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
+  const outside = friends?.filter((f) => f.state !== 'active') || [];
+  async function shareLink() {
+    const r = await shareGroupLink(club.name, code);
+    if (r === 'copied') toast('Link copiado.');
+    else if (r === 'failed') toast('Não deu para copiar o link.');
+  }
+  async function resetLink() {
+    if (!(await confirm({ title: 'Trocar o link do grupo?', message: 'O link antigo para de funcionar. Quem já entrou continua no grupo.', confirmLabel: 'Trocar link' }))) return;
+    try {
+      const r = await api(`/clubs/${club.slug}/link/reset`, { method: 'POST' });
+      setCode(r.code);
+      toast('Link novo pronto.');
+    } catch (e) { toast(e.message); }
+  }
   async function send() {
     setBusy(true);
     try {
       const r = await api(`/clubs/${club.slug}/invite`, { method: 'POST', body: { invite: picked } });
-      toast(r.added === 1 ? '1 amigo entrou no grupo.' : `${r.added} amigos entraram no grupo.`);
-      onInvited();
-      onClose();
+      toast(r.invited === 1 ? 'Convite enviado.' : `${r.invited} convites enviados.`);
+      setFriends((l) => l.map((f) => (picked.includes(f.id) ? { ...f, state: 'invited' } : f)));
+      setPicked([]);
     } catch (e) { toast(e.message); } finally { setBusy(false); }
   }
   return (
-    <Sheet open={open} onClose={onClose} title="Convidar amigos">
-      <p className="t-14 secondary">Quem você escolher entra direto no grupo. Só aparecem amigos (vocês se seguem) que ainda não estão aqui.</p>
-      {!friends && <Skeleton height={60} />}
-      {friends?.length === 0 && <p className="t-14 muted">Todos os seus amigos já estão no grupo.</p>}
-      {friends?.length > 0 && (
-        <div className="card flush card-list">
-          {friends.map((f) => (
-            <label key={f.id} className="list-row" style={{ cursor: 'pointer', minHeight: 52 }}>
-              <input type="checkbox" checked={picked.includes(f.id)} onChange={() => flip(f.id)} style={{ width: 20, height: 20, accentColor: 'var(--nobi-tinta)' }} />
-              <Avatar user={f} size={32} />
-              <span className="t-15 strong grow ellipsis">{f.name}</span>
-            </label>
-          ))}
+    <Sheet open={open} onClose={onClose} title="Convidar para o grupo">
+      <div className="card stack gap-10">
+        <span className="t-15 strong">Link do grupo</span>
+        <span className="t-13 secondary">Qualquer pessoa com o link vê o nome do grupo e escolhe se quer entrar.</span>
+        {code
+          ? <span className="t-13 strong ellipsis" style={{ padding: '10px 12px', borderRadius: 14, background: 'var(--nobi-track)' }}>{groupInviteUrl(code).replace(/^https?:\/\//, '')}</span>
+          : <Skeleton height={40} />}
+        <div className="row gap-8 wrap">
+          <button type="button" className="btn btn-dark sm" disabled={!code} onClick={shareLink}><Icon name="share" size={16} /> Compartilhar link</button>
+          {club.canModerate && <button type="button" className="btn btn-soft sm" disabled={!code} onClick={resetLink}>Trocar link</button>}
         </div>
+      </div>
+      <div className="stack gap-8">
+        <span className="t-14 strong">Amigos {picked.length > 0 && <span className="muted">· {picked.length}</span>}</span>
+        <span className="t-13 muted">Eles recebem um convite nas notificações e decidem se entram.</span>
+        {!friends && <Skeleton height={60} />}
+        {friends && outside.length === 0 && <p className="t-14 muted">{friends.length ? 'Todos os seus amigos já estão no grupo.' : 'Você ainda não tem amigos no app. Mande o link do grupo.'}</p>}
+        {outside.length > 0 && (
+          <div className="card flush card-list">
+            {outside.map((f) => (f.state === 'invited'
+              ? (
+                <div key={f.id} className="list-row" style={{ minHeight: 52 }}>
+                  <span style={{ width: 20 }} aria-hidden="true" />
+                  <Avatar user={f} size={32} />
+                  <span className="t-15 strong grow ellipsis">{f.name}</span>
+                  <span className="t-13 muted">Convidado</span>
+                </div>
+              ) : (
+                <label key={f.id} className="list-row" style={{ cursor: 'pointer', minHeight: 52 }}>
+                  <input type="checkbox" checked={picked.includes(f.id)} onChange={() => flip(f.id)} style={{ width: 20, height: 20, accentColor: 'var(--nobi-tinta)' }} />
+                  <Avatar user={f} size={32} />
+                  <span className="t-15 strong grow ellipsis">{f.name}</span>
+                </label>
+              )))}
+          </div>
+        )}
+      </div>
+      {outside.some((f) => f.state !== 'invited') && (
+        <button type="button" className="btn btn-dark block" disabled={busy || !picked.length} onClick={send}>
+          {busy ? 'Enviando…' : picked.length ? `Enviar ${picked.length === 1 ? 'convite' : `${picked.length} convites`}` : 'Escolha amigos para convidar'}
+        </button>
       )}
-      <button type="button" className="btn btn-dark block" disabled={busy || !picked.length} onClick={send}>
-        {busy ? 'Convidando…' : picked.length ? `Convidar ${picked.length}` : 'Escolha pelo menos 1 amigo'}
-      </button>
     </Sheet>
   );
 }
@@ -359,7 +395,6 @@ export default function Club() {
   const tab = TABS.some(([v]) => v === params.get('aba')) ? params.get('aba') : 'feed';
   const { data: club, error, reload, setData } = useLoad(`/clubs/${slug}`);
   const [sheet, setSheet] = useState(null); // menu | rules | report | reports | edit | invite
-  const [membersKey, setMembersKey] = useState(0);
   const { join, busy } = useJoin((c) => { setData({ ...club, ...c }); invalidateLoad(`/clubs/${slug}/feed`); });
   useStatusBar(club ? clubColor(club) : null);
 
@@ -401,12 +436,12 @@ export default function Club() {
         {tab === 'feed' && <Feed club={club} />}
         {tab === 'desafios' && <Challenges club={club} />}
         {tab === 'ranking' && <Ranking club={club} />}
-        {tab === 'membros' && <Members key={membersKey} club={club} onInvite={() => setSheet('invite')} />}
+        {tab === 'membros' && <Members club={club} onInvite={() => setSheet('invite')} />}
       </div>
 
       <Sheet open={sheet === 'menu'} onClose={() => setSheet(null)} title={club.name}>
         <div className="card flush card-list">
-          {club.kind === 'private' && club.member && <Item icon="plus" label="Convidar amigos" desc="eles entram direto no grupo" onClick={() => setSheet('invite')} />}
+          {club.kind === 'private' && club.member && <Item icon="plus" label="Convidar para o grupo" desc="link ou convite para amigos" onClick={() => setSheet('invite')} />}
           <Item icon="help" label="Regras" desc="o combinado do clube" onClick={() => setSheet('rules')} />
           {club.canModerate && <Item icon="edit" label="Recado e regras" desc="moderação" onClick={() => setSheet('edit')} />}
           {club.canModerate && <Item icon="shield" label={`Denúncias${club.openReports ? ` (${club.openReports})` : ''}`} desc="moderação" onClick={() => setSheet('reports')} />}
@@ -422,8 +457,7 @@ export default function Club() {
         <p className="t-13 muted">Viu algo fora das regras? Use “Denunciar” no ⋯ do post. A moderação do clube resolve.</p>
       </Sheet>
       {club.kind === 'private' && club.member && (
-        <InviteSheet club={club} open={sheet === 'invite'} onClose={() => setSheet(null)}
-          onInvited={() => { reload(); invalidateLoad('/community', `/clubs/${slug}/members`); setMembersKey((k) => k + 1); }} />
+        <InviteSheet club={club} open={sheet === 'invite'} onClose={() => setSheet(null)} />
       )}
       <ReportSheet open={sheet === 'report'} onClose={() => setSheet(null)} targetType="club" targetId={club.id} />
       {club.canModerate && <ReportsSheet club={club} open={sheet === 'reports'} onClose={() => setSheet(null)} onChanged={() => { reload(); invalidateLoad(`/clubs/${slug}/feed`); }} />}
