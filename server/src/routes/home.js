@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { addDays } from '../lib/dates.js';
-import { Goal, Post, User, Follow, Comment, Club, Membership, Nudge, Pair } from '../models/index.js';
+import { Goal, Post, User, Follow, Comment, Club, Membership, Nudge, Pair, Book } from '../models/index.js';
 import { friendIds, followingIds, publicUser } from '../services/social.js';
 import { clubSummary, visibleClubFilter } from '../services/clubs.js';
 import { Checkin } from '../models/index.js';
@@ -115,6 +115,14 @@ home.get('/notifications', async (req, res) => {
   for (const p of pairInvites) {
     const by = pu2.get(String(p.invitedBy));
     if (by) items.push({ id: `pair:${p._id}`, type: 'pair-invite', at: p.createdAt, user: publicUser(by), pairId: String(p._id) });
+  }
+
+  // Convites de leitura em dupla
+  const bookInvites = await Book.find({ userId: me._id, status: 'invited' }).lean();
+  const bu = new Map((await User.find({ _id: { $in: bookInvites.map((b) => b.invitedBy) } }).lean()).map((u) => [String(u._id), u]));
+  for (const b of bookInvites) {
+    const by = bu.get(String(b.invitedBy));
+    if (by) items.push({ id: `book:${b._id}`, type: 'book-invite', at: b.createdAt, user: publicUser(by), book: { id: String(b._id), title: b.title } });
   }
 
   // Convites para grupos privados: aparecem sempre, como pedidos para seguir

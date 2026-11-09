@@ -72,6 +72,14 @@ export default function Notifications() {
             <button type="button" className="btn btn-orbita sm" onClick={() => invite(i, true)}>Topar</button>
           </div>
         );
+      case 'book-invite':
+        return (
+          <Link to="/estante" className="list-row">
+            <Avatar user={i.user} size={44} />
+            <span className="grow t-14"><strong>{firstName(i.user.name)}</strong> chamou você para ler <strong>{i.book.title}</strong> junto</span>
+            <Icon name="book" size={18} />
+          </Link>
+        );
       case 'pair-invite':
         return (
           <div className="list-row">

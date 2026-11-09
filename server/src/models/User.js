@@ -12,7 +12,8 @@ const userSchema = new Schema({
   googleId: { type: String, unique: true, sparse: true },
   appleId: { type: String, unique: true, sparse: true }, // 'sub' do Sign in with Apple
   brotoAccessory: { type: String, default: null },
-  onboardingDismissedAt: { type: Date, default: null }, // fechou o cartão "Primeiros passos" // acessório que o Broto está vestindo (ver services/collectibles.js)
+  onboardingDismissedAt: { type: Date, default: null },
+  readingGoal: { type: new Schema({ year: Number, books: Number }, { _id: false }), default: null }, // meta de livros no ano // fechou o cartão "Primeiros passos" // acessório que o Broto está vestindo (ver services/collectibles.js)
   bio: { type: String, default: '', maxlength: 120 },
   avatarUrl: { type: String, default: '' }, // '' = inicial, 'broto' = avatar do Broto, data:/https: = foto
   avatarColor: { type: String, default: '#FFD8C7' },

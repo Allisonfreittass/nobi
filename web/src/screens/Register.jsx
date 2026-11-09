@@ -4,7 +4,7 @@ import Broto from '../components/Broto.jsx';
 import { MentionInput } from '../components/Mentions.jsx';
 import Icon from '../components/Icon.jsx';
 import { Chip, ErrorNote, Skeleton, Sheet, SelectRow, SwitchRow } from '../components/ui.jsx';
-import { useLoad, afterCheckin, afterPost } from '../lib/useLoad.js';
+import { useLoad, afterCheckin, afterPost, invalidateLoad } from '../lib/useLoad.js';
 import { brotoOf, useOpenAchievement, useSession } from '../lib/session.jsx';
 import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
@@ -32,6 +32,10 @@ export default function Register() {
   const [qty, setQty] = useState(1);
   const [pages, setPages] = useState('');
   const [km, setKm] = useState('');
+  const [bookId, setBookId] = useState('');
+  const shelf = useLoad(cat === 'leitura' ? '/books' : null);
+  const reading = shelf.data?.reading || [];
+  useEffect(() => { if (reading.length && !bookId) setBookId(reading[0].id); }, [reading.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [note, setNote] = useState('');
   const preset = state?.preset;
   const [share, setShare] = useState(Boolean(preset?.share));
@@ -69,11 +73,14 @@ export default function Register() {
     try {
       const body = isCount ? { value: qty } : { minutes: mins };
       if (pages) body.pages = Number(pages);
+      if (pages && cat === 'leitura' && bookId) body.bookId = bookId;
       if (km) body.km = Number(String(km).replace(',', '.'));
       if (note.trim()) body.note = note.trim();
       const r = await api(`/goals/${goal.id}/checkins`, { method: 'POST', body });
       patchMe({ level: r.me.level, xp: r.me.xp, golden: r.me.golden, stage: r.me.stage });
       afterCheckin(r.goal);
+      if (r.book) invalidateLoad('/books');
+      if (r.book?.finished) toast(`Livro lido: “${r.book.title}”. Na conta do ano!`);
       if (r.celebration) {
         // Fechou um marco: a Conquista oferece postar (com a escolha de público já feita aqui, se houver)
         const sent = share ? await sendPostPhoto(photo) : undefined;
@@ -146,6 +153,10 @@ export default function Register() {
                   <SelectRow label={`Quantidade · ${goal.status.todayValue} de ${goal.status.need} hoje`} value={qty} onChange={(v) => setQty(Number(v))} options={qtyOptions} chevron="right" />
                 ) : (
                   <SelectRow label="Tempo" value={mins} onChange={(v) => setMins(Number(v))} options={minuteOptions} chevron="right" />
+                )}
+                {cat === 'leitura' && reading.length > 0 && (
+                  <SelectRow label="Livro" hint={pages ? 'as páginas sobem no livro' : 'preencha as páginas para somar no livro'} value={bookId} onChange={setBookId}
+                    options={[...reading.map((b) => [b.id, b.title]), ['', 'Nenhum']]} />
                 )}
                 {(cat === 'leitura' || cat === 'treino') && (
                   <label className="select-row">

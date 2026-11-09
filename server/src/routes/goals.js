@@ -1,6 +1,9 @@
+import mongoose from 'mongoose';
 import { Router } from 'express';
 import { Goal, Checkin, User, Streak, Post, Comment, Task, Membership, Club, Nudge, CATEGORIES, KINDS } from '../models/index.js';
 import { canModerate } from '../services/clubs.js';
+import { Book } from '../models/index.js';
+import { setProgress } from './books.js';
 import { accessoriesFromAchievements, grantSeasonAccessory, accessoryView, SEASON_STREAK_DAYS } from '../services/collectibles.js';
 import { deleteImages } from '../services/storage.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
@@ -358,7 +361,18 @@ goals.post('/:id/checkins', async (req, res) => {
     };
   }
 
+  // Leitura com livro escolhido: as páginas do registro sobem no livro da estante
+  let book = null;
+  if (b.bookId && g.category === 'leitura' && Number(b.pages) > 0 && mongoose.isValidObjectId(b.bookId)) {
+    const doc = await Book.findOne({ _id: b.bookId, userId: uid, status: { $in: ['reading', 'want'] } });
+    if (doc) {
+      const finished = await setProgress(doc, { addPages: b.pages }, today);
+      book = { id: String(doc._id), title: doc.title, pagesRead: doc.pagesRead, pages: doc.pages, finished };
+    }
+  }
+
   res.status(201).json({
+    book,
     checkin: { id: String(checkin._id), date: checkin.date, value: checkin.value, minutes: checkin.minutes, pages: checkin.pages, km: checkin.km, note: checkin.note },
     goal: await goalView(g.toObject(), fresh, today, g.shared ? {} : { all: after }),
     celebration,

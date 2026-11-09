@@ -9,7 +9,7 @@ import { weeklySummary } from '../services/weekly.js';
 import { yearSummary } from '../services/yearly.js';
 import { ensureShields } from '../services/shields.js';
 import { comebackFor, markComebackSeen } from '../services/comeback.js';
-import { ShieldUse, Task, Membership, Report, Collectible, Nudge, Pair } from '../models/index.js';
+import { ShieldUse, Task, Membership, Report, Collectible, Nudge, Pair, Book } from '../models/index.js';
 import { publicUser } from '../services/social.js';
 import { handOverClubs } from '../services/clubs.js';
 import { ACCESSORIES, isAccessory, ownedAccessories } from '../services/collectibles.js';
@@ -196,8 +196,9 @@ me.get('/export', async (req, res) => {
   ]);
   const { passwordHash, resetToken, resetTokenExpiresAt, ...profile } = req.user.toObject();
   res.setHeader('Content-Disposition', `attachment; filename="nobi-${req.user.username}.json"`);
+  const books = await Book.find({ userId: id }).lean();
   const broto = [...(await ownedAccessories(id)).entries()].map(([item, earnedAt]) => ({ item, earnedAt }));
-  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements, brotoAccessories: broto, tasks, shieldsUsed: shields.map((s) => s.date) });
+  res.json({ exportedAt: new Date(), profile, goals, checkins, posts, comments, follows, achievements, brotoAccessories: broto, books, tasks, shieldsUsed: shields.map((s) => s.date) });
 });
 
 me.delete('/', async (req, res) => {
@@ -236,6 +237,7 @@ me.delete('/', async (req, res) => {
     Collectible.deleteMany({ userId: id }),
     Nudge.deleteMany({ $or: [{ fromId: id }, { toId: id }] }),
     Pair.deleteMany({ users: id }),
+    Book.deleteMany({ userId: id }),
     Report.deleteMany({ reporterId: id }),
     User.updateMany({ blocked: id }, { $pull: { blocked: id } }),
   ]);
