@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import crypto from 'node:crypto';
-import { Club, Membership, Post, User, Goal, Report, ClubEvent } from '../models/index.js';
+import { Club, Membership, Post, User, Goal, Report, ClubEvent, ClubMessage } from '../models/index.js';
 import { isDateStr } from '../lib/dates.js';
 import { notify } from '../services/push.js';
 import { social } from '../services/pushMessages.js';
@@ -50,12 +50,14 @@ community.get('/', async (req, res) => {
   const myClubs = await Club.find({ _id: { $in: mine.map((m) => m.clubId) } }).lean();
   const myCards = await Promise.all(myClubs.map(async (c) => {
     const seen = mine.find((m) => String(m.clubId) === String(c._id))?.lastSeenAt || new Date(0);
-    const [summary, newPosts, active] = await Promise.all([
+    const chatSeen = mine.find((m) => String(m.clubId) === String(c._id))?.chatSeenAt || new Date(0);
+    const [summary, newPosts, active, newMessages] = await Promise.all([
       clubSummary(c, { userId: me._id, friends }),
       Post.countDocuments({ clubIds: c._id, createdAt: { $gt: seen }, userId: { $ne: me._id } }),
       Goal.exists({ 'shared.clubId': c._id, 'shared.endsAt': { $gte: req.today }, archivedAt: null }),
+      c.chatEnabled === false ? 0 : ClubMessage.countDocuments({ clubId: c._id, createdAt: { $gt: chatSeen }, userId: { $ne: me._id }, deletedAt: null }),
     ]);
-    return { ...summary, newPosts, activeChallenge: Boolean(active) };
+    return { ...summary, newPosts, newMessages, activeChallenge: Boolean(active) };
   }));
 
   // Perto de você: mesma cidade ou mesma região das cidades conhecidas
@@ -176,7 +178,9 @@ clubs.get('/:slug', async (req, res) => {
   const inside = await Membership.find({ clubId: club._id, status: 'active', userId: { $in: friends } }).limit(5).lean();
   const people = await User.find({ _id: { $in: inside.map((x) => x.userId) } }).lean();
   const openReports = canModerate(m) ? await Report.countDocuments({ clubId: club._id, status: 'open' }) : 0;
-  res.json({ ...summary, description: club.description, rules: club.rules, pinned: club.pinned, friendsInside: people.map(publicUser), canModerate: canModerate(m), openReports });
+  const newMessages = m?.status === 'active' && club.chatEnabled !== false
+    ? await ClubMessage.countDocuments({ clubId: club._id, createdAt: { $gt: m.chatSeenAt || new Date(0) }, userId: { $ne: req.user._id }, deletedAt: null }) : 0;
+  res.json({ ...summary, description: club.description, rules: club.rules, pinned: club.pinned, friendsInside: people.map(publicUser), canModerate: canModerate(m), openReports, chatEnabled: club.chatEnabled !== false, newMessages });
 });
 
 clubs.post('/:slug/join', async (req, res) => {
@@ -335,6 +339,60 @@ clubs.get('/:slug/members', async (req, res) => {
   res.json(out.sort((a, b) => order[a.role] - order[b.role]));
 });
 
+// --- Conversa do clube ---
+// Só membros; o admin pode desligar; limite de envio contra spam; denúncia vai para a moderação do clube.
+const CHAT_PER_MINUTE = 12;
+const messageView = (m, by, meId) => ({
+  id: String(m._id), text: m.deletedAt ? '' : m.text, deleted: Boolean(m.deletedAt), createdAt: m.createdAt,
+  user: publicUser(by.get(String(m.userId))), mine: String(m.userId) === String(meId),
+});
+async function chatMember(slug, userId) {
+  const { club, m } = await loadClub(slug, userId);
+  if (m?.status !== 'active') throw forbidden('Entre no clube para conversar.');
+  if (club.chatEnabled === false) throw forbidden('A conversa deste clube está desligada.');
+  return { club, m };
+}
+
+clubs.get('/:slug/messages', async (req, res) => {
+  const { club, m } = await chatMember(req.params.slug, req.user._id);
+  const blocked = await blockedIds(req.user._id);
+  const q = { clubId: club._id, userId: { $nin: blocked } };
+  if (req.query.after) q.createdAt = { $gt: new Date(String(req.query.after)) }; // novas desde a última leitura
+  else if (req.query.before) q.createdAt = { $lt: new Date(String(req.query.before)) }; // mais antigas
+  const list = await ClubMessage.find(q).sort({ createdAt: -1 }).limit(50).lean();
+  const by = new Map((await User.find({ _id: { $in: list.map((x) => x.userId) } }).lean()).map((u) => [String(u._id), u]));
+  await Membership.updateOne({ _id: m._id }, { chatSeenAt: new Date() });
+  res.json({
+    messages: list.reverse().filter((x) => by.get(String(x.userId))).map((x) => messageView(x, by, req.user._id)),
+    more: !req.query.after && list.length === 50,
+    canModerate: canModerate(m),
+  });
+});
+
+clubs.post('/:slug/messages', async (req, res) => {
+  const { club, m } = await chatMember(req.params.slug, req.user._id);
+  const text = String(req.body?.text || '').trim().replace(/\n{3,}/g, '\n\n').slice(0, 500);
+  if (!text) throw bad('Escreva algo.');
+  const recent = await ClubMessage.countDocuments({ userId: req.user._id, createdAt: { $gt: new Date(Date.now() - 60000) } });
+  if (recent >= CHAT_PER_MINUTE) throw bad('Calma! Espere um pouquinho para mandar mais mensagens.');
+  const msg = await ClubMessage.create({ clubId: club._id, userId: req.user._id, text });
+  await Membership.updateOne({ _id: m._id }, { chatSeenAt: new Date() });
+  res.status(201).json(messageView(msg.toObject(), new Map([[String(req.user._id), req.user]]), req.user._id));
+});
+
+clubs.delete('/:slug/messages/:messageId', async (req, res) => {
+  const { club, m } = await loadClub(req.params.slug, req.user._id);
+  if (!mongoose.isValidObjectId(req.params.messageId)) throw notFound();
+  const msg = await ClubMessage.findOne({ _id: req.params.messageId, clubId: club._id });
+  if (!msg) throw notFound();
+  if (String(msg.userId) !== String(req.user._id) && !canModerate(m)) throw forbidden();
+  msg.deletedAt = new Date();
+  msg.deletedBy = req.user._id;
+  await msg.save();
+  await Report.updateMany({ targetType: 'message', targetId: msg._id, status: 'open' }, { status: 'done', resolution: 'mensagem apagada' });
+  res.json({ ok: true });
+});
+
 // --- Eventos do clube ---
 // Cria: moderação em clubes abertos/oficiais; qualquer membro num grupo privado. "Vou": membros.
 const eventView = (e, meId, by) => ({
@@ -411,6 +469,10 @@ clubs.patch('/:slug', async (req, res) => {
   if (b.pinned !== undefined) set.pinned = String(b.pinned).slice(0, 280);
   if (b.rules !== undefined) set.rules = String(b.rules).slice(0, 1500);
   if (b.description !== undefined) set.description = String(b.description).slice(0, 300);
+  if (b.chatEnabled !== undefined) {
+    if (m.role !== 'admin') throw forbidden('Só admins ligam ou desligam a conversa.');
+    set.chatEnabled = Boolean(b.chatEnabled);
+  }
   await Club.updateOne({ _id: club._id }, { $set: set });
   res.json({ ok: true });
 });
@@ -452,12 +514,15 @@ clubs.get('/:slug/reports', async (req, res) => {
   const list = await Report.find({ clubId: club._id, status: 'open' }).sort({ createdAt: -1 }).limit(100).lean();
   const posts = await Post.find({ _id: { $in: list.filter((r) => r.targetType === 'post').map((r) => r.targetId) } }).lean();
   const hydrated = new Map((await hydratePosts(posts, req.user._id)).map((p) => [p.id, p]));
-  const users = await User.find({ _id: { $in: list.filter((r) => r.targetType === 'user').map((r) => r.targetId) } }).lean();
+  const msgs = await ClubMessage.find({ _id: { $in: list.filter((r) => r.targetType === 'message').map((r) => r.targetId) }, deletedAt: null }).lean();
+  const mb = new Map(msgs.map((x) => [String(x._id), x]));
+  const users = await User.find({ _id: { $in: [...list.filter((r) => r.targetType === 'user').map((r) => r.targetId), ...msgs.map((x) => x.userId)] } }).lean();
   const ub = new Map(users.map((u) => [String(u._id), u]));
   res.json(list.map((r) => ({
     id: String(r._id), targetType: r.targetType, targetId: String(r.targetId), reason: r.reason, details: r.details, createdAt: r.createdAt,
     post: r.targetType === 'post' ? hydrated.get(String(r.targetId)) || null : null,
     user: r.targetType === 'user' ? publicUser(ub.get(String(r.targetId))) : null,
+    message: r.targetType === 'message' && mb.get(String(r.targetId)) ? { text: mb.get(String(r.targetId)).text, user: publicUser(ub.get(String(mb.get(String(r.targetId)).userId))) } : null,
   })));
 });
 
@@ -465,7 +530,7 @@ clubs.get('/:slug/reports', async (req, res) => {
 const REASONS = ['spam', 'assedio', 'improprio', 'falso', 'outro'];
 reports.post('/', async (req, res) => {
   const b = req.body || {};
-  if (!['post', 'user', 'comment', 'club'].includes(b.targetType)) throw bad('Denúncia inválida.');
+  if (!['post', 'user', 'comment', 'club', 'message'].includes(b.targetType)) throw bad('Denúncia inválida.');
   if (!REASONS.includes(b.reason)) throw bad('Escolha um motivo.');
   if (!mongoose.isValidObjectId(b.targetId)) throw bad('Denúncia inválida.');
   if (b.targetType === 'user' && String(b.targetId) === String(req.user._id)) throw bad('Você não pode se denunciar.');

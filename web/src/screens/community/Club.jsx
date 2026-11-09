@@ -17,8 +17,10 @@ import { CATEGORIES, firstName } from '../../lib/format.js';
 import { groupInviteUrl, shareGroupLink } from '../../lib/invite.js';
 import { ChallengeRow, clubColor, people, useJoin } from './parts.jsx';
 import { ClubEvents } from './events.jsx';
+import ClubChat from './chat.jsx';
 
-const TABS = [['feed', 'Feed'], ['desafios', 'Desafios'], ['ranking', 'Ranking'], ['membros', 'Membros']];
+const BASE_TABS = [['feed', 'Feed'], ['desafios', 'Desafios'], ['ranking', 'Ranking'], ['membros', 'Membros']];
+const tabsFor = (club) => (club?.member && club.chatEnabled ? [['feed', 'Feed'], ['conversa', 'Conversa'], ...BASE_TABS.slice(1)] : BASE_TABS);
 const ROLE = { admin: 'Admin', moderator: 'Moderador' };
 
 function friendsLine(club) {
@@ -349,6 +351,7 @@ function ReportsSheet({ club, open, onClose, onChanged }) {
     try {
       if (how === 'remover') await api(`/clubs/${club.slug}/posts/${r.targetId}/remove`, { method: 'POST' });
       else if (how === 'banir') await api(`/clubs/${club.slug}/members/${r.targetId}/ban`, { method: 'POST' });
+      else if (how === 'apagar-msg') await api(`/clubs/${club.slug}/messages/${r.targetId}`, { method: 'DELETE' });
       else await api(`/reports/${r.id}/resolve`, { method: 'POST', body: { resolution: 'mantido' } });
       setList((l) => l.filter((x) => x.id !== r.id));
       onChanged();
@@ -364,10 +367,12 @@ function ReportsSheet({ club, open, onClose, onChanged }) {
           <span className="t-13 strong">{REASON[r.reason]}{r.details ? ` · ${r.details}` : ''}</span>
           {r.post && <span className="t-14 secondary">Post de {r.post.user.name}: “{r.post.text || r.post.title}”</span>}
           {r.user && <span className="t-14 secondary">Conta: {r.user.name} (@{r.user.username})</span>}
-          {!r.post && !r.user && <span className="t-14 muted">O conteúdo já foi apagado.</span>}
+          {r.message && <span className="t-14 secondary">Mensagem de {r.message.user?.name}: “{r.message.text}”</span>}
+          {!r.post && !r.user && !r.message && <span className="t-14 muted">O conteúdo já foi apagado.</span>}
           <div className="row gap-8 wrap">
             {r.targetType === 'post' && r.post && <button type="button" className="btn sm btn-dark" onClick={() => resolve(r, 'remover')}>Remover do clube</button>}
             {r.targetType === 'user' && r.user && <button type="button" className="btn sm btn-dark" onClick={() => resolve(r, 'banir')}>Banir</button>}
+            {r.targetType === 'message' && r.message && <button type="button" className="btn sm btn-dark" onClick={() => resolve(r, 'apagar-msg')}>Apagar mensagem</button>}
             <button type="button" className="btn sm btn-soft" onClick={() => resolve(r, 'manter')}>Manter</button>
           </div>
         </div>
@@ -380,11 +385,12 @@ function EditSheet({ club, open, onClose, onSaved }) {
   const toast = useToast();
   const [pinned, setPinned] = useState(club.pinned || '');
   const [rules, setRules] = useState(club.rules || '');
+  const [chat, setChat] = useState(club.chatEnabled !== false);
   const [busy, setBusy] = useState(false);
   async function save() {
     setBusy(true);
     try {
-      await api(`/clubs/${club.slug}`, { method: 'PATCH', body: { pinned, rules } });
+      await api(`/clubs/${club.slug}`, { method: 'PATCH', body: { pinned, rules, ...(club.role === 'admin' ? { chatEnabled: chat } : {}) } });
       toast('Clube atualizado.');
       onSaved();
       onClose();
@@ -394,6 +400,14 @@ function EditSheet({ club, open, onClose, onSaved }) {
     <Sheet open={open} onClose={onClose} title="Recado e regras">
       <label className="field">Recado fixado<textarea className="textarea" rows={2} maxLength={280} value={pinned} onChange={(e) => setPinned(e.target.value)} placeholder="Livro de novembro: …" /></label>
       <label className="field">Regras<textarea className="textarea" rows={6} maxLength={1500} value={rules} onChange={(e) => setRules(e.target.value)} placeholder="Uma regra por linha" /></label>
+      {club.role === 'admin' && (
+        <div className="row-group">
+          <label className="select-row">
+            <span className="grow stack" style={{ gap: 1 }}><span className="t-15" style={{ fontWeight: 500 }}>Conversa do clube</span><span className="t-13 muted">membros conversam entre si; a moderação apaga e resolve denúncias</span></span>
+            <span className="switch"><input type="checkbox" role="switch" checked={chat} onChange={(e) => setChat(e.target.checked)} aria-label="Conversa do clube" /></span>
+          </label>
+        </div>
+      )}
       <button type="button" className="btn btn-dark block" disabled={busy} onClick={save}>{busy ? 'Salvando…' : 'Salvar'}</button>
     </Sheet>
   );
@@ -405,8 +419,9 @@ export default function Club() {
   const toast = useToast();
   const confirm = useConfirm();
   const [params, setParams] = useSearchParams();
-  const tab = TABS.some(([v]) => v === params.get('aba')) ? params.get('aba') : 'feed';
   const { data: club, error, reload, setData } = useLoad(`/clubs/${slug}`);
+  const TABS = tabsFor(club);
+  const tab = TABS.some(([v]) => v === params.get('aba')) ? params.get('aba') : 'feed';
   const [sheet, setSheet] = useState(null); // menu | rules | report | reports | edit | invite
   const { join, busy } = useJoin((c) => { setData({ ...club, ...c }); invalidateLoad(`/clubs/${slug}/feed`); });
   useStatusBar(club ? clubColor(club) : null);
@@ -441,12 +456,15 @@ export default function Club() {
     <div style={{ minHeight: '100dvh' }}>
       <Header club={club} onJoin={() => join(club)} joining={busy} onMenu={() => setSheet('menu')} onShare={club.kind === 'private' ? () => setSheet('invite') : share} />
       <div className="screen" style={{ paddingTop: 16 }}>
-        <div role="tablist" aria-label="Seção do clube" className="segmented bg-segment">
+        <div role="tablist" aria-label="Seção do clube" className={`segmented bg-segment${TABS.length > 4 ? ' club-tabs' : ''}`}>
           {TABS.map(([v, label]) => (
-            <button key={v} type="button" role="tab" aria-selected={tab === v} aria-pressed={tab === v} onClick={() => setParams(v === 'feed' ? {} : { aba: v }, { replace: true })}>{label}</button>
+            <button key={v} type="button" role="tab" aria-selected={tab === v} aria-pressed={tab === v} onClick={() => setParams(v === 'feed' ? {} : { aba: v }, { replace: true })}>
+              {label}{v === 'conversa' && club.newMessages > 0 && tab !== 'conversa' && <span className="tab-badge">{club.newMessages > 9 ? '9+' : club.newMessages}</span>}
+            </button>
           ))}
         </div>
         {tab === 'feed' && <Feed club={club} />}
+        {tab === 'conversa' && <ClubChat club={club} onSeen={() => { setData({ ...club, newMessages: 0 }); invalidateLoad('/community'); }} />}
         {tab === 'desafios' && <Challenges club={club} />}
         {tab === 'ranking' && <Ranking club={club} />}
         {tab === 'membros' && <Members club={club} onInvite={() => setSheet('invite')} />}

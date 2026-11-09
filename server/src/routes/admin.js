@@ -1,7 +1,7 @@
 // Moderação da Equipe Nobi: denúncias de todo o app, clubes novos e contas suspensas.
 import { Router } from 'express';
 import mongoose from 'mongoose';
-import { Report, Post, Comment, User, Club, Membership } from '../models/index.js';
+import { Report, Post, Comment, User, Club, Membership, ClubMessage } from '../models/index.js';
 import { bad, notFound } from '../lib/http.js';
 import { publicUser } from '../services/social.js';
 import { clubSummary } from '../services/clubs.js';
@@ -43,6 +43,9 @@ admin.get('/reports', async (req, res) => {
   }
   const list = [...groups.values()];
   const ids = (t) => list.filter((g) => g.targetType === t).map((g) => g.targetId).filter((id) => mongoose.isValidObjectId(id));
+  const messages = await ClubMessage.find({ _id: { $in: ids('message') } }).lean();
+  const messageAuthors = new Map((await User.find({ _id: { $in: messages.map((x) => x.userId) } }).lean()).map((u) => [String(u._id), u]));
+  const messageClubs = new Map((await Club.find({ _id: { $in: messages.map((x) => x.clubId) } }, { name: 1, slug: 1 }).lean()).map((c) => [String(c._id), c]));
   const [posts, users, comments, clubs] = await Promise.all([
     Post.find({ _id: { $in: ids('post') } }).lean(),
     User.find({ _id: { $in: ids('user') } }).lean(),
@@ -66,6 +69,10 @@ admin.get('/reports', async (req, res) => {
       const c = comments.find((x) => String(x._id) === id);
       if (c) target = { comment: { id, text: c.text, postId: String(c.postId), user: publicUser(commentAuthors.get(String(c.userId))) } };
     }
+    if (g.targetType === 'message') {
+      const x = messages.find((y) => String(y._id) === id);
+      if (x && !x.deletedAt) target = { message: { id, text: x.text, user: publicUser(messageAuthors.get(String(x.userId))), club: messageClubs.get(String(x.clubId)) ? { name: messageClubs.get(String(x.clubId)).name, slug: messageClubs.get(String(x.clubId)).slug } : null } };
+    }
     if (g.targetType === 'club') {
       const c = clubs.find((x) => String(x._id) === id);
       if (c) target = { club: { ...(await clubSummary(c)), description: c.description, createdBy: String(c.createdBy || '') } };
@@ -85,7 +92,7 @@ admin.get('/reports', async (req, res) => {
 admin.post('/reports/resolve', async (req, res) => {
   const { targetType, targetId, action } = req.body || {};
   if (!mongoose.isValidObjectId(targetId)) throw bad('Alvo inválido.');
-  const allowed = { post: ['keep', 'delete-post', 'suspend'], comment: ['keep', 'delete-comment', 'suspend'], user: ['keep', 'suspend'], club: ['keep', 'delete-club'] };
+  const allowed = { post: ['keep', 'delete-post', 'suspend'], comment: ['keep', 'delete-comment', 'suspend'], message: ['keep', 'delete-message', 'suspend'], user: ['keep', 'suspend'], club: ['keep', 'delete-club'] };
   if (!allowed[targetType]?.includes(action)) throw bad('Ação inválida.');
   let resolution = 'mantido';
   if (action === 'delete-post') { await deletePost(targetId); resolution = 'post apagado'; }
@@ -93,6 +100,10 @@ admin.post('/reports/resolve', async (req, res) => {
     const c = await Comment.findById(targetId);
     if (c) { await c.deleteOne(); await Post.updateOne({ _id: c.postId }, { $inc: { commentsCount: -1 } }); }
     resolution = 'comentário apagado';
+  }
+  if (action === 'delete-message') {
+    await ClubMessage.updateOne({ _id: targetId }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
+    resolution = 'mensagem apagada';
   }
   if (action === 'delete-club') {
     const c = await Club.findById(targetId).lean();
@@ -104,6 +115,7 @@ admin.post('/reports/resolve', async (req, res) => {
     let userId = targetId;
     if (targetType === 'post') userId = (await Post.findById(targetId).lean())?.userId;
     if (targetType === 'comment') userId = (await Comment.findById(targetId).lean())?.userId;
+    if (targetType === 'message') userId = (await ClubMessage.findById(targetId).lean())?.userId;
     if (!userId) throw notFound('Conta não encontrada.');
     if (String(userId) === String(req.user._id)) throw bad('Você não pode suspender a própria conta.');
     await suspend(userId, req.body.reason || 'denúncias');

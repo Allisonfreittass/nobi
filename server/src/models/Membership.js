@@ -11,6 +11,7 @@ const membershipSchema = new Schema({
   invitedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
   joinedAt: { type: Date, default: Date.now },
   lastSeenAt: { type: Date, default: Date.now }, // para "N posts novos"
+  chatSeenAt: { type: Date, default: Date.now }, // para "N mensagens novas"
 });
 
 membershipSchema.index({ clubId: 1, userId: 1 }, { unique: true });

@@ -619,3 +619,21 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .event-date { width: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 6px 0; border-radius: 14px; background: var(--nobi-tinta); color: #FFFFFF; font-size: var(--nobi-text-xs); font-weight: 700; line-height: 1.15; }
 .event-date strong { font-size: 1.375rem; line-height: 1.1; }
 :root[data-theme='dark'] .event-date { background: var(--nobi-creme); color: var(--nobi-tinta); }
+
+/* Abas do clube com Conversa (5 abas): rolam no celular estreito */
+.club-tabs { overflow-x: auto; scrollbar-width: none; }
+.club-tabs::-webkit-scrollbar { display: none; }
+.club-tabs button { flex: 1 0 auto; padding: 0 12px; }
+.tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--nobi-brasa); color: #FFFFFF; font-size: 11px; font-weight: 800; }
+
+/* Conversa do clube */
+.chat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.chat-day { display: block; text-align: center; margin: 10px 0 6px; font-size: var(--nobi-text-xs); font-weight: 700; color: var(--nobi-text-muted); }
+.chat-row { display: flex; gap: 8px; align-items: flex-end; }
+.chat-row.mine { justify-content: flex-end; }
+.chat-bubble { max-width: 78%; border: none; text-align: left; padding: 8px 12px 6px; border-radius: 18px 18px 18px 6px; background: var(--nobi-card); color: var(--nobi-text); box-shadow: inset 0 0 0 1px var(--nobi-border); cursor: pointer; }
+.chat-row.mine .chat-bubble { border-radius: 18px 18px 6px 18px; background: var(--nobi-tinta); color: #FFFFFF; box-shadow: none; }
+:root[data-theme='dark'] .chat-row.mine .chat-bubble { background: var(--nobi-creme); color: var(--nobi-tinta); }
+.chat-bubble.deleted { opacity: 0.6; cursor: default; }
+.chat-time { display: block; margin-top: 2px; font-size: 11px; opacity: 0.6; text-align: right; }
+.chat-input { position: sticky; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 5; padding: 8px; margin: 0 -8px; border-radius: 22px; background: var(--nobi-bg); }

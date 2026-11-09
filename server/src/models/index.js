@@ -12,6 +12,7 @@ export { Nudge } from './Nudge.js';
 export { Pair } from './Pair.js';
 export { ClubEvent } from './ClubEvent.js';
 export { Book } from './Book.js';
+export { ClubMessage } from './ClubMessage.js';
 export { XpGrant } from './XpGrant.js';
 export { PushSubscription } from './PushSubscription.js';
 export { PushLog } from './PushLog.js';

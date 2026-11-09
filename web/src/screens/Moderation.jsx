@@ -12,7 +12,7 @@ import { timeAgo } from '../lib/format.js';
 import { ClubTile, people } from './community/parts.jsx';
 
 const REASON = { spam: 'Spam', assedio: 'Assédio', improprio: 'Impróprio', falso: 'Falso', outro: 'Outro' };
-const TYPE = { post: 'Post', user: 'Conta', comment: 'Comentário', club: 'Clube' };
+const TYPE = { post: 'Post', user: 'Conta', comment: 'Comentário', club: 'Clube', message: 'Mensagem' };
 const TABS = [['denuncias', 'Denúncias'], ['clubes', 'Clubes novos'], ['suspensas', 'Suspensas']];
 
 function Pill({ children, tone }) {
@@ -39,6 +39,14 @@ function Target({ g }) {
       <div className="stack gap-4" style={{ padding: 12, borderRadius: 16, background: 'var(--nobi-bg)' }}>
         <span className="t-13 strong">{t.comment.user?.name || 'Conta removida'}</span>
         <p className="t-15">{t.comment.text}</p>
+      </div>
+    );
+  }
+  if (t.message) {
+    return (
+      <div className="stack gap-4" style={{ padding: 12, borderRadius: 16, background: 'var(--nobi-bg)' }}>
+        <span className="t-13 strong">{t.message.user?.name || 'Conta removida'}{t.message.club ? ` · conversa de ${t.message.club.name}` : ''}</span>
+        <p className="t-15" style={{ whiteSpace: 'pre-wrap' }}>{t.message.text}</p>
       </div>
     );
   }
@@ -79,6 +87,7 @@ function ReportCard({ g, onDone, readOnly }) {
     const danger = {
       'delete-post': ['Apagar o post?', 'Some para todo mundo, com os comentários e a foto.', 'Apagar post'],
       'delete-comment': ['Apagar o comentário?', 'Some para todo mundo.', 'Apagar comentário'],
+      'delete-message': ['Apagar a mensagem?', 'Some da conversa do clube para todo mundo.', 'Apagar mensagem'],
       'delete-club': ['Encerrar o clube?', 'O clube some e os membros saem. Os posts continuam no perfil de cada um.', 'Encerrar clube'],
       suspend: ['Suspender a conta?', 'A pessoa sai de todos os aparelhos, não consegue entrar e some das buscas e dos feeds. Dá para desfazer em Suspensas.', 'Suspender'],
     }[action];
@@ -113,6 +122,7 @@ function ReportCard({ g, onDone, readOnly }) {
         <div className="row gap-8 wrap">
           {t === 'post' && !g.gone && <button type="button" className="btn sm btn-dark" disabled={busy} onClick={() => act('delete-post')}>Apagar post</button>}
           {t === 'comment' && !g.gone && <button type="button" className="btn sm btn-dark" disabled={busy} onClick={() => act('delete-comment')}>Apagar comentário</button>}
+          {t === 'message' && !g.gone && <button type="button" className="btn sm btn-dark" disabled={busy} onClick={() => act('delete-message')}>Apagar mensagem</button>}
           {t === 'club' && !g.gone && g.target.club.kind !== 'official' && <button type="button" className="btn sm btn-dark" disabled={busy} onClick={() => act('delete-club')}>Encerrar clube</button>}
           {t !== 'club' && !g.gone && !g.target?.user?.suspendedAt && <button type="button" className="btn sm btn-soft" style={{ color: 'var(--nobi-danger)' }} disabled={busy} onClick={() => act('suspend')}>Suspender conta</button>}
           <button type="button" className="btn sm btn-soft" disabled={busy} onClick={() => act('keep')}>{g.gone ? 'Tirar da fila' : 'Manter'}</button>

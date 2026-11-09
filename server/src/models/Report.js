@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 // Denúncia de post, pessoa ou comentário (moderação desde o dia 1)
 const reportSchema = new Schema({
   reporterId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  targetType: { type: String, enum: ['post', 'user', 'comment', 'club'], required: true },
+  targetType: { type: String, enum: ['post', 'user', 'comment', 'club', 'message'], required: true },
   targetId: { type: Schema.Types.ObjectId, required: true },
   clubId: { type: Schema.Types.ObjectId, ref: 'Club', default: null },
   reason: { type: String, enum: ['spam', 'assedio', 'improprio', 'falso', 'outro'], required: true },

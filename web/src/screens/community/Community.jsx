@@ -14,7 +14,8 @@ import { CATEGORIES, CATEGORY_ORDER, goalColor } from '../../lib/format.js';
 import { ClubGridCard, ClubTile, ChallengeRow, people } from './parts.jsx';
 
 function MyClubCard({ club }) {
-  const sub = club.newPosts ? `${club.newPosts} ${club.newPosts === 1 ? 'post novo' : 'posts novos'}` : club.activeChallenge ? 'desafio ativo' : `${people(club.membersCount)} membros`;
+  const sub = club.newMessages ? `${club.newMessages} ${club.newMessages === 1 ? 'mensagem nova' : 'mensagens novas'}`
+    : club.newPosts ? `${club.newPosts} ${club.newPosts === 1 ? 'post novo' : 'posts novos'}` : club.activeChallenge ? 'desafio ativo' : `${people(club.membersCount)} membros`;
   return (
     <Link to={`/clubes/${club.slug}`} className="card row gap-10" style={{ padding: 12, borderRadius: 20, minWidth: 0 }}>
       <ClubTile club={club} size={44} icon />

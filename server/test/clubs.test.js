@@ -222,3 +222,37 @@ test('lembrete de véspera do evento: só a partir das 18h do dia anterior, uma 
   await runEventReminders(new Date('2031-05-10T23:00:00Z'));
   assert.equal(await PushLog.countDocuments(key), 1, 'avisa uma vez');
 });
+
+test('conversa do clube: só membros, limite, bloqueio, denúncia e moderação apagam; admin desliga', async () => {
+  const [ana, beto, caio] = await Promise.all([signup('Ana'), signup('Beto'), signup('Caio')]);
+  const club = (await call('POST', '/clubs', { kind: 'open', name: `Papo ${Date.now()}`, category: 'leitura', city: '' }, ana.token)).body;
+  await call('POST', `/clubs/${club.slug}/join`, null, beto.token);
+  assert.equal((await call('GET', `/clubs/${club.slug}/messages`, null, caio.token)).status, 403, 'fora do clube não lê');
+  const m1 = (await call('POST', `/clubs/${club.slug}/messages`, { text: 'Bom dia, leitores!' }, beto.token)).body;
+  assert.equal(m1.mine, true);
+  assert.equal((await call('GET', `/clubs/${club.slug}`, null, ana.token)).body.newMessages, 1, 'Ana tem 1 nova');
+  const list = (await call('GET', `/clubs/${club.slug}/messages`, null, ana.token)).body;
+  assert.equal(list.messages[0].text, 'Bom dia, leitores!');
+  assert.equal(list.canModerate, true);
+  assert.equal((await call('GET', `/clubs/${club.slug}`, null, ana.token)).body.newMessages, 0, 'leu, zerou');
+
+  // Denúncia chega à moderação do clube; admin apaga e resolve
+  assert.equal((await call('POST', '/reports', { targetType: 'message', targetId: m1.id, reason: 'spam', clubSlug: club.slug }, ana.token)).status, 201);
+  assert.equal((await call('GET', `/clubs/${club.slug}/reports`, null, ana.token)).body[0].message.text, 'Bom dia, leitores!');
+  assert.equal((await call('DELETE', `/clubs/${club.slug}/messages/${m1.id}`, null, ana.token)).status, 200);
+  assert.equal((await call('GET', `/clubs/${club.slug}/reports`, null, ana.token)).body.length, 0);
+  assert.equal((await call('GET', `/clubs/${club.slug}/messages`, null, beto.token)).body.messages[0].deleted, true);
+
+  // Bloqueio esconde as mensagens de quem foi bloqueado
+  await call('POST', `/clubs/${club.slug}/messages`, { text: 'oi de novo' }, beto.token);
+  await call('POST', `/users/${beto.me.id}/block`, null, ana.token);
+  assert.equal((await call('GET', `/clubs/${club.slug}/messages`, null, ana.token)).body.messages.filter((x) => !x.deleted).length, 0);
+
+  // Limite de envio
+  let last;
+  for (let i = 0; i < 13; i++) last = await call('POST', `/clubs/${club.slug}/messages`, { text: `msg ${i}` }, ana.token);
+  assert.equal(last.status, 400, 'mais de 12 por minuto é barrado');
+
+  assert.equal((await call('PATCH', `/clubs/${club.slug}`, { chatEnabled: false }, ana.token)).status, 200);
+  assert.equal((await call('GET', `/clubs/${club.slug}/messages`, null, ana.token)).status, 403, 'conversa desligada');
+});

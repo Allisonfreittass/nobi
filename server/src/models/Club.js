@@ -18,6 +18,7 @@ const clubSchema = new Schema({
   pinned: { type: String, default: '', maxlength: 280 }, // aviso fixado
   pinnedPostId: { type: Schema.Types.ObjectId, ref: 'Post', default: null },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  chatEnabled: { type: Boolean, default: true }, // conversa do clube (o admin pode desligar)
   inviteCode: { type: String, default: undefined }, // link secreto de convite dos grupos privados (/grupo/:code)
 }, { timestamps: true });
 
