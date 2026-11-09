@@ -16,6 +16,7 @@ import { useStatusBar } from '../../lib/statusBar.js';
 import { CATEGORIES, firstName } from '../../lib/format.js';
 import { groupInviteUrl, shareGroupLink } from '../../lib/invite.js';
 import { ChallengeRow, clubColor, people, useJoin } from './parts.jsx';
+import { ClubEvents } from './events.jsx';
 
 const TABS = [['feed', 'Feed'], ['desafios', 'Desafios'], ['ranking', 'Ranking'], ['membros', 'Membros']];
 const ROLE = { admin: 'Admin', moderator: 'Moderador' };
@@ -99,6 +100,7 @@ function Feed({ club }) {
           <span className="t-12 strong" style={{ padding: '6px 10px', borderRadius: 12, background: 'var(--nobi-track)' }}>Público</span>
         </button>
       )}
+      <ClubEvents club={club} />
       {club.pinned && (
         <div className="row gap-10" style={{ padding: '12px 14px', borderRadius: 18, background: 'var(--nobi-track)', alignItems: 'flex-start' }}>
           <Icon name="flag" size={18} />

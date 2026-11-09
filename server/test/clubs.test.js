@@ -178,3 +178,47 @@ test('desafio com checklist pela interface; desafio de clube só a moderação c
   assert.equal(list[0].id, ch.id);
   assert.equal((await call('POST', `/goals/${ch.id}/participate`, null, caio.token)).status, 200, 'membro entra sem convite');
 });
+
+test('eventos do clube: moderação cria, membros vão, cancela; véspera avisa', async () => {
+  const [ana, beto, caio] = await Promise.all([signup('Ana'), signup('Beto'), signup('Caio')]);
+  const { addDays } = await import('../src/lib/dates.js');
+  const club = (await call('POST', '/clubs', { kind: 'open', name: `Corrida ${Date.now()}`, category: 'treino', city: 'Lavras, MG' }, ana.token)).body;
+  await call('POST', `/clubs/${club.slug}/join`, null, beto.token);
+  const today = new Date().toISOString().slice(0, 10);
+  const ev = { title: 'Treino na praça', date: addDays(today, 2), time: '07:00', place: 'Praça central' };
+  assert.equal((await call('POST', `/clubs/${club.slug}/events`, ev, beto.token)).status, 403, 'membro comum não cria em clube aberto');
+  assert.equal((await call('POST', `/clubs/${club.slug}/events`, { ...ev, date: addDays(today, -1) }, ana.token)).status, 400, 'data passada');
+  const e = (await call('POST', `/clubs/${club.slug}/events`, ev, ana.token)).body;
+  assert.equal(e.goingCount, 1, 'quem cria já vai');
+  assert.equal((await call('POST', `/clubs/${club.slug}/events/${e.id}/going`, {}, caio.token)).status, 403, 'precisa ser do clube');
+  const g = (await call('POST', `/clubs/${club.slug}/events/${e.id}/going`, {}, beto.token)).body;
+  assert.equal(g.goingCount, 2);
+  assert.equal(g.going, true);
+  assert.equal((await call('POST', `/clubs/${club.slug}/events/${e.id}/going`, { going: false }, beto.token)).body.goingCount, 1);
+  const list = (await call('GET', `/clubs/${club.slug}/events`, null, beto.token)).body;
+  assert.equal(list.canCreate, false);
+  assert.equal(list.events[0].title, 'Treino na praça');
+  await call('PATCH', '/me', { city: 'Lavras, MG' }, caio.token);
+  assert.equal((await call('GET', '/community/events', null, caio.token)).body[0].club.slug, club.slug, 'aparece para quem é da cidade');
+  assert.equal((await call('DELETE', `/clubs/${club.slug}/events/${e.id}`, null, beto.token)).status, 403);
+  await call('DELETE', `/clubs/${club.slug}/events/${e.id}`, null, ana.token);
+  assert.equal((await call('GET', `/clubs/${club.slug}/events`, null, beto.token)).body.events.length, 0, 'cancelado some');
+
+  // Grupo privado: qualquer membro cria
+  const grp = (await call('POST', '/clubs', { kind: 'private', name: 'Grupo da Ana', category: 'treino' }, ana.token)).body;
+  assert.equal((await call('POST', `/clubs/${grp.slug}/events`, ev, ana.token)).status, 201);
+});
+
+test('lembrete de véspera do evento: só a partir das 18h do dia anterior, uma vez', async () => {
+  const { runEventReminders } = await import('../src/services/reminders.js');
+  const { ClubEvent, PushLog } = await import('../src/models/index.js');
+  const ana = await signup('Ana');
+  const club = await Club.create({ name: 'Ev', slug: `ev-${Date.now()}`, category: 'treino', kind: 'official' });
+  const e = await ClubEvent.create({ clubId: club._id, title: 'Treino', date: '2031-05-11', time: '07:00', createdBy: ana.me.id, going: [ana.me.id] });
+  const key = { userId: ana.me.id, key: `event:eve:${e._id}` };
+  await runEventReminders(new Date('2031-05-10T19:00:00Z')); // 16h em São Paulo
+  assert.equal(await PushLog.countDocuments(key), 0, 'antes das 18h não avisa');
+  await runEventReminders(new Date('2031-05-10T22:00:00Z')); // 19h em São Paulo
+  await runEventReminders(new Date('2031-05-10T23:00:00Z'));
+  assert.equal(await PushLog.countDocuments(key), 1, 'avisa uma vez');
+});

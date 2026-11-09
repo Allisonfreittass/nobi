@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import crypto from 'node:crypto';
-import { Club, Membership, Post, User, Goal, Report } from '../models/index.js';
+import { Club, Membership, Post, User, Goal, Report, ClubEvent } from '../models/index.js';
+import { isDateStr } from '../lib/dates.js';
+import { notify } from '../services/push.js';
+import { social } from '../services/pushMessages.js';
 import { bad, notFound, forbidden, HttpError } from '../lib/http.js';
 import { friendIds, publicUser, blockedIds, relation } from '../services/social.js';
 import { clubSummary, membershipOf, canModerate, visibleClubFilter, clubRanking, openChallengeFilter, isCategory, CATEGORY_LABEL, INTEREST_ORDER, MAX_OPEN_CLUBS } from '../services/clubs.js';
@@ -72,6 +75,21 @@ community.get('/', async (req, res) => {
       .map((i) => ({ interest: i._id.interest || CATEGORY_LABEL[i._id.category], category: i._id.category, count: i.n }))
       .sort((a, b) => INTEREST_ORDER.indexOf(a.category) - INTEREST_ORDER.indexOf(b.category) || b.count - a.count || a.interest.localeCompare(b.interest)),
   });
+});
+
+/** Próximos eventos: dos meus clubes e dos clubes da minha cidade. */
+community.get('/events', async (req, res) => {
+  const me = req.user;
+  const mine = (await Membership.find({ userId: me._id, status: 'active' }, { clubId: 1 }).lean()).map((m) => m.clubId);
+  const near = me.city ? (await Club.find({ kind: { $in: ['official', 'open'] }, city: me.city }, { _id: 1 }).lean()).map((c) => c._id) : [];
+  const list = await ClubEvent.find({ clubId: { $in: [...mine, ...near] }, canceledAt: null, date: { $gte: req.today } }).sort({ date: 1, time: 1 }).limit(10).lean();
+  const clubsById = new Map((await Club.find({ _id: { $in: list.map((e) => e.clubId) } }).lean()).map((c) => [String(c._id), c]));
+  const views = await eventViews(list, me._id);
+  const mineSet = new Set(mine.map(String));
+  res.json(views.map((v, i) => {
+    const c = clubsById.get(String(list[i].clubId));
+    return { ...v, club: c ? { slug: c.slug, name: c.name, category: c.category, member: mineSet.has(String(c._id)) } : null };
+  }).filter((v) => v.club));
 });
 
 community.get('/challenges', async (req, res) => {
@@ -315,6 +333,67 @@ clubs.get('/:slug/members', async (req, res) => {
     ...publicUser(by.get(String(r.userId))), role: r.role, status: r.status, relation: await relation(req.user._id, r.userId),
   })));
   res.json(out.sort((a, b) => order[a.role] - order[b.role]));
+});
+
+// --- Eventos do clube ---
+// Cria: moderação em clubes abertos/oficiais; qualquer membro num grupo privado. "Vou": membros.
+const eventView = (e, meId, by) => ({
+  id: String(e._id), title: e.title, date: e.date, time: e.time, place: e.place, description: e.description,
+  goingCount: e.going.length, going: e.going.some((u) => String(u) === String(meId)), canceled: Boolean(e.canceledAt),
+  people: e.going.slice(0, 5).map((u) => by?.get(String(u))).filter(Boolean).map(publicUser),
+  mine: String(e.createdBy) === String(meId),
+});
+const canCreateEvent = (club, m) => (club.kind === 'private' ? m?.status === 'active' : canModerate(m));
+async function eventViews(list, meId) {
+  const by = new Map((await User.find({ _id: { $in: list.flatMap((e) => e.going.slice(0, 5)) } }).lean()).map((u) => [String(u._id), u]));
+  return list.map((e) => eventView(e, meId, by));
+}
+
+clubs.get('/:slug/events', async (req, res) => {
+  const { club, m } = await loadClub(req.params.slug, req.user._id);
+  const list = await ClubEvent.find({ clubId: club._id, date: { $gte: req.today }, canceledAt: null }).sort({ date: 1, time: 1 }).limit(20).lean();
+  res.json({ canCreate: canCreateEvent(club, m), events: await eventViews(list, req.user._id) });
+});
+
+clubs.post('/:slug/events', async (req, res) => {
+  const { club, m } = await loadClub(req.params.slug, req.user._id);
+  if (!canCreateEvent(club, m)) throw forbidden(club.kind === 'private' ? 'Só quem está no grupo cria eventos.' : 'Só a moderação do clube cria eventos.');
+  const b = req.body || {};
+  const title = String(b.title || '').trim().slice(0, 80);
+  if (title.length < 3) throw bad('Dê um nome ao evento.');
+  if (!isDateStr(b.date) || b.date < req.today) throw bad('Escolha uma data de hoje em diante.');
+  if (!/^\d{2}:\d{2}$/.test(b.time || '')) throw bad('Escolha o horário.');
+  const e = await ClubEvent.create({
+    clubId: club._id, title, date: b.date, time: b.time, place: String(b.place || '').trim().slice(0, 120),
+    description: String(b.description || '').trim().slice(0, 500), createdBy: req.user._id, going: [req.user._id],
+  });
+  // Avisa os membros (agrupado pelo push; nunca de madrugada)
+  const members = await Membership.find({ clubId: club._id, status: 'active', userId: { $ne: req.user._id } }, { userId: 1 }).limit(500).lean();
+  const [, mo, d] = b.date.split('-');
+  await Promise.all(members.map((x) => notify(x.userId, { ...social.eventNew(club.name, title, `${d}/${mo} às ${b.time}`), url: `/clubes/${club.slug}` }, { type: 'social', dedupeKey: `event:new:${e._id}` })));
+  res.status(201).json((await eventViews([e.toObject()], req.user._id))[0]);
+});
+
+clubs.post('/:slug/events/:eventId/going', async (req, res) => {
+  const { club, m } = await loadClub(req.params.slug, req.user._id);
+  if (m?.status !== 'active') throw forbidden('Entre no clube para confirmar presença.');
+  if (!mongoose.isValidObjectId(req.params.eventId)) throw notFound();
+  const want = req.body?.going !== false;
+  const e = await ClubEvent.findOneAndUpdate({ _id: req.params.eventId, clubId: club._id, canceledAt: null },
+    want ? { $addToSet: { going: req.user._id } } : { $pull: { going: req.user._id } }, { new: true }).lean();
+  if (!e) throw notFound('Evento não encontrado.');
+  res.json((await eventViews([e], req.user._id))[0]);
+});
+
+clubs.delete('/:slug/events/:eventId', async (req, res) => {
+  const { club, m } = await loadClub(req.params.slug, req.user._id);
+  if (!mongoose.isValidObjectId(req.params.eventId)) throw notFound();
+  const e = await ClubEvent.findOne({ _id: req.params.eventId, clubId: club._id });
+  if (!e) throw notFound();
+  if (String(e.createdBy) !== String(req.user._id) && !canModerate(m)) throw forbidden();
+  e.canceledAt = new Date();
+  await e.save();
+  res.json({ ok: true });
 });
 
 clubs.get('/:slug/challenges', async (req, res) => {

@@ -7,6 +7,7 @@ import PersonRow from '../../components/PersonRow.jsx';
 import { Chip, ErrorNote, Sheet, Skeleton } from '../../components/ui.jsx';
 import { api } from '../../lib/api.js';
 import { useLoad, invalidateLoad } from '../../lib/useLoad.js';
+import { CommunityEvents } from './events.jsx';
 import { useBroto, useSession } from '../../lib/session.jsx';
 import { useToast } from '../../lib/toast.jsx';
 import { CATEGORIES, CATEGORY_ORDER, goalColor } from '../../lib/format.js';
@@ -185,6 +186,7 @@ function Clubs() {
           )}
       </section>
 
+      <CommunityEvents />
       <section className="stack gap-10" aria-label="Perto de você">
         <div className="row gap-8">
           <Icon name="globe" size={18} />

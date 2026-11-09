@@ -4,7 +4,7 @@ import { PushSubscription } from '../models/index.js';
 import { bad, HttpError } from '../lib/http.js';
 import { config } from '../config.js';
 import { pushReady, sendPush } from '../services/push.js';
-import { runReminders, runWeeklyRecap } from '../services/reminders.js';
+import { runReminders, runWeeklyRecap, runEventReminders } from '../services/reminders.js';
 
 export const push = Router();
 
@@ -43,5 +43,6 @@ cron.all('/reminders', async (req, res) => {
   if (!ok) throw new HttpError(401, 'Não autorizado.');
   const result = await runReminders();
   result.weekly = await runWeeklyRecap();
+  result.events = await runEventReminders();
   res.json(result);
 });

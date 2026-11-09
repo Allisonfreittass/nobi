@@ -186,6 +186,8 @@ export const social = {
     { title: `${first(who)} chegou num marco`, body: `${title}. Que tal um Boa!?` },
   ]),
   tagged: (who, text) => ({ title: `${first(who)} marcou você num post`, body: text.length > 120 ? `${text.slice(0, 117)}...` : text }),
+  eventTomorrow: (title, time, place) => ({ title: `Amanhã: ${title}`, body: `${time.replace(':00', 'h').replace(':', 'h')}${place ? ` · ${place}` : ''}. Até lá!` }),
+  eventNew: (club, title, when) => ({ title: `Evento novo em ${club}`, body: `${title} · ${when}` }),
   pairInvite: (who) => ({ title: `${first(who)} quer uma sequência a dois`, body: 'Os dois registram algo no dia e a sequência cresce. Topa?' }),
   pairNudge: (who) => pick([
     { title: `${first(who)} está esperando você`, body: 'Falta seu registro para a sequência de vocês contar hoje.' },

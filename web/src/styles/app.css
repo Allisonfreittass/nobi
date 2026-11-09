@@ -614,3 +614,8 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .pair-strip { list-style: none; margin: 0 -20px; padding: 0 20px; display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; }
 .pair-strip::-webkit-scrollbar { display: none; }
 .pair-card { flex: 0 0 auto; width: 200px; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 20px; }
+
+/* Eventos do clube */
+.event-date { width: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 6px 0; border-radius: 14px; background: var(--nobi-tinta); color: #FFFFFF; font-size: var(--nobi-text-xs); font-weight: 700; line-height: 1.15; }
+.event-date strong { font-size: 1.375rem; line-height: 1.1; }
+:root[data-theme='dark'] .event-date { background: var(--nobi-creme); color: var(--nobi-tinta); }

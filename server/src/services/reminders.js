@@ -1,10 +1,11 @@
 // Lembrete de check-in: no horário escolhido, um por dia, só se faltar algo (DESIGN.md §8.9).
 // Chamado de 15 em 15 minutos pelo cron-job.org (rota /api/cron/reminders).
-import { PushSubscription, PushLog, User, Checkin } from '../models/index.js';
+import { PushSubscription, PushLog, User, Checkin, ClubEvent, Club } from '../models/index.js';
+import { addDays } from '../lib/dates.js';
 import { userGoals, streakSummary } from './progress.js';
 import { friendIds } from './social.js';
 import { localParts, sendPush, recentMessageIds, remember } from './push.js';
-import { REMINDERS, chooseMessage } from './pushMessages.js';
+import { REMINDERS, chooseMessage, social } from './pushMessages.js';
 import { weeklySummary } from './weekly.js';
 
 const UNIT_LABEL = { copos: 'copos', treinos: 'treinos', 'lições': 'lições', min: 'min', 'páginas': 'páginas' };
@@ -87,3 +88,25 @@ export async function runReminders(now = new Date()) {
   return result;
 }
 
+
+/** Véspera de evento do clube: a partir das 18h (hora de quem vai), um aviso por evento e pessoa. */
+export async function runEventReminders(now = new Date()) {
+  const utc = now.toISOString().slice(0, 10);
+  const events = await ClubEvent.find({ canceledAt: null, date: { $gte: utc, $lte: addDays(utc, 2) } }).lean();
+  if (!events.length) return 0;
+  const users = new Map((await User.find({ _id: { $in: events.flatMap((e) => e.going) } }, { timeZone: 1, prefs: 1 }).lean()).map((u) => [String(u._id), u]));
+  const clubs = new Map((await Club.find({ _id: { $in: events.map((e) => e.clubId) } }, { slug: 1 }).lean()).map((c) => [String(c._id), c]));
+  let sent = 0;
+  for (const e of events) {
+    for (const uid of e.going) {
+      const u = users.get(String(uid));
+      if (!u) continue;
+      const local = localParts(u.timeZone, now);
+      if (local.hour < 18 || e.date !== addDays(local.date, 1)) continue;
+      if (!(await remember(u._id, `event:eve:${e._id}`))) continue;
+      const n = await sendPush(u._id, { ...social.eventTomorrow(e.title, e.time, e.place), url: `/clubes/${clubs.get(String(e.clubId))?.slug || ''}`, tag: 'event' }, { type: 'social', quiet: false, user: u });
+      if (n) sent += 1;
+    }
+  }
+  return sent;
+}
