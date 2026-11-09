@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { addDays } from '../lib/dates.js';
-import { Goal, Post, User, Follow, Comment, Club, Membership, Nudge } from '../models/index.js';
+import { Goal, Post, User, Follow, Comment, Club, Membership, Nudge, Pair } from '../models/index.js';
 import { friendIds, followingIds, publicUser } from '../services/social.js';
 import { clubSummary, visibleClubFilter } from '../services/clubs.js';
 import { Checkin } from '../models/index.js';
@@ -109,6 +109,14 @@ home.get('/notifications', async (req, res) => {
     if (u) items.push({ id: `follow:${r._id}`, type: 'follow-request', at: r.createdAt, user: publicUser(u), requestId: String(r._id) });
   }
 
+  // Convites de sequência a dois (aparecem sempre)
+  const pairInvites = await Pair.find({ users: me._id, status: 'pending', invitedBy: { $ne: me._id } }).lean();
+  const pu2 = new Map((await User.find({ _id: { $in: pairInvites.map((p) => p.invitedBy) } }).lean()).map((u) => [String(u._id), u]));
+  for (const p of pairInvites) {
+    const by = pu2.get(String(p.invitedBy));
+    if (by) items.push({ id: `pair:${p._id}`, type: 'pair-invite', at: p.createdAt, user: publicUser(by), pairId: String(p._id) });
+  }
+
   // Convites para grupos privados: aparecem sempre, como pedidos para seguir
   const groupInvites = await Membership.find({ userId: me._id, status: 'invited' }).lean();
   if (groupInvites.length) {
@@ -137,6 +145,7 @@ home.get('/notifications', async (req, res) => {
     const ng = new Map(nGoals.map((x) => [String(x._id), x]));
     for (const n of nudges) {
       const by = nu.get(String(n.fromId));
+      if (by && n.pairId) { items.push({ id: `nudge:${n._id}`, type: 'pair-nudge', at: n.createdAt, user: publicUser(by) }); continue; }
       const goal = ng.get(String(n.goalId));
       if (!by || !goal) continue;
       items.push({ id: `nudge:${n._id}`, type: 'nudge', at: n.createdAt, user: publicUser(by), goal: { id: String(goal._id), title: goal.title, challenge: Boolean(goal.shared?.endsAt) } });

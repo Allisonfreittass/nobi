@@ -71,6 +71,24 @@ function Achievements({ data }) {
   );
 }
 
+/** No perfil de um amigo: começar (ou ver) a sequência a dois. */
+function PairButton({ profile }) {
+  const toast = useToast();
+  const { data, reload } = useLoad('/pairs');
+  if (!profile.relation?.friends || profile.relation.self || !data) return null;
+  const pair = data.find((x) => x.partner.id === profile.id);
+  async function start() {
+    try {
+      await api('/pairs', { method: 'POST', body: { userId: profile.id } });
+      toast(`Convite enviado. Quando ${profile.name.split(' ')[0]} topar, a sequência começa.`);
+      reload();
+    } catch (e) { toast(e.message); }
+  }
+  if (pair?.status === 'active') return <span className="tag row gap-6" style={{ alignSelf: 'flex-start' }}><Icon name="flame" size={14} /> {pair.streak} {pair.streak === 1 ? 'dia' : 'dias'} a dois</span>;
+  if (pair) return <span className="tag" style={{ alignSelf: 'flex-start' }}>Sequência a dois: aguardando</span>;
+  return <button type="button" className="btn sm btn-soft" style={{ alignSelf: 'flex-start' }} onClick={start}><Icon name="flame" size={16} /> Sequência a dois</button>;
+}
+
 function FollowButton({ profile, onChange }) {
   const toast = useToast();
   const rel = profile.relation;
@@ -152,6 +170,7 @@ export default function Profile() {
             <Link to={`/u/${p.username}/seguindo`} className="tap" style={{ minHeight: 32, display: 'inline-flex', alignItems: 'center' }}><strong>{p.following}</strong>&nbsp;<span className="secondary">seguindo</span></Link>
           </span>
           {p.bio && <span className="t-14 secondary">{p.bio}</span>}
+          {!isMe && <PairButton profile={p} />}
           {p.season && (
             <span className="row gap-6 t-12 strong" style={{ alignSelf: 'flex-start', marginTop: 4, padding: '4px 10px', borderRadius: 12, background: 'var(--nobi-tinta)', color: '#FFFFFF' }}>
               <span style={{ width: 8, height: 8, borderRadius: 4, background: 'var(--nobi-orbita)', boxShadow: '0 0 0 1.5px #FFFFFF' }} />

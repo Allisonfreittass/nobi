@@ -186,6 +186,11 @@ export const social = {
     { title: `${first(who)} chegou num marco`, body: `${title}. Que tal um Boa!?` },
   ]),
   tagged: (who, text) => ({ title: `${first(who)} marcou você num post`, body: text.length > 120 ? `${text.slice(0, 117)}...` : text }),
+  pairInvite: (who) => ({ title: `${first(who)} quer uma sequência a dois`, body: 'Os dois registram algo no dia e a sequência cresce. Topa?' }),
+  pairNudge: (who) => pick([
+    { title: `${first(who)} está esperando você`, body: 'Falta seu registro para a sequência de vocês contar hoje.' },
+    { title: 'Sequência a dois', body: `${first(who)} já fez a parte dele hoje. Um registro seu e o dia conta.` },
+  ]),
   nudge: (who, goal) => pick([
     { title: `${first(who)} lembrou de você`, body: `Falta você hoje no ${goal}. Sem pressão: um pouco já conta.` },
     { title: `Bora, ${goal}?`, body: `${first(who)} já fez e está te esperando.` },

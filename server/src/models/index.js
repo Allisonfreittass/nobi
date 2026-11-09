@@ -9,6 +9,7 @@ export { Season } from './Season.js';
 export { Achievement } from './Achievement.js';
 export { Collectible } from './Collectible.js';
 export { Nudge } from './Nudge.js';
+export { Pair } from './Pair.js';
 export { XpGrant } from './XpGrant.js';
 export { PushSubscription } from './PushSubscription.js';
 export { PushLog } from './PushLog.js';

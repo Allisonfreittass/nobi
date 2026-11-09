@@ -6,10 +6,11 @@ const { Schema } = mongoose;
 const nudgeSchema = new Schema({
   fromId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   toId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  goalId: { type: Schema.Types.ObjectId, ref: 'Goal', required: true },
+  goalId: { type: Schema.Types.ObjectId, ref: 'Goal', default: null },
+  pairId: { type: Schema.Types.ObjectId, ref: 'Pair', default: null }, // cutucada da sequência a dois
   date: { type: String, required: true }, // dia local de quem cutucou
 }, { timestamps: true });
 
-nudgeSchema.index({ fromId: 1, toId: 1, goalId: 1, date: 1 }, { unique: true });
+nudgeSchema.index({ fromId: 1, toId: 1, goalId: 1, pairId: 1, date: 1 }, { unique: true });
 
 export const Nudge = mongoose.model('Nudge', nudgeSchema);

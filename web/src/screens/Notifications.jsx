@@ -27,6 +27,16 @@ export default function Notifications() {
     if (yes) navigate(`/desafios/${item.goal.id}`);
   }
 
+  async function pair(item, yes) {
+    try {
+      if (yes) await api(`/pairs/${item.pairId}/accept`, { method: 'POST' });
+      else await api(`/pairs/${item.pairId}`, { method: 'DELETE' });
+      invalidateLoad('/pairs');
+      if (yes) toast(`Sequência a dois com ${firstName(item.user.name)} começou hoje.`);
+    } catch (e) { toast(e.message); }
+    drop(item.id);
+  }
+
   async function group(item, yes) {
     try {
       await api(`/clubs/${item.club.slug}/invite/${yes ? 'accept' : 'decline'}`, { method: 'POST' });
@@ -61,6 +71,23 @@ export default function Notifications() {
             <span className="grow t-14"><strong>{firstName(i.user?.name)}</strong> chamou você para <strong>{i.goal.title}</strong> · {i.goal.mode === 'together' ? 'Juntos' : 'Disputa'}</span>
             <button type="button" className="btn btn-orbita sm" onClick={() => invite(i, true)}>Topar</button>
           </div>
+        );
+      case 'pair-invite':
+        return (
+          <div className="list-row">
+            <Avatar user={i.user} size={44} />
+            <span className="grow t-14"><strong>{firstName(i.user.name)}</strong> quer uma sequência a dois: o dia conta quando os dois registram algo.</span>
+            <button type="button" className="btn btn-dark sm" onClick={() => pair(i, true)}>Topar</button>
+            <button type="button" className="icon-btn plain" aria-label="Recusar sequência a dois" onClick={() => pair(i, false)}><Icon name="close" /></button>
+          </div>
+        );
+      case 'pair-nudge':
+        return (
+          <Link to="/" className="list-row">
+            <Avatar user={i.user} size={44} />
+            <span className="grow t-14"><strong>{firstName(i.user.name)}</strong> está esperando você: falta seu registro para a sequência a dois contar hoje <span className="muted">· {timeAgo(i.at)}</span></span>
+            <Icon name="flame" size={18} />
+          </Link>
         );
       case 'nudge':
         return (

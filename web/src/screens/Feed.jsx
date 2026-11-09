@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
 import FirstSteps from '../components/FirstSteps.jsx';
+import PairStreaks from '../components/PairStreaks.jsx';
 import PostCard from '../components/PostCard.jsx';
 import GoalCard from '../components/GoalCard.jsx';
 import FriendsRing from '../components/FriendsRing.jsx';
@@ -73,6 +74,7 @@ function MobileFeed() {
       <WeeklyCard />
       <SmartPrompt />
       {home.data ? <FriendsRing ring={home.data.ring} /> : <Skeleton height={80} />}
+      <PairStreaks />
       {home.data?.challenge && <ChallengeBanner c={home.data.challenge} />}
       <ErrorNote error={feed.error} onRetry={feed.reload} />
       {feed.loading && !feed.data && <><Skeleton height={260} /><Skeleton height={220} /></>}
@@ -208,6 +210,7 @@ function DesktopFeed() {
       </div>
       <aside className="stack gap-16" style={{ position: 'sticky', top: 24 }}>
         <FirstSteps />
+        <PairStreaks />
         <h2 className="title t-20">Seus amigos agora</h2>
         <div className="stack gap-12" style={{ maxHeight: 'calc(100dvh - 300px)', overflowY: 'auto', paddingRight: 4 }}>
           {feed.data && feed.posts.length === 0 && <EmptyFeed />}
