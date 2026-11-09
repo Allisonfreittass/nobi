@@ -109,7 +109,7 @@ function EditPostSheet({ post, open, onClose, onSaved }) {
         </div>
         <span className="t-13 muted">{audience === 'public' ? 'Público também aparece nos clubes da categoria em que você está.' : 'Só seus amigos veem. Não aparece nos clubes.'}</span>
       </div>
-      {post.photo && post.kind !== 'weekly' && (
+      {post.photo && !['weekly', 'year'].includes(post.kind) && (
         <label className="select-row" style={{ padding: 0 }}>
           <span className="grow t-15">Tirar a foto do post</span>
           <span className="switch"><input type="checkbox" role="switch" checked={dropPhoto} onChange={(e) => setDropPhoto(e.target.checked)} aria-label="Tirar a foto do post" /></span>
@@ -188,7 +188,7 @@ export default function PostCard({ post: initial, compact = false, onDelete, clu
           <Link to={`/u/${post.user.username}`} className="strong t-15 ellipsis">{post.user.name}</Link>
           <span className="row gap-6 t-13 secondary" style={{ flexWrap: 'wrap', rowGap: 0, whiteSpace: 'nowrap' }}>
             <span style={{ width: 8, height: 8, flexShrink: 0, borderRadius: 3, background: cat.color }} aria-hidden="true" />
-            {post.kind === 'weekly' ? 'Resumo da semana' : cat.label}<span aria-hidden="true">·</span>{timeAgo(post.createdAt)}
+            {post.kind === 'weekly' ? 'Resumo da semana' : post.kind === 'year' ? 'Retrospectiva' : cat.label}<span aria-hidden="true">·</span>{timeAgo(post.createdAt)}
             {post.audience === 'public' ? <Icon name="globe" size={13} /> : <Icon name="users" size={13} />}
             <span className="sr-only">{post.audience === 'public' ? 'Público' : 'Amigos'}</span>
             {post.edited && <><span aria-hidden="true">·</span>editado</>}
@@ -211,7 +211,7 @@ export default function PostCard({ post: initial, compact = false, onDelete, clu
 
       {post.photo && (
         <img src={post.photo.url} alt={post.text || `Foto de ${post.user.name}`} loading="lazy" decoding="async" width={post.photo.w} height={post.photo.h}
-          style={post.kind === 'weekly'
+          style={['weekly', 'year'].includes(post.kind)
             ? { width: compact ? 'min(100%, 200px)' : 'min(100%, 300px)', height: 'auto', aspectRatio: '9 / 16', alignSelf: 'center', borderRadius: 22, background: 'var(--nobi-brasa)' }
             : { width: '100%', height: 'auto', aspectRatio: `${post.photo.w} / ${post.photo.h}`, maxHeight: compact ? 260 : 520, objectFit: 'cover', borderRadius: 18, background: 'var(--nobi-track)' }} />
       )}

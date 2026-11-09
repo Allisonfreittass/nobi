@@ -8,7 +8,7 @@ const postSchema = new Schema({
   goalId: { type: Schema.Types.ObjectId, ref: 'Goal' },
   checkinId: { type: Schema.Types.ObjectId, ref: 'Checkin' },
   audience: { type: String, enum: ['friends', 'public'], required: true },
-  kind: { type: String, enum: ['checkin', 'milestone', 'record', 'start', 'weekly'], default: 'checkin' },
+  kind: { type: String, enum: ['checkin', 'milestone', 'record', 'start', 'weekly', 'year'], default: 'checkin' },
   category: { type: String },
   title: { type: String, default: '' }, // ex.: "7 dias seguidos de leitura"
   metrics: {

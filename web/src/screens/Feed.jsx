@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import Broto from '../components/Broto.jsx';
 import FirstSteps from '../components/FirstSteps.jsx';
+import YearCard from '../components/YearCard.jsx';
 import PairStreaks from '../components/PairStreaks.jsx';
 import PostCard from '../components/PostCard.jsx';
 import GoalCard from '../components/GoalCard.jsx';
@@ -71,6 +72,7 @@ function MobileFeed() {
       </header>
       <FirstSteps />
       <ShieldNotice />
+      <YearCard />
       <WeeklyCard />
       <SmartPrompt />
       {home.data ? <FriendsRing ring={home.data.ring} /> : <Skeleton height={80} />}

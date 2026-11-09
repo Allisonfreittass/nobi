@@ -77,13 +77,14 @@ posts.post('/', async (req, res) => {
     const dim = (n) => Math.min(10000, Math.max(1, Math.round(Number(n) || 1)));
     photo = { url: b.photo.url, w: dim(b.photo.w), h: dim(b.photo.h) };
   }
-  // Resumo da semana: não pertence a um objetivo, vai com a imagem do card
-  if (b.weekly) {
+  // Resumo da semana (ou do ano): não pertence a um objetivo, vai com a imagem do card
+  if (b.weekly || b.year) {
     if (!photo) throw bad('Falta a imagem do resumo.');
-    const label = String(b.weekly.label || '').slice(0, 40);
+    const label = String(b.weekly?.label || '').slice(0, 40);
+    const year = Number(b.year?.year) || null;
     const post = new Post({
-      userId: req.user._id, audience: b.audience, kind: 'weekly', title: `Minha semana${label ? ` · ${label}` : ''}`,
-      metrics: { streak: Number(b.weekly.bestStreak) || 0, streakUnit: 'days' }, text, photo, date: req.today,
+      userId: req.user._id, audience: b.audience, kind: year ? 'year' : 'weekly', title: year ? `Meu ${year} no Nobi` : `Minha semana${label ? ` · ${label}` : ''}`,
+      metrics: { streak: Number((b.weekly || b.year).bestStreak) || 0, streakUnit: 'days' }, text, photo, date: req.today,
     });
     await applyTags(post, req.user);
     await post.save();
@@ -161,7 +162,7 @@ posts.patch('/:id', async (req, res) => {
       p.clubIds = b.audience === 'public' && p.goalId ? await clubIdsForPost(req.user._id, p.category) : [];
     }
   }
-  if (b.photo === null && p.photo?.url && p.kind !== 'weekly') {
+  if (b.photo === null && p.photo?.url && !['weekly', 'year'].includes(p.kind)) {
     await deleteImages([p.photo.url]);
     p.photo = null;
   }

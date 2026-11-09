@@ -51,3 +51,22 @@ test('check-in que fecha 7 dias avisa o acessório novo', async () => {
   const r = (await call('POST', `/goals/${g.id}/checkins`, { value: 1, date: today }, bia.token)).body;
   assert.deepEqual(r.accessories, [{ id: 'faixa', name: 'Faixa da constância' }]);
 });
+
+test('ano no Nobi: dias ativos, maior sequência do ano, mês a mês e torcida', async () => {
+  const { longestRun, yearToShow } = await import('../src/services/yearly.js');
+  assert.equal(longestRun(new Set(['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-05', '2026-01-06'])), 3);
+  assert.equal(yearToShow('2027-01-10'), 2026, 'em janeiro mostra o ano que acabou');
+  assert.equal(yearToShow('2026-12-02'), 2026);
+  const ana = await signup('Ana');
+  const { Checkin, Goal } = await import('../src/models/index.js');
+  const g = await Goal.create({ ownerId: ana.me.id, title: 'Correr', category: 'treino', kind: 'daily' });
+  for (const d of ['2025-03-01', '2025-03-02', '2025-03-03', '2025-07-10']) await Checkin.create({ goalId: g._id, userId: ana.me.id, date: d, value: 1, km: 5 });
+  const y = (await call('GET', '/me/year?year=2025', null, ana.token)).body;
+  assert.equal(y.activeDays, 4);
+  assert.equal(y.longestRun, 3);
+  assert.equal(y.km, 20);
+  assert.equal(y.months[2], 3);
+  assert.equal(y.bestMonth, 2);
+  assert.deepEqual(y.topGoals, [{ title: 'Correr', category: 'treino', days: 4 }]);
+  assert.equal(y.complete, true);
+});

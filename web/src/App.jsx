@@ -26,6 +26,7 @@ const loadChallenges = () => import('./screens/Challenges.jsx');
 const loadNotifications = () => import('./screens/Notifications.jsx');
 const loadInvite = () => import('./screens/Invite.jsx');
 const loadGroupInvite = () => import('./screens/GroupInvite.jsx');
+const loadYear = () => import('./screens/Year.jsx');
 const loadStarted = () => import('./screens/Started.jsx');
 const loadConnections = () => import('./screens/Connections.jsx');
 const loadWeekly = () => import('./screens/Weekly.jsx');
@@ -47,6 +48,7 @@ const Challenges = lazy(loadChallenges);
 const Notifications = lazy(loadNotifications);
 const Invite = lazy(loadInvite);
 const GroupInvite = lazy(loadGroupInvite);
+const Year = lazy(loadYear);
 const Started = lazy(loadStarted);
 const Connections = lazy(loadConnections);
 const Weekly = lazy(loadWeekly);
@@ -190,6 +192,7 @@ export default function App() {
         <Route path="/perfil/editar" element={<EditProfile />} />
         <Route path="/configuracoes" element={<Settings />} />
         <Route path="/semana" element={<Weekly />} />
+        <Route path="/ano" element={<Year />} />
         <Route path="/moderacao" element={<Moderation />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -6,6 +6,7 @@ import { streakSummary, profileStats } from '../services/progress.js';
 import { currentSeason, seasonInfo } from '../services/seasons.js';
 import { CATALOG } from '../services/achievements.js';
 import { weeklySummary } from '../services/weekly.js';
+import { yearSummary } from '../services/yearly.js';
 import { ensureShields } from '../services/shields.js';
 import { comebackFor, markComebackSeen } from '../services/comeback.js';
 import { ShieldUse, Task, Membership, Report, Collectible, Nudge, Pair } from '../models/index.js';
@@ -128,6 +129,7 @@ me.patch('/account', async (req, res) => {
 
 me.get('/stats', async (req, res) => res.json(await profileStats(req.user, req.today)));
 me.get('/weekly', async (req, res) => res.json(await weeklySummary(req.user, req.today, req.query.start)));
+me.get('/year', async (req, res) => res.json(await yearSummary(req.user, req.today, req.query.year)));
 me.get('/achievements', async (req, res) => res.json(await achievementsView(req.user._id)));
 
 // Coleção de acessórios do Broto: todos, com os que a pessoa já tem e o que está vestindo

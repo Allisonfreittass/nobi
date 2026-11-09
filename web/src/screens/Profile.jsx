@@ -228,6 +228,13 @@ export default function Profile() {
               <Icon name="chevron" size={18} />
             </Link>
           )}
+          {isMe && (
+            <Link to="/ano" className="card row gap-12 tap">
+              <Icon name="calendar" size={20} />
+              <span className="grow stack" style={{ gap: 1 }}><span className="strong t-15">Seu ano no Nobi</span><span className="t-13 muted">retrospectiva com card para os Stories</span></span>
+              <Icon name="chevron" size={18} />
+            </Link>
+          )}
           <MonthMap month={s.month} weekStart={me.prefs.weekStart} audience={p.statsAudience} />
           {p.achievements && <Achievements data={p.achievements} />}
         </>
