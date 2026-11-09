@@ -169,6 +169,22 @@ clubs.post('/:slug/join', async (req, res) => {
   res.json(await clubSummary(club, { userId: req.user._id }));
 });
 
+// Grupo privado: quem está dentro chama mais amigos depois de criado (como na criação, entram direto).
+// Clubes abertos não precisam: qualquer pessoa entra pelo link.
+clubs.post('/:slug/invite', async (req, res) => {
+  const { club, m } = await loadClub(req.params.slug, req.user._id);
+  if (club.kind !== 'private') throw bad('Clubes abertos não precisam de convite: compartilhe o link.');
+  if (m?.status !== 'active') throw forbidden('Só quem está no grupo convida.');
+  const friends = new Set((await friendIds(req.user._id)).map(String));
+  const wanted = [...new Set((req.body?.invite || []).map(String))].filter((id) => friends.has(id));
+  if (!wanted.length) throw bad('Escolha pelo menos 1 amigo.');
+  // Quem já está (ou foi banido) não é mexido
+  const existing = new Set((await Membership.find({ clubId: club._id, userId: { $in: wanted } }, { userId: 1 }).lean()).map((x) => String(x.userId)));
+  const add = wanted.filter((id) => !existing.has(id));
+  if (add.length) await Membership.insertMany(add.map((u) => ({ clubId: club._id, userId: u })));
+  res.json({ added: add.length });
+});
+
 clubs.delete('/:slug/membership', async (req, res) => {
   const { club, m } = await loadClub(req.params.slug, req.user._id);
   if (!m || m.status !== 'active') return res.json({ ok: true });

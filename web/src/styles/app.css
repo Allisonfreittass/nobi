@@ -526,6 +526,13 @@ button.list-row:hover, a.list-row:hover { background: var(--nobi-bg); }
 .checklist > li + li { border-top: 1px solid var(--nobi-track); }
 .checklist-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; }
 .checklist-row > .check-circle { margin-top: 2px; }
+.date-chip { position: relative; overflow: hidden; gap: 4px; isolation: isolate; }
+.date-chip > input[type='date'] {
+  position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; max-width: 100%;
+  margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer;
+  -webkit-appearance: none; appearance: none; font-size: var(--nobi-text-lg);
+}
+.date-chip > input[type='date']::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 .drag-handle { width: 28px; min-width: 28px; height: 36px; border: none; background: none; color: var(--nobi-text-muted); cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
 .drag-handle:active { cursor: grabbing; color: var(--nobi-text); }
 .sublist { margin-left: 38px; padding-bottom: 6px; }

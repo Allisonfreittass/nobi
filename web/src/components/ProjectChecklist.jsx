@@ -38,12 +38,14 @@ function useSortable(items, setItems, onCommit) {
   return { listRef, handleProps: (index) => ({ onPointerDown: (e) => start(e, index), onPointerMove: move, onPointerUp: end, onPointerCancel: end }) };
 }
 
+// O input de data fica invisível por cima do chip. Ele precisa ficar preso ao chip
+// (overflow hidden + sem largura mínima nativa): no iPhone o date input tem largura
+// mínima própria e vazava por cima do chip "Marco" ao lado, roubando o toque.
 function DateChip({ value, onChange, label }) {
   return (
-    <label className="chip sm" style={{ position: 'relative', gap: 4, boxShadow: value ? undefined : 'inset 0 0 0 1px var(--nobi-border)', color: value ? 'var(--nobi-text)' : 'var(--nobi-text-muted)' }}>
+    <label className="chip sm date-chip" style={{ boxShadow: value ? undefined : 'inset 0 0 0 1px var(--nobi-border)', color: value ? 'var(--nobi-text)' : 'var(--nobi-text-muted)' }}>
       <Icon name="calendar" size={14} />{value ? shortDay(value) : 'data'}
-      <input type="date" value={value || ''} aria-label={label} onChange={(e) => onChange(e.target.value || null)}
-        style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', cursor: 'pointer', fontSize: 'var(--nobi-text-lg)' }} />
+      <input type="date" value={value || ''} aria-label={label} onChange={(e) => onChange(e.target.value || null)} />
     </label>
   );
 }
