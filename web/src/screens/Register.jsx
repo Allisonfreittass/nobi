@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Broto from '../components/Broto.jsx';
+import { MentionInput } from '../components/Mentions.jsx';
 import Icon from '../components/Icon.jsx';
 import { Chip, ErrorNote, Skeleton, Sheet, SelectRow, SwitchRow } from '../components/ui.jsx';
 import { useLoad, afterCheckin, afterPost } from '../lib/useLoad.js';
@@ -158,7 +159,8 @@ export default function Register() {
 
               <label className="field">
                 <span className="sr-only">Nota</span>
-                <textarea className="textarea" rows={2} maxLength={280} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional): como foi?" />
+                <MentionInput id="register-note" rows={2} maxLength={280} value={note} onChange={setNote} placeholder="Nota (opcional): como foi? Marque com @"
+                  suggestUrl={(q) => `/posts/mentionable/new?audience=${share ? aud : 'friends'}&q=${encodeURIComponent(q)}`} />
               </label>
 
               <div className="row-group">

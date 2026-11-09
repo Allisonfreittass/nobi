@@ -47,3 +47,23 @@ test('cutucar: só quem divide o objetivo, quem ainda não fez, uma vez por dia'
   await call('POST', `/goals/${g.id}/checkins`, { value: 1 }, ana.token);
   assert.equal((await call('POST', `/goals/${g.id}/nudge/${ana.me.id}`, null, beto.token)).status, 400, 'quem já fez hoje não recebe');
 });
+
+test('marcar amigos no post: só quem vê é marcado, aparece no feed dela e é avisada', async () => {
+  const [ana, beto, caio] = await Promise.all([signup('Ana'), signup('Beto'), signup('Caio')]);
+  await call('POST', `/users/${ana.me.username}/invite`, {}, beto.token); // Ana e Beto amigos; Caio não
+  const g = await goal(ana.token, 'treino');
+  const p = (await call('POST', '/posts', { goalId: g.id, audience: 'friends', text: `Treinei com @${beto.me.username} e @${caio.me.username}` }, ana.token)).body.post;
+  assert.deepEqual(p.tags, [beto.me.username], 'Caio não vê post de Amigos: não é marcado');
+  const n = (await call('GET', '/home/notifications', null, beto.token)).body.items.find((i) => i.type === 'tag');
+  assert.equal(n.user.name, 'Ana');
+  assert.equal((await call('GET', '/home/notifications', null, caio.token)).body.items.filter((i) => i.type === 'tag').length, 0);
+  // Beto segue a Ana? São amigos, então já vê; o importante é o post estar no feed dele
+  assert.ok((await call('GET', '/feed', null, beto.token)).body.posts.some((x) => x.id === p.id));
+  // Público: agora Caio pode ver, então é marcado e o post aparece no feed dele mesmo sem seguir a Ana
+  const e = (await call('PATCH', `/posts/${p.id}`, { audience: 'public' }, ana.token)).body;
+  assert.deepEqual(e.tags.sort(), [beto.me.username, caio.me.username].sort());
+  assert.ok((await call('GET', '/feed', null, caio.token)).body.posts.some((x) => x.id === p.id), 'marcado vê no próprio feed');
+  // Sugestões do @ para post novo: Amigos só mostra amigos
+  const sug = (await call('GET', '/posts/mentionable/new?audience=friends&q=', null, ana.token)).body.map((u) => u.name);
+  assert.deepEqual(sug, ['Beto']);
+});

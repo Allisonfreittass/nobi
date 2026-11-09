@@ -185,6 +185,7 @@ export const social = {
     { title: `${first(who)}: ${lower(title)}`, body: 'Manda um Boa! pra comemorar junto.' },
     { title: `${first(who)} chegou num marco`, body: `${title}. Que tal um Boa!?` },
   ]),
+  tagged: (who, text) => ({ title: `${first(who)} marcou você num post`, body: text.length > 120 ? `${text.slice(0, 117)}...` : text }),
   nudge: (who, goal) => pick([
     { title: `${first(who)} lembrou de você`, body: `Falta você hoje no ${goal}. Sem pressão: um pouco já conta.` },
     { title: `Bora, ${goal}?`, body: `${first(who)} já fez e está te esperando.` },

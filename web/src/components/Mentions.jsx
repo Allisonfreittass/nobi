@@ -33,7 +33,9 @@ function tokenAt(value, caret) {
  * Campo de comentário com sugestões de @. `postId` define quem aparece (só quem vê o post).
  * O pai controla o valor; `ref.insertMention(username)` coloca "@usuario " no começo (usado no "Responder").
  */
-export const MentionInput = forwardRef(function MentionInput({ postId, value, onChange, id, placeholder, maxLength = 280 }, ref) {
+export const MentionInput = forwardRef(function MentionInput({ postId, suggestUrl, value, onChange, id, placeholder, maxLength = 280, rows = 0, className }, ref) {
+  // suggestUrl(q): de onde vêm as sugestões. Padrão: quem vê o post `postId` (comentários)
+  const urlFor = suggestUrl || ((q) => `/posts/${postId}/mentionable?q=${encodeURIComponent(q)}`);
   const input = useRef(null);
   const [token, setToken] = useState(null);
   const [list, setList] = useState([]);
@@ -52,10 +54,10 @@ export const MentionInput = forwardRef(function MentionInput({ postId, value, on
     if (!token) { setList([]); return undefined; }
     let alive = true;
     const t = setTimeout(() => {
-      api(`/posts/${postId}/mentionable?q=${encodeURIComponent(token.q)}`).then((r) => { if (alive) { setList(r); setActive(0); } }).catch(() => {});
+      api(urlFor(token.q)).then((r) => { if (alive) { setList(r); setActive(0); } }).catch(() => {});
     }, 150);
     return () => { alive = false; clearTimeout(t); };
-  }, [token?.q, token?.start, postId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token?.q, token?.start, postId, suggestUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sync = (v, caret) => setToken(tokenAt(v, caret));
   function pick(u) {
@@ -70,7 +72,7 @@ export const MentionInput = forwardRef(function MentionInput({ postId, value, on
     if (!token || !list.length) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => (i + 1) % list.length); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => (i - 1 + list.length) % list.length); }
-    else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pick(list[active]); }
+    else if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') { e.preventDefault(); pick(list[active]); }
     else if (e.key === 'Escape') { e.preventDefault(); setToken(null); }
   }
 
@@ -93,12 +95,18 @@ export const MentionInput = forwardRef(function MentionInput({ postId, value, on
           ))}
         </ul>
       )}
-      <input ref={input} id={id} className="input" style={{ minHeight: 44, height: 44, width: '100%' }} value={value} maxLength={maxLength}
-        placeholder={placeholder} autoComplete="off" role="combobox" aria-expanded={open} aria-controls={`${id}-sug`} aria-autocomplete="list"
-        onChange={(e) => { onChange(e.target.value); sync(e.target.value, e.target.selectionStart); }}
-        onSelect={(e) => sync(e.currentTarget.value, e.currentTarget.selectionStart)}
-        onKeyDown={onKeyDown}
-        onBlur={() => setTimeout(() => setToken(null), 120)} />
+      {(() => {
+        const Tag = rows ? 'textarea' : 'input';
+        return (
+          <Tag ref={input} id={id} className={className || (rows ? 'textarea' : 'input')} rows={rows || undefined}
+            style={rows ? { width: '100%' } : { minHeight: 44, height: 44, width: '100%' }} value={value} maxLength={maxLength}
+            placeholder={placeholder} autoComplete="off" role="combobox" aria-expanded={open} aria-controls={`${id}-sug`} aria-autocomplete="list"
+            onChange={(e) => { onChange(e.target.value); sync(e.target.value, e.target.selectionStart); }}
+            onSelect={(e) => sync(e.currentTarget.value, e.currentTarget.selectionStart)}
+            onKeyDown={onKeyDown}
+            onBlur={() => setTimeout(() => setToken(null), 120)} />
+        );
+      })()}
     </div>
   );
 });

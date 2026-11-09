@@ -21,10 +21,12 @@ const postSchema = new Schema({
   reactions: [{ userId: { type: Schema.Types.ObjectId, ref: 'User' }, type: { type: String, default: 'boa' }, at: { type: Date, default: Date.now }, _id: false }],
   commentsCount: { type: Number, default: 0 },
   editedAt: { type: Date, default: null },
+  tags: [{ type: Schema.Types.ObjectId, ref: 'User' }], // @amigos marcados no texto que podem ver o post
 }, { timestamps: true });
 
 postSchema.index({ createdAt: -1 });
 postSchema.index({ userId: 1, date: 1 });
 postSchema.index({ clubIds: 1, createdAt: -1 });
+postSchema.index({ tags: 1, createdAt: -1 });
 
 export const Post = mongoose.model('Post', postSchema);

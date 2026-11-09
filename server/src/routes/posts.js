@@ -19,7 +19,7 @@ const UNIT_WORD = { treino: 'treino', leitura: 'leitura', estudo: 'estudo', habi
 
 /** Junta autor, objetivo e o estado das reações para a tela. */
 export async function hydratePosts(list, meId) {
-  const userIds = [...new Set(list.map((p) => String(p.userId)))];
+  const userIds = [...new Set([...list.map((p) => String(p.userId)), ...list.flatMap((p) => (p.tags || []).map(String))])];
   const reactorIds = [...new Set(list.flatMap((p) => p.reactions.map((r) => String(r.userId))))];
   const [authors, reactors, goalsList] = await Promise.all([
     User.find({ _id: { $in: userIds } }).lean(),
@@ -49,6 +49,7 @@ export async function hydratePosts(list, meId) {
       commentsCount: p.commentsCount,
       createdAt: p.createdAt,
       edited: Boolean(p.editedAt),
+      tags: (p.tags || []).map((id) => a.get(String(id))?.username).filter(Boolean),
     };
   }).filter((p) => p.user);
 }
@@ -80,10 +81,12 @@ posts.post('/', async (req, res) => {
   if (b.weekly) {
     if (!photo) throw bad('Falta a imagem do resumo.');
     const label = String(b.weekly.label || '').slice(0, 40);
-    const post = await Post.create({
+    const post = new Post({
       userId: req.user._id, audience: b.audience, kind: 'weekly', title: `Minha semana${label ? ` · ${label}` : ''}`,
       metrics: { streak: Number(b.weekly.bestStreak) || 0, streakUnit: 'days' }, text, photo, date: req.today,
     });
+    await applyTags(post, req.user);
+    await post.save();
     const [view] = await hydratePosts([post.toObject()], req.user._id);
     return res.status(201).json({ post: view, achievements: [] });
   }
@@ -130,10 +133,12 @@ posts.post('/', async (req, res) => {
   }
   // Público entra nos clubes da categoria em que a pessoa é membro; Amigos nunca vaza para clube
   const clubIds = b.audience === 'public' ? await clubIdsForPost(req.user._id, goal.category) : [];
-  const post = await Post.create({
+  const post = new Post({
     userId: req.user._id, goalId: goal._id, checkinId: checkin?._id, audience: b.audience,
     kind, category: goal.category, title, metrics, text, photo, date: req.today, clubIds,
   });
+  await applyTags(post, req.user);
+  await post.save();
   const earned = await award(req.user._id, 'primeiro-post');
   if (kind === 'milestone' && title) {
     const friends = await friendIds(req.user._id);
@@ -161,6 +166,7 @@ posts.patch('/:id', async (req, res) => {
     p.photo = null;
   }
   p.editedAt = new Date();
+  await applyTags(p, req.user, p.tags); // texto ou público mudou: refaz quem está marcado
   await p.save();
   const [view] = await hydratePosts([p.toObject()], req.user._id);
   res.json(view);
@@ -202,6 +208,16 @@ async function mentionable(p, author, usernames) {
   return out;
 }
 
+/** Marca no post quem foi citado com @ e consegue vê-lo; avisa só quem é novo na marcação. */
+async function applyTags(post, author, before = []) {
+  const tagged = await mentionable(post, author, mentionedUsernames(post.text));
+  post.tags = tagged.map((u) => u._id);
+  const old = new Set(before.map(String));
+  for (const u of tagged.filter((x) => !old.has(String(x._id)))) {
+    await notify(u._id, { ...social.tagged(author.name, post.text), url: `/u/${author.username}` }, { type: 'social', dedupeKey: `social:tag:${post._id}:${u._id}` });
+  }
+}
+
 const commentView = (c, by, meId) => ({
   id: String(c._id), text: c.text, createdAt: c.createdAt, user: publicUser(by.get(String(c.userId))), mine: String(c.userId) === String(meId),
   mentions: (c.mentions || []).map((id) => by.get(String(id))).filter(Boolean).map((u) => u.username),
@@ -235,6 +251,24 @@ posts.get('/:id/comments', async (req, res) => {
   const people = await User.find({ _id: { $in: [...list.map((c) => c.userId), ...list.flatMap((c) => c.mentions || [])] } }).lean();
   const by = new Map(people.map((u) => [String(u._id), u]));
   res.json(list.map((c) => commentView(c, by, req.user._id)).filter((c) => c.user));
+});
+
+/** Sugestões para o @ de um post novo: amigos primeiro; no Público, também quem você segue e busca por nome. */
+posts.get('/mentionable/new', async (req, res) => {
+  const q = String(req.query.q || '').trim().toLowerCase().replace(/^@/, '').slice(0, 24);
+  const isPublic = req.query.audience === 'public';
+  const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = q ? new RegExp(`^${esc}|\\s${esc}`, 'i') : null;
+  const blocked = await blockedIds(req.user._id);
+  const friends = (await friendIds(req.user._id)).map(String);
+  const near = isPublic ? [...friends, ...(await followingIds(req.user._id)).map(String)] : friends;
+  const base = { suspendedAt: null, ...(re ? { $or: [{ username: re }, { name: re }] } : {}) };
+  const close = await User.find({ ...base, _id: { $in: near, $nin: [...blocked, String(req.user._id)] } }).limit(20).lean();
+  const rank = new Map(near.map((id, i) => [id, i]));
+  close.sort((a, b) => rank.get(String(a._id)) - rank.get(String(b._id)));
+  const far = isPublic && re && close.length < 8
+    ? await User.find({ ...base, _id: { $nin: [...blocked, ...near, String(req.user._id)] }, demo: { $ne: true } }).limit(8).lean() : [];
+  res.json([...close, ...far].slice(0, 8).map(publicUser));
 });
 
 /** Sugestões para o @ do comentário: quem está na conversa e amigos primeiro, depois busca por nome. Só quem vê o post. */
@@ -298,7 +332,7 @@ feed.get('/', async (req, res) => {
   const [friends, following, blocked] = await Promise.all([friendIds(me), followingIds(me), blockedIds(me)]);
   const q = {
     userId: { $nin: blocked },
-    $or: [{ userId: me }, { userId: { $in: friends } }, { userId: { $in: following }, audience: 'public' }],
+    $or: [{ userId: me }, { userId: { $in: friends } }, { userId: { $in: following }, audience: 'public' }, { tags: me }],
   };
   if (req.query.before) q.createdAt = { $lt: new Date(String(req.query.before)) };
   const list = await Post.find(q).sort({ createdAt: -1 }).limit(20).lean();

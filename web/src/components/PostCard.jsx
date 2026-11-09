@@ -96,16 +96,18 @@ function EditPostSheet({ post, open, onClose, onSaved }) {
   }
   return (
     <Sheet open={open} onClose={onClose} title="Editar post">
-      <label className="field">Texto
-        <textarea className="textarea" rows={4} maxLength={500} value={text} onChange={(e) => setText(e.target.value)} placeholder="Conte como foi" />
-      </label>
+      <div className="field">
+        <label htmlFor={`edit-${post.id}`}>Texto</label>
+        <MentionInput id={`edit-${post.id}`} rows={4} maxLength={500} value={text} onChange={setText} placeholder="Conte como foi"
+          suggestUrl={(q) => `/posts/mentionable/new?audience=${audience}&q=${encodeURIComponent(q)}`} />
+      </div>
       <div className="stack gap-8">
         <span className="t-14 strong">Quem vê</span>
         <div className="segmented" role="group" aria-label="Quem vê">
           <button type="button" aria-pressed={audience === 'friends'} onClick={() => setAudience('friends')}>Amigos</button>
           <button type="button" aria-pressed={audience === 'public'} onClick={() => setAudience('public')}>Público</button>
         </div>
-        <span className="t-13 muted">{audience === 'public' ? 'Público também aparece nos clubes da categoria em que você está.' : 'Amigos: só quem vocês se seguem. Sai dos clubes.'}</span>
+        <span className="t-13 muted">{audience === 'public' ? 'Público também aparece nos clubes da categoria em que você está.' : 'Só seus amigos veem. Não aparece nos clubes.'}</span>
       </div>
       {post.photo && post.kind !== 'weekly' && (
         <label className="select-row" style={{ padding: 0 }}>
@@ -205,7 +207,7 @@ export default function PostCard({ post: initial, compact = false, onDelete, clu
           {post.kind !== 'record' && post.title}
         </span>
       )}
-      {post.text && <p className={compact ? 't-14' : 't-15'} style={{ lineHeight: 1.5 }}>{post.text}</p>}
+      {post.text && <p className={compact ? 't-14' : 't-15'} style={{ lineHeight: 1.5 }}><MentionText text={post.text} mentions={post.tags} /></p>}
 
       {post.photo && (
         <img src={post.photo.url} alt={post.text || `Foto de ${post.user.name}`} loading="lazy" decoding="async" width={post.photo.w} height={post.photo.h}

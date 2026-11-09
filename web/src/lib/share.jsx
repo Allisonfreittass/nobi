@@ -4,6 +4,7 @@ import { api } from './api.js';
 import { afterPost } from './useLoad.js';
 import { useToast } from './toast.jsx';
 import PhotoPicker, { sendPostPhoto } from '../components/PhotoPicker.jsx';
+import { MentionInput } from '../components/Mentions.jsx';
 
 const ShareCtx = createContext(() => {});
 
@@ -54,10 +55,11 @@ export function ShareProvider({ children }) {
         <div className="row-group">
           <SelectRow label="Para quem" hint={audience === 'public' ? 'aparece no seu perfil e nos seus clubes' : 'só seus amigos veem e podem reagir'} value={audience} onChange={setAudience} options={[['friends', 'Amigos'], ['public', 'Público']]} />
         </div>
-        <label className="field">
-          Legenda (opcional)
-          <textarea className="textarea" rows={3} maxLength={500} value={text} onChange={(e) => setText(e.target.value)} placeholder="Conte como foi" />
-        </label>
+        <div className="field">
+          <label htmlFor="share-text">Legenda (opcional)</label>
+          <MentionInput id="share-text" rows={3} maxLength={500} value={text} onChange={setText} placeholder="Conte como foi. Treinou com alguém? Marque com @"
+            suggestUrl={(q) => `/posts/mentionable/new?audience=${audience}&q=${encodeURIComponent(q)}`} />
+        </div>
         <PhotoPicker value={photo} onChange={setPhoto} />
         <ErrorNote error={error} />
         <button type="button" className="btn btn-primary block" onClick={publish} disabled={busy}>{busy ? 'Publicando…' : 'Publicar'}</button>

@@ -120,6 +120,14 @@ home.get('/notifications', async (req, res) => {
       items.push({ id: `comment:${c._id}`, type: 'comment', at: c.createdAt, user: publicUser(pu.get(String(c.userId))), text: c.text, post: { id: String(c.postId) } });
     }
 
+    // Marcações em posts ("treinei com @fulano")
+    const taggedIn = await Post.find({ tags: me._id, userId: { $ne: me._id }, createdAt: { $gte: since } }).sort({ createdAt: -1 }).limit(20).lean();
+    const tUsers = new Map((await User.find({ _id: { $in: taggedIn.map((p) => p.userId) } }).lean()).map((u) => [String(u._id), u]));
+    for (const p of taggedIn) {
+      const by = tUsers.get(String(p.userId));
+      if (by) items.push({ id: `tag:${p._id}`, type: 'tag', at: p.createdAt, user: publicUser(by), text: p.text, post: { id: String(p._id) } });
+    }
+
     // Menções em comentários de posts de outras pessoas (no próprio post já chega como "comentou")
     const mentions = await Comment.find({ mentions: me._id, userId: { $ne: me._id }, createdAt: { $gte: since } }).sort({ createdAt: -1 }).limit(30).lean();
     const mPosts = new Map((await Post.find({ _id: { $in: mentions.map((c) => c.postId) } }, { userId: 1 }).lean()).map((p) => [String(p._id), p]));
