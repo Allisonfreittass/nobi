@@ -24,7 +24,8 @@ export async function connectDb({ ephemeral = false } = {}) {
     // Nome em variável para o empacotador da Vercel não levar o MongoDB embutido para produção
     const devOnly = 'mongodb-memory-server';
     const { MongoMemoryServer } = await import(devOnly);
-    const instance = {};
+    // Nos testes vários arquivos sobem um banco ao mesmo tempo: o limite padrão de 10 s para iniciar não basta
+    const instance = ephemeral ? { launchTimeout: 60000 } : {};
     if (!ephemeral) {
       const dbPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data');
       fs.mkdirSync(dbPath, { recursive: true });

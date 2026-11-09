@@ -37,17 +37,19 @@ const signup = async (n) => (await call('POST', '/auth/signup', { name: n, email
 
 test('escudo protege o dia perdido e a sequência continua', async () => {
   const { token, me } = await signup('Escudo');
-  // Semana completa há duas semanas (ganha 1 escudo) e sequência até anteontem; ontem sem registro
+  // Semana completa há duas semanas (ganha 1 escudo) e sequência até anteontem; ontem sem registro.
+  // A sequência recente tem 4 dias, não 5: com 5, às segundas e terças eles caem todos na semana passada,
+  // que também ganha escudo (5+ dias ativos) e o saldo final deixa de ser 0.
   const created = new Date(`${addDays(today, -30)}T12:00:00Z`);
   const g = await Goal.create({ ownerId: me.id, title: 'Ler', category: 'leitura', kind: 'daily', createdAt: created });
   const lastWeek = weekStart(addDays(today, -14), 1);
   const dates = new Set([0, 1, 2, 3, 4].map((i) => addDays(lastWeek, i)));
-  for (let i = 2; i <= 6; i++) dates.add(addDays(today, -i));
+  for (let i = 2; i <= 5; i++) dates.add(addDays(today, -i));
   for (const date of dates) await Checkin.create({ goalId: g._id, userId: me.id, date, value: 1 });
 
   const view = (await call('GET', `/goals/${g._id}`, null, token)).body;
   assert.ok(await ShieldUse.exists({ userId: me.id, date: addDays(today, -1) }), 'ontem protegido');
-  assert.equal(view.streak.current, 5, 'sequência não quebrou (ontem conta como descanso)');
+  assert.equal(view.streak.current, 4, 'sequência não quebrou (ontem conta como descanso)');
   const meView = (await call('GET', '/me', null, token)).body;
   assert.deepEqual(meView.shields.protectedDays, [addDays(today, -1)]);
   assert.equal(meView.shields.available, 0, 'o escudo foi usado');
