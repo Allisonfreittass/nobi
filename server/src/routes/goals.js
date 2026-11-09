@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { Goal, Checkin, User, Streak, Post, Comment, Task, Membership, CATEGORIES, KINDS } from '../models/index.js';
+import { Goal, Checkin, User, Streak, Post, Comment, Task, Membership, Club, CATEGORIES, KINDS } from '../models/index.js';
+import { canModerate } from '../services/clubs.js';
 import { deleteImages } from '../services/storage.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
 import { addDays, weekStart, weekday, isDateStr } from '../lib/dates.js';
@@ -73,18 +74,38 @@ goals.post('/', async (req, res) => {
     tasksMigrated: true,
   };
   if (b.shared) {
+    const days = Math.min(Number(b.shared.durationDays) || 0, 120);
+    // Desafio do clube: só a moderação cria; membros entram sozinhos pelo clube, sem convite
+    let club = null;
+    if (b.shared.clubSlug) {
+      club = await Club.findOne({ slug: String(b.shared.clubSlug).toLowerCase() }).lean();
+      if (!club) throw notFound('Clube não encontrado.');
+      if (!canModerate(await Membership.findOne({ clubId: club._id, userId: req.user._id }).lean())) throw forbidden('Só a moderação do clube cria desafios.');
+      if (!days) throw bad('Desafio do clube precisa de duração.');
+    }
     const friends = new Set((await friendIds(req.user._id)).map(String));
     const invite = [...new Set((b.shared.invite || []).map(String))].filter((id) => friends.has(id));
-    if (!invite.length) throw bad('Escolha pelo menos 1 amigo.');
-    const days = Number(b.shared.durationDays) || 0;
+    if (!club && !invite.length) throw bad('Escolha pelo menos 1 amigo.');
+    // Checklist do desafio: cada tarefa feita no dia vale pontos no ranking
+    const tasks = (Array.isArray(b.shared.tasks) ? b.shared.tasks : [])
+      .map((t) => ({ label: String(t?.label || '').trim().replace(/\s+/g, ' ').slice(0, 60), pts: Math.min(50, Math.max(1, Math.round(Number(t?.pts) || 10))) }))
+      .filter((t) => t.label.length >= 2).slice(0, 8)
+      .map((t, i) => ({ key: `t${i + 1}`, ...t }));
+    if (tasks.length && !days) throw bad('Checklist é para desafio com prazo. Escolha a duração.');
+    if (tasks.length && b.kind !== 'daily') throw bad('Desafio com checklist é do tipo Hábito.');
+    if (tasks.length === 1) throw bad('Checklist precisa de pelo menos 2 tarefas (ou nenhuma).');
+    if (tasks.length) doc.target = { amount: 1, unit: '' };
     const season = await currentSeason(req.today);
     doc.shared = {
       mode: b.shared.mode === 'versus' ? 'versus' : 'together',
       participants: [req.user._id],
-      invited: invite,
+      invited: club ? [] : invite,
       startsAt: req.today,
       endsAt: days > 0 ? addDays(req.today, days - 1) : undefined,
       seasonId: season?._id,
+      tasks,
+      clubId: club?._id || null,
+      description: String(b.shared.description || '').trim().slice(0, 280),
     };
   }
   const g = await Goal.create(doc);

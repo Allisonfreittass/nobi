@@ -127,7 +127,17 @@ function Challenges({ club }) {
   const { data, error, reload, setData } = useLoad(`/clubs/${club.slug}/challenges`);
   if (error) return <ErrorNote error={error} onRetry={reload} />;
   if (!data) return <Skeleton height={120} />;
-  if (!data.length) return <p className="t-14 secondary">Nenhum desafio no clube agora. A moderação cria desafios de tempos em tempos.</p>;
+  const create = club.canModerate && (
+    <Link to={`/metas/novo?clube=${club.slug}`} className="btn btn-dark block"><Icon name="plus" size={16} /> Criar desafio do clube</Link>
+  );
+  if (!data.length) {
+    return (
+      <>
+        <p className="t-14 secondary">{club.canModerate ? 'Nenhum desafio no clube agora. Crie um: todo membro pode entrar, e o ranking zera no domingo.' : 'Nenhum desafio no clube agora. A moderação cria desafios de tempos em tempos.'}</p>
+        {create}
+      </>
+    );
+  }
   const [first, ...rest] = data;
   const joined = (id) => setData(data.map((c) => (c.id === id ? { ...c, joined: true, participants: c.participants + 1 } : c)));
   return (
@@ -141,6 +151,7 @@ function Challenges({ club }) {
       </Link>
       {!first.joined && club.member && <ChallengeRow ch={{ ...first, club: null }} onJoined={joined} />}
       {rest.map((ch) => <ChallengeRow key={ch.id} ch={ch} canJoin={club.member} onJoined={joined} />)}
+      {create}
     </>
   );
 }

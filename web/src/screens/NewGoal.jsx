@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BrotoHead } from '../components/Broto.jsx';
 import Icon from '../components/Icon.jsx';
@@ -22,6 +22,41 @@ function NumberStep({ value, onChange, min = 1, max = 999, label }) {
       <button type="button" className="icon-btn" aria-label="Menos" onClick={() => onChange(Math.max(min, value - 1))}><Icon name="minus" /></button>
       <span className="num t-22" style={{ minWidth: 40, textAlign: 'center' }} aria-live="polite">{value}</span>
       <button type="button" className="icon-btn" aria-label="Mais" onClick={() => onChange(Math.min(max, value + 1))}><Icon name="plus" /></button>
+    </div>
+  );
+}
+
+/** Checklist do desafio: tarefas do dia, cada uma com pontos (na Disputa). */
+function ChecklistEditor({ tasks, setTasks, showPoints }) {
+  const [focusLast, setFocusLast] = useState(false);
+  const set = (i, patch) => setTasks((l) => l.map((t, j) => (j === i ? { ...t, ...patch } : t)));
+  const add = () => { setTasks((l) => [...l, { label: '', pts: 10 }]); setFocusLast(true); };
+  return (
+    <div className="stack gap-12">
+      {tasks.map((t, i) => (
+        <div key={i} className="stack gap-6" style={{ paddingBottom: i < tasks.length - 1 ? 12 : 0, borderBottom: i < tasks.length - 1 ? '1px solid var(--nobi-track)' : 'none' }}>
+          <div className="row gap-8">
+            <label className="grow"><span className="sr-only">Tarefa {i + 1}</span>
+              <input className="input" value={t.label} maxLength={60} placeholder={['Ler 20 minutos', 'Treinar', 'Dormir antes das 23h'][i] || `Tarefa ${i + 1}`}
+                autoFocus={focusLast && i === tasks.length - 1} onChange={(e) => set(i, { label: e.target.value })} />
+            </label>
+            <button type="button" className="icon-btn plain" aria-label={`Remover tarefa ${i + 1}`} onClick={() => setTasks((l) => l.filter((_, j) => j !== i))}><Icon name="close" /></button>
+          </div>
+          {showPoints && (
+            <div className="row between" role="group" aria-label={`Pontos da tarefa ${i + 1}`}>
+              <span className="t-13 secondary">Vale no ranking</span>
+              <div className="row gap-4">
+                <button type="button" className="icon-btn plain" aria-label="Menos pontos" disabled={t.pts <= 5} onClick={() => set(i, { pts: Math.max(5, t.pts - 5) })}><Icon name="minus" size={16} /></button>
+                <span className="num t-15" style={{ minWidth: 52, textAlign: 'center' }} aria-live="polite">{t.pts} pts</span>
+                <button type="button" className="icon-btn plain" aria-label="Mais pontos" disabled={t.pts >= 50} onClick={() => set(i, { pts: Math.min(50, t.pts + 5) })}><Icon name="plus" size={16} /></button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+      {tasks.length < 8 && (
+        <button type="button" className="btn btn-soft sm" onClick={add}><Icon name="plus" size={16} /> {tasks.length ? 'Adicionar tarefa' : 'Criar checklist'}</button>
+      )}
     </div>
   );
 }
@@ -58,10 +93,30 @@ export default function NewGoal() {
   const [style, setStyle] = useState('together');
   const [duration, setDuration] = useState(params.get('amigos') ? '30' : '0');
   const [picked, setPicked] = useState([]);
+  const [checklist, setChecklist] = useState([]);
+  const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  // Aberto a partir do clube ("Criar desafio do clube"): desafio para os membros, sem convite
+  const clubSlug = params.get('clube');
+  const [club, setClub] = useState(null);
+  useEffect(() => {
+    if (!clubSlug) return;
+    api(`/clubs/${encodeURIComponent(clubSlug)}`).then((c) => {
+      if (!c.canModerate) return;
+      setClub(c);
+      setMode('amigos');
+      setStyle('versus');
+      setDuration('30');
+      setCategory(c.category === 'projeto' ? 'objetivo' : c.category);
+      setColor(DEFAULT_COLOR[c.category] || color);
+    }).catch(() => {});
+  }, [clubSlug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const withFriends = mode === 'amigos';
+  const isChallenge = withFriends && duration !== '0';
+  const tasksFilled = checklist.filter((t) => t.label.trim().length >= 2);
+  const usesChecklist = isChallenge && kind === 'daily' && tasksFilled.length > 0;
   const pickCategory = (c) => {
     setCategory(c);
     if (Object.values(DEFAULT_COLOR).includes(color)) setColor(DEFAULT_COLOR[c]);
@@ -85,8 +140,10 @@ export default function NewGoal() {
     return `${days.length} ${days.length === 1 ? 'dia' : 'dias'} por semana · conta em dias · descanso não quebra`;
   }, [withFriends, style, kind, amount, days]);
 
-  const cta = withFriends ? (picked.length ? `Criar e convidar ${picked.length}` : 'Escolha pelo menos 1 amigo') : 'Criar objetivo';
-  const canSubmit = title.trim() && days.length && (!withFriends || picked.length);
+  const checklistOk = !usesChecklist || tasksFilled.length >= 2;
+  const cta = club ? 'Criar desafio do clube'
+    : withFriends ? (picked.length ? `Criar e convidar ${picked.length}` : 'Escolha pelo menos 1 amigo') : 'Criar objetivo';
+  const canSubmit = title.trim() && days.length && (!withFriends || club || picked.length) && checklistOk;
 
   async function submit() {
     setBusy(true);
@@ -100,7 +157,11 @@ export default function NewGoal() {
         dueAt: deadline || undefined,
         scheduleTime: kind !== 'project' && scheduleTime ? scheduleTime : undefined,
         tasks: kind === 'project' ? steps.filter((t) => t.title.trim()) : undefined,
-        shared: withFriends ? { mode: style, invite: picked, durationDays: Number(duration) } : undefined,
+        shared: withFriends ? {
+          mode: style, invite: club ? [] : picked, durationDays: Number(duration),
+          tasks: usesChecklist ? tasksFilled.map((t) => ({ label: t.label.trim(), pts: style === 'versus' ? t.pts : 10 })) : undefined,
+          clubSlug: club?.slug, description: isChallenge ? description.trim() || undefined : undefined,
+        } : undefined,
       };
       const g = await api('/goals', { method: 'POST', body });
       invalidateLoad('/goals', '/home');
@@ -121,23 +182,24 @@ export default function NewGoal() {
     <div className="screen no-nav">
       <header className="screen-head">
         <BackButton />
-        <h1 className="title t-20">Novo objetivo</h1>
+        <h1 className="title t-20">{club ? 'Desafio do clube' : 'Novo objetivo'}</h1>
         <span style={{ width: 44 }} />
       </header>
+      {club && <p className="t-15 secondary">Para os membros de <strong>{club.name}</strong>. Quem é do clube entra pela aba Desafios, sem precisar de convite.</p>}
       {params.get('primeiro') && (
         <p className="t-15 secondary">Bem-vindo! Comece com um objetivo. Cada um tem a sua própria sequência.</p>
       )}
 
       <label className="field">
-        <span className="title t-22">O que você quer construir?</span>
+        <span className="title t-22">{club ? 'Nome do desafio' : 'O que você quer construir?'}</span>
         <input className="input" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Ler 20 min por dia" autoFocus />
       </label>
 
-      <Section title="Com quem">
-        <Segmented label="Com quem" options={[['pessoal', 'Pessoal'], ['amigos', 'Com amigos']]} value={mode} onChange={setMode} className="bg-segment" />
+      <Section title={club ? 'Como funciona' : 'Com quem'}>
+        {!club && <Segmented label="Com quem" options={[['pessoal', 'Pessoal'], ['amigos', 'Com amigos']]} value={mode} onChange={setMode} className="bg-segment" />}
         {withFriends && (
           <div className="card stack gap-14">
-            {friends.length === 0 ? (
+            {club ? null : friends.length === 0 ? (
               <p className="t-14 secondary">Você ainda não tem amigos no app. Amigos são pessoas que seguem você e que você segue.</p>
             ) : (
               <ul className="chips" style={{ listStyle: 'none', margin: '0 -16px', padding: '0 16px', gap: 12 }} aria-label="Convidar amigos">
@@ -166,11 +228,28 @@ export default function NewGoal() {
               ))}
             </div>
             <div className="row-group">
-              <SelectRow label="Duração" hint={duration === '0' ? 'objetivo contínuo com amigos' : 'com prazo vira um desafio, com página própria'} value={duration} onChange={setDuration} options={DURATIONS.map(([v, t]) => [v, t === 'Temporada' ? 'Temporada (12 semanas)' : t])} />
+              <SelectRow label="Duração" hint={duration === '0' ? 'objetivo contínuo com amigos' : 'com prazo vira um desafio, com página própria'} value={duration} onChange={setDuration}
+                options={DURATIONS.filter(([v]) => !club || v !== '0').map(([v, t]) => [v, t === 'Temporada' ? 'Temporada (12 semanas)' : t])} />
             </div>
+            {isChallenge && (
+              <label className="field">Sobre o desafio (opcional)
+                <textarea className="textarea" rows={2} maxLength={280} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex.: 30 dias para criar o hábito de ler antes de dormir." />
+              </label>
+            )}
           </div>
         )}
       </Section>
+
+      {isChallenge && kind === 'daily' && (
+        <Section title="Checklist do dia (opcional)"
+          hint={checklist.length === 0
+            ? 'Sem checklist, cada um só marca o dia como feito. Com checklist, cada tarefa conta separado.'
+            : style === 'versus'
+              ? 'Cada tarefa feita no dia soma os pontos dela no ranking da semana. Mínimo de 2 tarefas.'
+              : 'Cada um marca as tarefas que fez no dia. Mínimo de 2 tarefas.'}>
+          <div className="card"><ChecklistEditor tasks={checklist} setTasks={setChecklist} showPoints={style === 'versus'} /></div>
+        </Section>
+      )}
 
       <Section title="Tipo">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }} role="group" aria-label="Tipo">
@@ -192,7 +271,7 @@ export default function NewGoal() {
         </div>
       </Section>
 
-      {kind === 'daily' && (
+      {kind === 'daily' && !usesChecklist && (
         <Section title="Meta por dia" hint={minutes ? `Conta quando somar ${minutes} min no dia.` : 'Só marcar como feito. Ou defina minutos.'}>
           <div className="card row between"><span className="t-15 strong">{minutes ? `${minutes} min` : 'Só marcar'}</span>
             <div className="row gap-6">

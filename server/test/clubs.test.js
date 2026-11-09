@@ -154,3 +154,27 @@ test('grupo privado: amigo recebe convite e decide; link entra só quem toca em 
   assert.equal((await call('POST', `/clubs/link/${fresh}/join`, null, duda.token)).status, 403, 'banido não volta pelo link');
   assert.equal((await call('POST', `/clubs/link/${fresh}/join`, null, edu.token)).body.member, true);
 });
+
+test('desafio com checklist pela interface; desafio de clube só a moderação cria', async () => {
+  const [ana, beto, caio] = await Promise.all([signup('Ana'), signup('Beto'), signup('Caio')]);
+  await call('POST', `/users/${ana.me.username}/invite`, {}, beto.token);
+  const base = { title: 'Semana focada', category: 'objetivo', kind: 'daily', target: { amount: 1, unit: '' } };
+  const tasks = [{ label: 'Ler 20 min', pts: 10 }, { label: '  Treinar  ', pts: 99 }, { label: 'x' }];
+  assert.equal((await call('POST', '/goals', { ...base, shared: { mode: 'versus', invite: [beto.me.id], durationDays: 0, tasks } }, ana.token)).status, 400, 'checklist precisa de prazo');
+  const g = (await call('POST', '/goals', { ...base, shared: { mode: 'versus', invite: [beto.me.id], durationDays: 7, tasks } }, ana.token)).body;
+  assert.deepEqual(g.shared.tasks, [{ key: 't1', label: 'Ler 20 min', pts: 10 }, { key: 't2', label: 'Treinar', pts: 50 }], 'limpa nome, limita pontos, ignora tarefa curta');
+  await call('POST', `/goals/${g.id}/checkins`, { taskKey: 't2' }, ana.token);
+  const after = (await call('GET', `/goals/${g.id}`, null, ana.token)).body;
+  assert.equal(after.shared.ranking.find((r) => r.me).points, 50);
+
+  // Clube aberto: Ana cria e é admin; Caio é membro comum
+  const club = (await call('POST', '/clubs', { kind: 'open', name: `Leitores ${Date.now()}`, category: 'leitura', city: '' }, ana.token)).body;
+  await call('POST', `/clubs/${club.slug}/join`, null, caio.token);
+  const clubCh = { title: 'Maratona de leitura', category: 'leitura', kind: 'daily', target: { amount: 1, unit: '' } };
+  assert.equal((await call('POST', '/goals', { ...clubCh, shared: { mode: 'versus', clubSlug: club.slug, durationDays: 14 } }, caio.token)).status, 403);
+  assert.equal((await call('POST', '/goals', { ...clubCh, shared: { mode: 'versus', clubSlug: club.slug, durationDays: 0 } }, ana.token)).status, 400, 'precisa de duração');
+  const ch = (await call('POST', '/goals', { ...clubCh, shared: { mode: 'versus', clubSlug: club.slug, durationDays: 14 } }, ana.token)).body;
+  const list = (await call('GET', `/clubs/${club.slug}/challenges`, null, caio.token)).body;
+  assert.equal(list[0].id, ch.id);
+  assert.equal((await call('POST', `/goals/${ch.id}/participate`, null, caio.token)).status, 200, 'membro entra sem convite');
+});
