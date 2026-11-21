@@ -16,6 +16,7 @@ import { friendIds, publicUser, blockedIds } from '../services/social.js';
 import { currentSeason } from '../services/seasons.js';
 import { notify, localParts } from '../services/push.js';
 import { ensureShields } from '../services/shields.js';
+import { loadStreakData, resolveGoalMarks, forgetMarks } from '../services/history.js';
 import { social } from '../services/pushMessages.js';
 import { weeklyPoints } from '../services/progress.js';
 
@@ -177,6 +178,8 @@ async function destroyGoal(g, userId) {
     Task.deleteMany({ goalId: g._id }),
   ]);
   await Goal.deleteOne({ _id: g._id });
+  // Os dias com registro mudaram: os escudos ganhos são recontados do histórico
+  await forgetMarks(userId, { goalId: g._id });
 }
 
 // Pessoal: arquiva (padrão) ou exclui de vez (?modo=excluir). Compartilhado: sai do grupo (a posse passa para outra pessoa).
@@ -279,16 +282,21 @@ goals.post('/:id/checkins', async (req, res) => {
 
   // Uma leitura só: objetivos, registros e conquistas do usuário. Antes e depois saem daqui, em memória.
   const uid = req.user._id;
-  const [myGoals, myCheckins, have, season] = await Promise.all([
-    Goal.find(goalsQuery(uid)).lean(),
-    Checkin.find({ userId: uid }).lean(),
+  // Check-ins só da janela recente: o passado vem resumido nos marcos (services/history.js)
+  const [data, have, season] = await Promise.all([
+    loadStreakData([req.user], today).then((m) => m.get(String(uid))),
     ownedCodes(uid),
     currentSeason(today),
   ]);
-  const shields = (await ensureShields(req.user, today)).shieldDates;
-  const before = myCheckins.filter((c) => String(c.goalId) === String(g._id));
-  const sBefore = computeStreak(g, before, today, wso, shields);
-  const summaryBefore = summarize(req.user, myGoals, myCheckins, today);
+  const shields = (await ensureShields(req.user, today, data)).shieldDates;
+  const goalMarks = await resolveGoalMarks(req.user, data, today, shields);
+  const myGoals = data.goals;
+  const myCheckins = data.checkins;
+  // Objetivo fora da lista de ativos (não deveria acontecer): conta com o histórico inteiro
+  const mark = goalMarks.get(String(g._id)) || null;
+  const before = mark ? myCheckins.filter((c) => String(c.goalId) === String(g._id)) : await Checkin.find({ goalId: g._id, userId: uid }).lean();
+  const sBefore = computeStreak(g, before, today, wso, shields, mark);
+  const summaryBefore = summarize(req.user, myGoals, myCheckins, today, goalMarks);
 
   const update = { $inc: { value, minutes, pages, km } };
   if (b.note) update.$set = { note: String(b.note).slice(0, 280) };
@@ -301,7 +309,7 @@ goals.post('/:id/checkins', async (req, res) => {
   const swap = (list) => [...list.filter((c) => String(c._id) !== String(checkin._id)), checkin];
   const after = swap(before);
   const allAfter = swap(myCheckins);
-  const sAfter = computeStreak(g, after, today, wso, shields);
+  const sAfter = computeStreak(g, after, today, wso, shields, mark);
 
   await Promise.all([
     grantXp(uid, `checkin:${g._id}:${today}${taskKey ? `:${taskKey}` : ''}`, XP.checkin, { have }),
@@ -333,7 +341,8 @@ goals.post('/:id/checkins', async (req, res) => {
   }
 
   if (g.shared?.mode === 'versus') {
-    const everyone = await Checkin.find({ goalId: g._id }).lean();
+    // weeklyPoints só soma a semana atual (segunda a domingo)
+    const everyone = await Checkin.find({ goalId: g._id, date: { $gte: weekStart(today, 1) } }).lean();
     const ptsAfter = weeklyPoints(g, everyone, today);
     const ptsBefore = weeklyPoints(g, everyone.filter((c) => String(c._id) !== String(checkin._id)).concat(before.filter((c) => String(c._id) === String(checkin._id))), today);
     const meBefore = ptsBefore.get(String(uid)) || 0;
@@ -347,7 +356,7 @@ goals.post('/:id/checkins', async (req, res) => {
 
   const fresh = await User.findById(uid);
   fresh._shields = req.user._shields;
-  const summaryAfter = summarize(fresh, myGoals, allAfter, today);
+  const summaryAfter = summarize(fresh, myGoals, allAfter, today, goalMarks);
 
   // Conquista em tela cheia só quando a sequência deste objetivo cruza um marco agora
   let celebration = null;

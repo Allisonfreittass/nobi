@@ -1,8 +1,9 @@
 // Monta o que as telas mostram sobre objetivos, sequências e estatísticas. Tudo calculado no servidor.
 import { Goal, Checkin, Post, Streak, User } from '../models/index.js';
-import { computeStreak, computeGroupStreak, todayStatus, streakInDays, needFor } from './streaks.js';
+import { computeStreak, computeGroupStreak, todayStatus, streakInDays, needFor, streakMark } from './streaks.js';
 import { stageFromLevel } from './level.js';
 import { ensureShields, shieldDatesOf } from './shields.js';
+import { loadStreakData, resolveGoalMarks, markFrom } from './history.js';
 import { Task } from '../models/index.js';
 import { migrateMilestones, taskTree, treeProgress, goalStart, goalDue, pacePct, daysLeft } from './tasks.js';
 import { publicUser } from './social.js';
@@ -106,12 +107,13 @@ export function serializeGoal(goal) {
 }
 
 /** Visão completa de um objetivo para um usuário. */
-export async function goalView(goal, user, today, { all, postsCount, tasksByGoal } = {}) {
+/** mark: marco da sequência (com ele, `all` pode trazer só os check-ins recentes). */
+export async function goalView(goal, user, today, { all, postsCount, tasksByGoal, mark } = {}) {
   const wso = weekStartsOn(user);
   const shields = (await ensureShields(user, today)).shieldDates;
   const allCheckins = all ?? (await Checkin.find({ goalId: goal._id }).lean());
   const mine = allCheckins.filter((c) => String(c.userId) === String(user._id));
-  const streak = computeStreak(goal, mine, today, wso, shields);
+  const streak = computeStreak(goal, mine, today, wso, shields, mark);
   const status = todayStatus(goal, mine, today, wso);
   // Etapas (tarefas) do objetivo: progresso do projeto e do ritmo
   await migrateMilestones(goal);
@@ -147,52 +149,63 @@ export async function goalView(goal, user, today, { all, postsCount, tasksByGoal
 
 /** Todos os objetivos ativos do usuário, já com sequência e situação de hoje. */
 export async function userGoals(user, today) {
-  // Escudos e objetivos não dependem um do outro: uma viagem ao banco em vez de duas
-  const [, goals] = await Promise.all([ensureShields(user, today), Goal.find(goalsQuery(user._id)).sort({ createdAt: 1 }).lean()]);
+  // Uma leitura: escudos, objetivos, marcos e só os check-ins recentes (o passado está nos marcos)
+  const data = (await loadStreakData([user], today, { sort: { createdAt: 1 } })).get(String(user._id));
+  const { goals } = data;
   const ids = goals.map((g) => g._id);
-  const [checkins, counts, tasks] = await Promise.all([
-    Checkin.find({ goalId: { $in: ids } }).lean(),
+  // Desafios em grupo precisam dos registros de todo mundo (sequência do grupo, ranking)
+  const sharedIds = goals.filter((g) => g.shared).map((g) => g._id);
+  const [{ shieldDates }, shared, counts, tasks] = await Promise.all([
+    ensureShields(user, today, data),
+    sharedIds.length ? Checkin.find({ goalId: { $in: sharedIds } }).lean() : [],
     Post.aggregate([{ $match: { userId: user._id, goalId: { $in: ids } } }, { $group: { _id: '$goalId', n: { $sum: 1 } } }]),
     Task.find({ goalId: { $in: ids }, userId: user._id }).lean(),
   ]);
+  const marks = await resolveGoalMarks(user, data, today, shieldDates);
   const tasksByGoal = new Map();
   for (const t of tasks) {
     const k = String(t.goalId);
     if (!tasksByGoal.has(k)) tasksByGoal.set(k, []);
     tasksByGoal.get(k).push(t);
   }
+  const isShared = new Set(sharedIds.map(String));
   const byGoal = new Map(ids.map((id) => [String(id), []]));
-  for (const c of checkins) byGoal.get(String(c.goalId))?.push(c);
+  for (const c of data.checkins) if (!isShared.has(String(c.goalId))) byGoal.get(String(c.goalId))?.push(c);
+  for (const c of shared) byGoal.get(String(c.goalId))?.push(c);
   const countBy = new Map(counts.map((c) => [String(c._id), c.n]));
   // Marcos antigos ainda não migrados: deixa goalView buscar as tarefas depois de migrar
   const pendingMigration = new Set(goals.filter((g) => !g.tasksMigrated && g.milestones?.length).map((g) => String(g._id)));
   return Promise.all(goals.map((g) => goalView(g, user, today, {
     all: byGoal.get(String(g._id)),
+    // Nos desafios em grupo os check-ins vêm inteiros: a conta é a do histórico todo
+    mark: g.shared ? null : marks.get(String(g._id)),
     postsCount: countBy.get(String(g._id)) || 0,
     tasksByGoal: pendingMigration.has(String(g._id)) ? null : tasksByGoal,
   })));
 }
 
-/** Resumo leve: só as sequências, para anel de amigos e Broto. */
-export async function streakSummary(user, today) {
-  const [, goals, mine] = await Promise.all([
-    ensureShields(user, today),
-    Goal.find(goalsQuery(user._id)).lean(),
-    Checkin.find({ userId: user._id }).lean(),
-  ]);
-  const ids = new Set(goals.map((g) => String(g._id)));
-  const checkins = mine.filter((c) => ids.has(String(c.goalId)));
-  return summarize(user, goals, checkins, today);
+/**
+ * Resumo leve: só as sequências, para anel de amigos e Broto.
+ * data: o que loadStreakData já leu desta pessoa (o anel lê todos os amigos de uma vez).
+ */
+export async function streakSummary(user, today, data = null) {
+  data = data || (await loadStreakData([user], today)).get(String(user._id));
+  const { shieldDates } = await ensureShields(user, today, data);
+  const marks = await resolveGoalMarks(user, data, today, shieldDates);
+  const ids = new Set(data.goals.map((g) => String(g._id)));
+  const checkins = data.checkins.filter((c) => ids.has(String(c.goalId)));
+  return summarize(user, data.goals, checkins, today, marks);
 }
 
 /** Mesmo resumo, a partir de dados já carregados (sem ir ao banco). */
-export function summarize(user, goals, checkins, today) {
+/** marks: marcos de cada objetivo (aí `checkins` pode trazer só a janela recente). */
+export function summarize(user, goals, checkins, today, marks = null) {
   const wso = weekStartsOn(user);
   let maxActiveDays = 0; // para o Broto dourado (semanas viram 7 dias cada)
   let maxDays = 0; // para mostrar "N dias seguidos" (só objetivos medidos em dias)
   let maxGoal = null;
   for (const g of goals) {
-    const s = computeStreak(g, checkins.filter((c) => String(c.goalId) === String(g._id)), today, wso, user._shields?.shieldDates);
+    const s = computeStreak(g, checkins.filter((c) => String(c.goalId) === String(g._id)), today, wso, user._shields?.shieldDates, marks?.get(String(g._id)));
     maxActiveDays = Math.max(maxActiveDays, streakInDays(s));
     if (s.unit === 'days' && s.current > maxDays) {
       maxDays = s.current;
@@ -206,9 +219,11 @@ export function summarize(user, goals, checkins, today) {
 export async function refreshStreakCache(goal, userId, today, wso = 1) {
   const [mine, shields] = await Promise.all([Checkin.find({ goalId: goal._id, userId }).lean(), shieldDatesOf(userId)]);
   const s = computeStreak(goal, mine, today, wso, shields);
+  // Com o histórico inteiro em mãos, refaz também o marco
+  const mark = streakMark(goal, mine, markFrom(today, wso), wso, shields);
   await Streak.updateOne(
     { goalId: goal._id, userId },
-    { $set: { current: s.current, best: s.best, unit: s.unit, lastDate: s.lastDate } },
+    { $set: { current: s.current, best: s.best, unit: s.unit, lastDate: s.lastDate, mark } },
     { upsert: true },
   );
   return s;
@@ -250,8 +265,14 @@ export function consistency(goals, checkinsByGoal, from, to, today) {
 
 /** Estatísticas do perfil: sequência, consistência, mapa do mês, consistência 12 semanas. */
 export async function profileStats(user, today) {
-  const goals = await Goal.find({ $or: [{ ownerId: user._id, shared: null }, { 'shared.participants': user._id }] }).lean();
-  const checkins = await Checkin.find({ userId: user._id }).lean();
+  // Só o que as contas abaixo olham: 12 semanas + as 12 anteriores, e o mês passado
+  const from12 = addDays(weekStart(today, 1), -7 * 11);
+  const oldest = [addDays(from12, -84), `${addDays(`${today.slice(0, 8)}01`, -1).slice(0, 7)}-01`, addDays(today, -59)].sort()[0];
+  const [goals, checkins, summary] = await Promise.all([
+    Goal.find({ $or: [{ ownerId: user._id, shared: null }, { 'shared.participants': user._id }] }).lean(),
+    Checkin.find({ userId: user._id, date: { $gte: oldest } }).lean(),
+    streakSummary(user, today),
+  ]);
   const byGoal = new Map();
   for (const c of checkins) {
     const k = String(c.goalId);
@@ -259,12 +280,10 @@ export async function profileStats(user, today) {
     byGoal.get(k).push(c);
   }
   const active = goals.filter((g) => !g.archivedAt);
-  const summary = await streakSummary(user, today);
 
   const last30 = consistency(active, byGoal, addDays(today, -29), today, today);
   const prev30 = consistency(active, byGoal, addDays(today, -59), addDays(today, -30), today);
 
-  const from12 = addDays(weekStart(today, 1), -7 * 11);
   const weeks = [];
   for (let w = from12; w <= today; w = addDays(w, 7)) {
     weeks.push({ weekStart: w, pct: consistency(active, byGoal, w, addDays(w, 6) > today ? today : addDays(w, 6), today) });

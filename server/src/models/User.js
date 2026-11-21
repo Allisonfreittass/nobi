@@ -47,6 +47,7 @@ const userSchema = new Schema({
   },
   comebackSeenFor: { type: String, default: '' }, // data do último registro cuja tela de volta já foi vista
   shieldsEarnedSeen: { type: Number, default: 0 }, // quantos escudos ganhos a pessoa já viu (para o aviso)
+  shieldMark: { type: Schema.Types.Mixed }, // cache: escudos ganhos/saldo até uma data (services/history.js)
   timeZone: { type: String, default: 'America/Sao_Paulo' }, // para o lembrete sair no horário de quem usa
   staff: { type: Boolean, default: false }, // Equipe Nobi: modera denúncias e clubes (ou e-mail em STAFF_EMAILS)
   suspendedAt: { type: Date, default: null, index: true }, // conta suspensa pela moderação: não entra e some da descoberta

@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { Goal, Checkin, StravaImport } from '../models/index.js';
 import { bad, HttpError } from '../lib/http.js';
+import { forgetMarks } from '../services/history.js';
 import { refreshStreakCache, weekStartsOn } from '../services/progress.js';
 import { grantXp } from '../services/achievements.js';
 import { XP } from '../services/level.js';
@@ -118,7 +119,11 @@ strava.post('/sync', async (req, res) => {
     await grantXp(user._id, `checkin:${goal._id}:${c.date}`, XP.checkin);
     imported += 1;
   }
-  if (imported) await refreshStreakCache(goal, user._id, req.today, weekStartsOn(user));
+  if (imported) {
+    // Treinos podem cair em dias antigos: refaz os marcos (sequência e escudos) do histórico inteiro
+    await forgetMarks(user._id, { goalId: goal._id });
+    await refreshStreakCache(goal, user._id, req.today, weekStartsOn(user));
+  }
   user.strava.lastSyncAt = new Date();
   user.markModified('strava');
   await user.save();

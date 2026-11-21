@@ -10,6 +10,8 @@ const streakSchema = new Schema({
   best: { type: Number, default: 0 },
   unit: { type: String, enum: ['days', 'weeks'], default: 'days' },
   lastDate: { type: String },
+  // Marco: estado da contagem com tudo antes de mark.from fechado (services/history.js)
+  mark: { type: Schema.Types.Mixed },
 }, { timestamps: true });
 
 streakSchema.index({ goalId: 1, userId: 1 }, { unique: true });

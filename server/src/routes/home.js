@@ -5,6 +5,7 @@ import { friendIds, followingIds, publicUser } from '../services/social.js';
 import { clubSummary, visibleClubFilter } from '../services/clubs.js';
 import { Checkin } from '../models/index.js';
 import { goalsQuery, goalView, streakSummary, userGoals } from '../services/progress.js';
+import { loadStreakData } from '../services/history.js';
 
 export const home = Router();
 
@@ -19,13 +20,15 @@ home.get('/', async (req, res) => {
 
 async function friendsRing(me, today) {
   const ids = await friendIds(me._id);
-  const [friends, posts] = await Promise.all([
+  // Check-ins recentes, objetivos, escudos e marcos de todos os amigos numa leitura só
+  const [friends, posts, data] = await Promise.all([
     User.find({ _id: { $in: ids } }).lean(),
     Post.find({ userId: { $in: ids }, date: today }, { userId: 1 }).lean(),
+    ids.length ? loadStreakData(ids.map((_id) => ({ _id })), today) : new Map(),
   ]);
   const postedToday = new Set(posts.map((p) => String(p.userId)));
   const ring = await Promise.all(friends.map(async (f) => {
-    const s = await streakSummary(f, today);
+    const s = await streakSummary(f, today, data.get(String(f._id)));
     // dourado = sequência ≥ 7; brasa = postou hoje; cinza = não postou (DESIGN.md §8.7)
     const ringState = s.golden ? 'golden' : postedToday.has(String(f._id)) ? 'posted' : 'none';
     return { ...publicUser(f), ring: ringState, streak: s.maxActiveDays };
