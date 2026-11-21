@@ -33,6 +33,11 @@ const loadStarted = () => import('./screens/Started.jsx');
 const loadConnections = () => import('./screens/Connections.jsx');
 const loadWeekly = () => import('./screens/Weekly.jsx');
 const loadComeback = () => import('./screens/Comeback.jsx');
+const loadTreinos = () => import('./screens/treinos/Treinos.jsx');
+const loadTreino = () => import('./screens/treinos/Treino.jsx');
+const loadNovoTreino = () => import('./screens/treinos/NovoTreino.jsx');
+const loadSessao = () => import('./screens/treinos/Sessao.jsx');
+const loadHistorico = () => import('./screens/treinos/Historico.jsx');
 const ResetPassword = lazy(loadResetPassword);
 const Terms = lazy(loadTerms);
 const Privacy = lazy(loadPrivacy);
@@ -57,7 +62,12 @@ const Started = lazy(loadStarted);
 const Connections = lazy(loadConnections);
 const Weekly = lazy(loadWeekly);
 const Comeback = lazy(loadComeback);
-const LAZY = [loadResetPassword, loadTerms, loadCommunity, loadClub, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy, loadConnections, loadWeekly, loadComeback];
+const Treinos = lazy(loadTreinos);
+const Treino = lazy(loadTreino);
+const NovoTreino = lazy(loadNovoTreino);
+const Sessao = lazy(loadSessao);
+const Historico = lazy(loadHistorico);
+const LAZY = [loadResetPassword, loadTerms, loadCommunity, loadClub, loadAchievement, loadNewGoal, loadGoalDetail, loadProfile, loadEditProfile, loadSettings, loadChallenge, loadChallenges, loadNotifications, loadInvite, loadStarted, loadPrivacy, loadConnections, loadWeekly, loadComeback, loadTreinos, loadTreino, loadNovoTreino, loadSessao, loadHistorico];
 function usePrefetch() {
   useEffect(() => {
     const go = () => LAZY.forEach((l) => l().catch(() => {}));
@@ -191,6 +201,8 @@ export default function App() {
         <Route path="/desafios" element={<Challenges />} />
         <Route path="/desafios/:id" element={<Challenge />} />
         <Route path="/notificacoes" element={<Notifications />} />
+        <Route path="/treinos" element={<Treinos />} />
+        <Route path="/treinos/historico" element={<Historico />} />
       </Route>
       <Route element={<Private><Layout nav={false} /></Private>}>
         <Route path="/metas/novo" element={<NewGoal />} />
@@ -202,6 +214,10 @@ export default function App() {
         <Route path="/estante" element={<Shelf />} />
         <Route path="/strava/retorno" element={<StravaReturn />} />
         <Route path="/moderacao" element={<Moderation />} />
+        <Route path="/treinos/novo" element={<NovoTreino />} />
+        <Route path="/treinos/:id" element={<Treino />} />
+        <Route path="/treinos/:id/editar" element={<NovoTreino />} />
+        <Route path="/treinos/:id/sessao" element={<Sessao />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

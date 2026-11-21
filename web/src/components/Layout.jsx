@@ -21,7 +21,8 @@ function BottomNav() {
       <ul className="tabbar-pill">
         {NAV.map((it) => (
           <li key={it.to}>
-            <NavLink to={it.to} end={it.end} className="tab" aria-label={it.label}>
+            <NavLink to={it.to} end={it.end} aria-label={it.label}
+              className={({ isActive }) => `tab ${!isActive && it.to === '/metas' && location.pathname.startsWith('/treinos') ? 'active' : ''}`}>
               <Icon name={it.icon} size={22} />
               <span className="tab-label">{it.label}</span>
             </NavLink>
@@ -102,7 +103,7 @@ function FocusSession() {
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const links = [NAV[0], NAV[1], NAV[2], { to: '/desafios', label: 'Desafios', icon: 'trophy' }, NAV[3]];
+  const links = [NAV[0], NAV[1], NAV[2], { to: '/treinos', label: 'Treinos', icon: 'dumbbell' }, { to: '/desafios', label: 'Desafios', icon: 'trophy' }, NAV[3]];
   return (
     <aside className="sidebar" aria-label="Menu">
       <div style={{ padding: '0 8px 18px' }}><Logo size={34} /></div>

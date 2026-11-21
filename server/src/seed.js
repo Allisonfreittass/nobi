@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { connectDb, disconnectDb, usingEmbeddedDb } from './db.js';
-import { User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription, Club, Membership, Report } from './models/index.js';
+import { User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription, Club, Membership, Report, WorkoutPlan, WorkoutSession } from './models/index.js';
 import { addDays, serverToday, weekStart, weekday } from './lib/dates.js';
 import { currentSeason } from './services/seasons.js';
 import { refreshStreakCache } from './services/progress.js';
@@ -20,7 +20,7 @@ const ago = (n) => addDays(today, -n);
 const minutesAgo = (m) => new Date(Date.now() - m * 60000);
 
 await connectDb();
-await Promise.all([User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription, Club, Membership, Report].map((M) => M.deleteMany({})));
+await Promise.all([User, Goal, Checkin, Post, Comment, Follow, Achievement, Streak, XpGrant, Season, Task, ShieldUse, PushLog, PushSubscription, Club, Membership, Report, WorkoutPlan, WorkoutSession].map((M) => M.deleteMany({})));
 
 const hash = await bcrypt.hash(PASSWORD, 10);
 const mk = (name, username, extra = {}) => User.create({
@@ -107,6 +107,44 @@ const thisWeek = (n) => [0, 1, 2, 3, 4, 5, 6].map((i) => addDays(ws, i)).filter(
 await checkins(treino, rafa, thisWeek(2), 1, { minutes: 50 });
 await checkins(treino, caio, thisWeek(3), 1, { minutes: 45 });
 await checkins(treino, julia, [...thisWeek(3), today], 1, { minutes: 55 });
+
+// Treinos com carga: um programa arquivado (histórico) e um ativo ligado ao "Treinar 4x na semana"
+{
+  const ex = (key, name, sets, reps, load) => ({ key, name, sets, reps, load });
+  const fullBody = await WorkoutPlan.create({
+    userId: rafa._id, name: 'Adaptação Full Body', totalSessions: 12, startedAt: ago(110), completedAt: ago(70), archivedAt: new Date(Date.now() - 69 * 86400000),
+    days: [{ key: 'fb', name: 'Full body', exercises: [ex('fb1', 'Supino reto', 3, '12', 30), ex('fb2', 'Agachamento livre', 3, '12', 40), ex('fb3', 'Remada curvada', 3, '12', 30)] }],
+  });
+  for (let i = 0; i < 12; i++) {
+    const up = Math.floor(i / 3) * 2.5;
+    await WorkoutSession.create({
+      userId: rafa._id, planId: fullBody._id, date: ago(110 - i * 3.5 | 0), dayKey: 'fb', dayName: 'Full body', minutes: 45,
+      exercises: [['fb1', 'Supino reto', 30], ['fb2', 'Agachamento livre', 40], ['fb3', 'Remada curvada', 30]]
+        .map(([key, name, base]) => ({ key, name, sets: [12, 12, 10].map((reps) => ({ reps, load: base + up, done: true })) })),
+    });
+  }
+  const abc = await WorkoutPlan.create({
+    userId: rafa._id, name: 'Hipertrofia ABC', totalSessions: 36, startedAt: ago(40), goalId: treino._id,
+    days: [
+      { key: 'a', name: 'Treino A', exercises: [ex('a1', 'Supino reto', 4, '8-10', 40), ex('a2', 'Supino inclinado halteres', 3, '10', 16), ex('a3', 'Tríceps corda', 3, '12', 20)] },
+      { key: 'b', name: 'Treino B', exercises: [ex('b1', 'Puxada frontal', 4, '10', 45), ex('b2', 'Remada curvada', 3, '10', 40), ex('b3', 'Rosca direta', 3, '12', 12)] },
+      { key: 'c', name: 'Treino C', exercises: [ex('c1', 'Agachamento livre', 4, '8', 60), ex('c2', 'Leg press', 3, '12', 120), ex('c3', 'Elevação lateral', 3, '15', 6)] },
+    ],
+  });
+  const loads = { a1: 40, a2: 16, a3: 20, b1: 45, b2: 40, b3: 12, c1: 60, c2: 120, c3: 6 };
+  for (let i = 0; i < 11; i++) {
+    const day = abc.days[i % 3];
+    const step = Math.floor(i / 3);
+    await WorkoutSession.create({
+      userId: rafa._id, planId: abc._id, date: ago(38 - i * 3), dayKey: day.key, dayName: day.name, minutes: 55,
+      exercises: day.exercises.map((e) => {
+        const load = loads[e.key] + step * (loads[e.key] >= 40 ? 2.5 : 1);
+        return { key: e.key, name: e.name, sets: Array.from({ length: e.sets }, (_, j) => ({ reps: Math.max(6, firstReps(e.reps) - (j === e.sets - 1 ? 2 : 0)), load, done: true })) };
+      }),
+    });
+  }
+}
+function firstReps(r) { return parseInt(r, 10) || 10; }
 
 // Desafio Foco Total: 30 dias, disputa com checklist
 const tasks = [

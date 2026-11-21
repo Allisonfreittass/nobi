@@ -13,6 +13,34 @@ import { useToast } from '../lib/toast.jsx';
 import { api } from '../lib/api.js';
 import { longToday } from '../lib/format.js';
 import { useConfirm } from '../lib/confirm.jsx';
+import { ProgressBar } from '../components/ui.jsx';
+
+/** Treinos ativos na visão Hoje: a divisão do dia e o atalho para registrar as cargas. */
+function TreinoHoje() {
+  const navigate = useNavigate();
+  const { data } = useLoad('/treinos');
+  const plans = (data || []).filter((p) => !p.progress.completed);
+  if (!plans.length) return null;
+  return (
+    <section className="stack gap-8" aria-label="Treino de hoje">
+      <div className="section-head"><h2 className="title t-18">Treino de hoje</h2><Link to="/treinos" className="t-13 strong secondary">Biblioteca</Link></div>
+      <div className="card flush card-list">
+        {plans.slice(0, 3).map((p) => (
+          <div key={p.id} className="list-row">
+            <Link to={`/treinos/${p.id}`} className="grow stack plan-link" style={{ gap: 6, minWidth: 0 }}>
+              <span className="t-15 strong ellipsis">{p.todaySessionId ? `${p.name} · feito hoje` : `${p.next?.name || ''} · ${p.name}`}</span>
+              <ProgressBar value={p.progress.pct} height={6} label={`Progresso de ${p.name}`} />
+              <span className="t-12 muted">{p.progress.done} de {p.progress.total} treinos</span>
+            </Link>
+            {p.todaySessionId
+              ? <span className="check-circle" style={{ background: 'var(--nobi-control-on)', color: '#FFFFFF' }} aria-label="Feito hoje"><Icon name="check" size={16} stroke={2.8} /></span>
+              : p.next && <button type="button" className="btn btn-dark sm" onClick={() => navigate(`/treinos/${p.id}/sessao?dia=${p.next.key}`)}>Treinar</button>}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function Invites({ onJoined }) {
   const { data, setData } = useLoad('/goals/invites');
@@ -105,7 +133,10 @@ export default function Goals() {
           <span className="t-14 secondary">{longToday()}</span>
           <h1 className="title t-30">Metas</h1>
         </div>
-        <Link to="/metas/novo" className="btn btn-dark sm"><Icon name="plus" size={18} /> Novo</Link>
+        <div className="row gap-8">
+          <Link to="/treinos" className="icon-btn" aria-label="Treinos" title="Treinos"><Icon name="dumbbell" size={20} /></Link>
+          <Link to="/metas/novo" className="btn btn-dark sm"><Icon name="plus" size={18} /> Novo</Link>
+        </div>
       </header>
 
       <Segmented label="Período" className="bg-segment" value={view} options={VIEWS}
@@ -119,6 +150,7 @@ export default function Goals() {
         </>
       )}
       {view === 'hoje' && <Hoje key={round} me={me} />}
+      {view === 'hoje' && <TreinoHoje />}
       {view === 'semana' && <Semana me={me} />}
       {view === 'mes' && <Mes me={me} />}
       {view === 'concluidas' && <Concluidas />}

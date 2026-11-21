@@ -22,3 +22,5 @@ export { Task } from './Task.js';
 export { Club } from './Club.js';
 export { Membership } from './Membership.js';
 export { Report } from './Report.js';
+export { WorkoutPlan } from './WorkoutPlan.js';
+export { WorkoutSession } from './WorkoutSession.js';

@@ -86,3 +86,9 @@ Web Push com service worker (`web/public/sw.js`). Funciona no Android e no compu
 
 ### Acessórios do Broto
 - 7 acessórios (DESIGN.md §6): camadas SVG em `web/public/broto/acessorios/` por cima da arte oficial. Três vêm das conquistas de sequência (7, 30 e 100 dias) e quatro são de temporada (21 dias seguidos durante Primavera, Verão, Outono ou Inverno; coleção `collectibles`). Perfil → **Acessórios do Broto** para vestir ou tirar.
+### Treinos com carga (biblioteca de programas)
+- **Programa** (`server/src/models/WorkoutPlan.js`): nome, divisões (Treino A, B…) com exercícios, séries, repetições e carga planejada. Dura um **número de treinos**, não dias no calendário: faltar não "queima" o programa.
+- **Sessão** (`WorkoutSession.js`): uma por programa por dia, com as séries feitas (reps × kg). Salvar de novo no mesmo dia atualiza. A carga sugerida é a da última vez.
+- Ligado a um objetivo, o primeiro treino do dia faz o check-in dele (sequência, XP, Broto) pelo fluxo normal do app.
+- Concluiu o total → **Arquivar** leva ao Histórico: resumo por programa, comparação Antes × Depois (melhor carga por exercício, volume) e evolução de cada exercício em gráfico. Exercícios com o mesmo nome (sem acento/maiúscula) são o mesmo entre programas.
+- Rotas em `/api/treinos`; regras puras em `server/src/services/workouts.js` (testadas em `test/workouts.test.js`). Telas em `web/src/screens/treinos/`, com entrada pela aba Metas (ícone de haltere e "Treino de hoje").
