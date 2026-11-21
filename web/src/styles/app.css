@@ -657,11 +657,6 @@ a.card.plan-link { transition: box-shadow var(--nobi-dur-fast); }
 .num-inline { display: inline-flex; width: 96px; }
 .num-inline .num-field-label { display: none; }
 .exercise-edit + .exercise-edit { padding-top: 12px; border-top: 1px solid var(--nobi-track); }
-.set-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.set-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1.3fr) 30px; gap: 10px; align-items: end; }
-.set-row .check-circle { margin-bottom: 7px; }
-.set-index { font-weight: 700; color: var(--nobi-text-muted); font-variant-numeric: tabular-nums; padding-bottom: 12px; text-align: center; }
-.set-row.done .num-field-box { background: var(--nobi-bg); box-shadow: none; }
 .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .stat-row > div { display: flex; flex-direction: column; gap: 2px; }
 .compare-table { width: 100%; border-collapse: collapse; font-size: var(--nobi-text-sm); }
@@ -687,5 +682,70 @@ a.card.plan-link { transition: box-shadow var(--nobi-dur-fast); }
 :root[data-theme='dark'] .chart-tip { background: var(--nobi-creme); color: var(--nobi-tinta); }
 
 .card.flush > .select-row { padding: 6px 16px; }
-.set-row + .set-row .num-field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .plan-plate { width: 44px; height: 44px; color: var(--nobi-tinta); }
+
+/* Registro do treino: lista de exercícios em sanfona, um aberto por vez */
+.screen.session-screen { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+.session-top { position: sticky; top: env(safe-area-inset-top); z-index: 6; margin: 0 -20px; padding: 8px 20px 10px; background: var(--nobi-bg); display: flex; flex-direction: column; gap: 8px; }
+.session-top-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.session-title { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.session-title > * { max-width: 100%; }
+.session-timer { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px; border-radius: 16px; background: var(--nobi-card); box-shadow: inset 0 0 0 1px var(--nobi-border); font-size: var(--nobi-text-sm); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.session-progress { height: 6px; border-radius: 3px; background: var(--nobi-track); overflow: hidden; }
+.session-progress > span { display: block; height: 100%; border-radius: 3px; background: var(--nobi-brasa); transition: width var(--nobi-dur-toggle) var(--nobi-ease-out); }
+.session-count { text-align: center; }
+.day-chips .chip { max-width: 180px; }
+.day-chips .chip > .ellipsis { display: block; min-width: 0; }
+.ex-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ex-item { scroll-margin-top: calc(130px + env(safe-area-inset-top)); background: var(--nobi-card); border-radius: var(--nobi-radius-card); box-shadow: var(--nobi-shadow-card); overflow: hidden; }
+.ex-item.open { box-shadow: var(--nobi-shadow-card), inset 0 0 0 2px var(--nobi-text); }
+.ex-head { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border: none; background: transparent; text-align: left; color: inherit; cursor: pointer; }
+.ex-badge { width: 32px; height: 32px; flex-shrink: 0; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--nobi-text-sm); background: var(--nobi-track); color: var(--nobi-text-secondary); font-variant-numeric: tabular-nums; }
+.ex-item.complete .ex-badge { background: var(--nobi-success); color: #FFFFFF; }
+.ex-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ex-name { font-weight: 700; font-size: var(--nobi-text-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-item.open .ex-name { white-space: normal; overflow-wrap: anywhere; }
+.ex-sub { font-size: var(--nobi-text-sm); color: var(--nobi-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-item.complete:not(.open) .ex-name { color: var(--nobi-text-secondary); }
+.ex-chevron { color: var(--nobi-text-muted); transform: rotate(90deg); transition: transform var(--nobi-dur-fast); flex-shrink: 0; }
+.ex-item.open .ex-chevron { transform: rotate(-90deg); }
+.ex-body { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px; }
+.set-table { display: flex; flex-direction: column; gap: 6px; }
+.set-line { display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1.25fr) 46px; gap: 8px; align-items: center; }
+.set-header { font-size: var(--nobi-text-xs); font-weight: 600; color: var(--nobi-text-muted); }
+.set-header > span:first-child { text-align: center; }
+.set-n { text-align: center; font-weight: 700; color: var(--nobi-text-muted); font-variant-numeric: tabular-nums; }
+.set-input { display: flex; align-items: center; gap: 4px; height: 46px; padding: 0 12px; border-radius: 12px; background: var(--nobi-bg); box-shadow: inset 0 0 0 1.5px var(--nobi-border); transition: box-shadow var(--nobi-dur-fast), background var(--nobi-dur-fast); }
+.set-input:focus-within { box-shadow: inset 0 0 0 2px var(--nobi-text); background: var(--nobi-card); }
+.set-input input { width: 100%; min-width: 0; border: none; background: transparent; padding: 0; font-size: var(--nobi-text-lg); font-weight: 700; font-variant-numeric: tabular-nums; color: inherit; }
+.set-input input:focus { outline: none; }
+.set-input > span { font-size: var(--nobi-text-sm); font-weight: 600; color: var(--nobi-text-muted); }
+.set-line.done .set-input { box-shadow: none; background: color-mix(in srgb, var(--nobi-success) 12%, transparent); }
+.set-check { width: 46px; height: 46px; border-radius: 14px; border: none; display: inline-flex; align-items: center; justify-content: center; background: var(--nobi-bg); color: var(--nobi-text-muted); box-shadow: inset 0 0 0 1.5px var(--nobi-border); cursor: pointer; transition: background var(--nobi-dur-fast), color var(--nobi-dur-fast); }
+.set-check.on { background: var(--nobi-success); color: #FFFFFF; box-shadow: none; }
+.session-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--nobi-bg) 70%, transparent); }
+.session-bottom > * { max-width: 520px; margin: 0 auto; }
+@media (min-width: 1024px) {
+  .session-bottom { position: sticky; margin: 0 -20px; }
+}
+
+/* Programa de treino: cabeçalho na cor de Treino, nomes longos quebram sem estourar */
+.plan-hero { background: var(--nobi-brasa); color: var(--nobi-tinta); }
+.plan-name { overflow-wrap: anywhere; }
+.plan-card-name { overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.plan-stats { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.plan-stats > div { display: flex; flex-direction: column; gap: 0; }
+.plan-stats .num { line-height: 1; }
+.plan-bar { height: 8px; border-radius: 4px; background: rgba(20, 18, 24, 0.18); overflow: hidden; }
+.plan-bar > span { display: block; height: 100%; border-radius: 4px; background: var(--nobi-tinta); }
+.plan-meta { opacity: 0.85; overflow-wrap: anywhere; }
+.cta-ellipsis { min-width: 0; overflow: hidden; }
+.cta-ellipsis > .ellipsis { min-width: 0; }
+.chip-dot { width: 7px; height: 7px; border-radius: 4px; background: var(--nobi-brasa); flex-shrink: 0; }
+.plan-card { display: flex; flex-direction: column; gap: 14px; }
+.plan-card-top { display: flex; gap: 14px; align-items: center; color: inherit; text-decoration: none; min-width: 0; }
+.plan-ring { position: relative; flex-shrink: 0; }
+.plan-ring > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--nobi-text-sm); font-variant-numeric: tabular-nums; }
+.plan-next { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--nobi-bg); min-width: 0; }
+.list-row:disabled { cursor: default; opacity: 1; }
+.compare-table thead th { overflow-wrap: anywhere; max-width: 120px; vertical-align: bottom; }

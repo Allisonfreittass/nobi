@@ -44,11 +44,14 @@ async function challengeCard(g, user, today) {
 // --- Comunidade: Clubes e Desafios ---
 community.get('/', async (req, res) => {
   const me = req.user;
-  const friends = await friendIds(me._id);
-  const visible = await visibleClubFilter(me._id);
-  const mine = await Membership.find({ userId: me._id, status: 'active' }).lean();
+  // Consultas independentes saem juntas: cada ida ao banco custa uma viagem de rede
+  const [friends, visible, mine] = await Promise.all([
+    friendIds(me._id),
+    visibleClubFilter(me._id),
+    Membership.find({ userId: me._id, status: 'active' }).lean(),
+  ]);
   const myClubs = await Club.find({ _id: { $in: mine.map((m) => m.clubId) } }).lean();
-  const myCards = await Promise.all(myClubs.map(async (c) => {
+  const myCardsP = Promise.all(myClubs.map(async (c) => {
     const seen = mine.find((m) => String(m.clubId) === String(c._id))?.lastSeenAt || new Date(0);
     const chatSeen = mine.find((m) => String(m.clubId) === String(c._id))?.chatSeenAt || new Date(0);
     const [summary, newPosts, active, newMessages] = await Promise.all([
@@ -61,14 +64,18 @@ community.get('/', async (req, res) => {
   }));
 
   // Perto de você: mesma cidade ou mesma região das cidades conhecidas
-  let nearby = { label: null, clubs: [] };
-  if (me.city) {
+  const nearbyP = (async () => {
+    if (!me.city) return { label: null, clubs: [] };
     const sameCity = await Club.find({ ...visible, city: me.city }).lean();
     const regions = [...new Set(sameCity.map((c) => c.region).filter(Boolean))];
     const list = await Club.find({ ...visible, $or: [{ city: me.city }, ...(regions.length ? [{ region: { $in: regions } }] : [])] }).limit(12).lean();
-    nearby = { label: regions[0] || me.city, clubs: await Promise.all(list.map((c) => clubSummary(c, { userId: me._id, friends }))) };
-  }
-  const interests = await Club.aggregate([{ $match: { kind: { $in: ['official', 'open'] } } }, { $group: { _id: { interest: '$interest', category: '$category' }, n: { $sum: 1 } } }, { $sort: { n: -1 } }]);
+    return { label: regions[0] || me.city, clubs: await Promise.all(list.map((c) => clubSummary(c, { userId: me._id, friends }))) };
+  })();
+  const [myCards, nearby, interests] = await Promise.all([
+    myCardsP,
+    nearbyP,
+    Club.aggregate([{ $match: { kind: { $in: ['official', 'open'] } } }, { $group: { _id: { interest: '$interest', category: '$category' }, n: { $sum: 1 } } }, { $sort: { n: -1 } }]),
+  ]);
   res.json({
     myClubs: myCards,
     nearby,

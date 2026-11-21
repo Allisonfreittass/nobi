@@ -25,11 +25,11 @@ export async function visibleClubFilter(userId) {
 }
 
 export async function clubSummary(club, { userId, friends = [] } = {}) {
-  const [membersCount, mine] = await Promise.all([
+  const [membersCount, mine, friendsIn] = await Promise.all([
     Membership.countDocuments({ clubId: club._id, status: 'active' }),
     userId ? membershipOf(club._id, userId) : null,
+    friends.length ? Membership.countDocuments({ clubId: club._id, status: 'active', userId: { $in: friends } }) : 0,
   ]);
-  const friendsIn = friends.length ? await Membership.countDocuments({ clubId: club._id, status: 'active', userId: { $in: friends } }) : 0;
   return {
     id: String(club._id),
     slug: club.slug,

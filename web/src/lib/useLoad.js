@@ -4,12 +4,33 @@ import { api } from './api.js';
 // Memória das telas: mostra na hora o que já foi carregado e atualiza por trás.
 // Fica só na memória da aba (some ao fechar) e é limpa ao entrar ou sair da conta.
 const cache = new Map();
-export const clearLoadCache = () => cache.clear();
+const inflight = new Map(); // path -> Promise: duas telas pedindo o mesmo endpoint dividem a mesma requisição
+export const clearLoadCache = () => { cache.clear(); inflight.clear(); };
 const subscribers = new Map(); // path -> Set(setState) para atualizar telas abertas
+
+/** Busca (ou reaproveita a busca em andamento), guarda na memória e avisa as telas abertas. */
+function fetchShared(path) {
+  if (inflight.has(path)) return inflight.get(path);
+  const p = api(path).then((d) => {
+    // Invalidada enquanto buscava (ex.: logo depois de um registro): não grava a resposta velha
+    if (inflight.get(path) === p) {
+      cache.set(path, d);
+      subscribers.get(path)?.forEach((fn) => fn(d));
+    }
+    return d;
+  }).finally(() => { if (inflight.get(path) === p) inflight.delete(path); });
+  inflight.set(path, p);
+  return p;
+}
+
+/** Adianta dados de uma tela (ex.: junto com o /me na abertura do app). Erros ficam para a tela tratar. */
+export function prefetchLoad(...paths) {
+  for (const path of paths) if (!cache.has(path)) fetchShared(path).catch(() => {});
+}
 
 /** Esquece telas que mudaram, para a próxima abertura buscar de novo. */
 export function invalidateLoad(...paths) {
-  for (const p of paths) cache.delete(p);
+  for (const p of paths) { cache.delete(p); inflight.delete(p); }
 }
 
 /** Depois de um registro: troca o objetivo na lista e marca as telas que dependem dele. */
@@ -64,8 +85,7 @@ export function useLoad(path, { skip = false } = {}) {
     if (!cache.has(path)) setLoading(true);
     setError(null);
     try {
-      const d = await api(path);
-      cache.set(path, d);
+      const d = await fetchShared(path);
       if (alive.current) setDataState(d);
     } catch (e) {
       if (alive.current && !cache.has(path)) setError(e);

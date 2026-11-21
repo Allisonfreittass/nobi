@@ -147,8 +147,8 @@ export async function goalView(goal, user, today, { all, postsCount, tasksByGoal
 
 /** Todos os objetivos ativos do usuário, já com sequência e situação de hoje. */
 export async function userGoals(user, today) {
-  await ensureShields(user, today);
-  const goals = await Goal.find(goalsQuery(user._id)).sort({ createdAt: 1 }).lean();
+  // Escudos e objetivos não dependem um do outro: uma viagem ao banco em vez de duas
+  const [, goals] = await Promise.all([ensureShields(user, today), Goal.find(goalsQuery(user._id)).sort({ createdAt: 1 }).lean()]);
   const ids = goals.map((g) => g._id);
   const [checkins, counts, tasks] = await Promise.all([
     Checkin.find({ goalId: { $in: ids } }).lean(),
@@ -175,9 +175,13 @@ export async function userGoals(user, today) {
 
 /** Resumo leve: só as sequências, para anel de amigos e Broto. */
 export async function streakSummary(user, today) {
-  await ensureShields(user, today);
-  const goals = await Goal.find(goalsQuery(user._id)).lean();
-  const checkins = await Checkin.find({ userId: user._id, goalId: { $in: goals.map((g) => g._id) } }).lean();
+  const [, goals, mine] = await Promise.all([
+    ensureShields(user, today),
+    Goal.find(goalsQuery(user._id)).lean(),
+    Checkin.find({ userId: user._id }).lean(),
+  ]);
+  const ids = new Set(goals.map((g) => String(g._id)));
+  const checkins = mine.filter((c) => ids.has(String(c.goalId)));
   return summarize(user, goals, checkins, today);
 }
 

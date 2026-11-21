@@ -11,22 +11,35 @@ export const home = Router();
 /** Topo do feed: anel dos amigos e desafio ativo. */
 home.get('/', async (req, res) => {
   const me = req.user;
+  // Três partes independentes (anel, desafio, pendências) saem juntas
+  const [ring, challenge, goals] = await Promise.all([friendsRing(me, req.today), activeChallenge(me, req.today), userGoals(me, req.today)]);
+  const dueToday = goals.filter((g) => g.status.activeToday && g.kind !== 'project' && !g.status.periodDone);
+  res.json({ ring, challenge, pendingToday: dueToday.length, goalsToday: goals.length });
+});
+
+async function friendsRing(me, today) {
   const ids = await friendIds(me._id);
-  const friends = await User.find({ _id: { $in: ids } }).lean();
-  const postedToday = new Set((await Post.find({ userId: { $in: ids }, date: req.today }, { userId: 1 }).lean()).map((p) => String(p.userId)));
+  const [friends, posts] = await Promise.all([
+    User.find({ _id: { $in: ids } }).lean(),
+    Post.find({ userId: { $in: ids }, date: today }, { userId: 1 }).lean(),
+  ]);
+  const postedToday = new Set(posts.map((p) => String(p.userId)));
   const ring = await Promise.all(friends.map(async (f) => {
-    const s = await streakSummary(f, req.today);
+    const s = await streakSummary(f, today);
     // dourado = sequência ≥ 7; brasa = postou hoje; cinza = não postou (DESIGN.md §8.7)
     const ringState = s.golden ? 'golden' : postedToday.has(String(f._id)) ? 'posted' : 'none';
     return { ...publicUser(f), ring: ringState, streak: s.maxActiveDays };
   }));
   const order = { golden: 0, posted: 1, none: 2 };
   ring.sort((a, b) => order[a.ring] - order[b.ring] || b.streak - a.streak);
+  return ring;
+}
 
-  const challenges = await Goal.find({ ...goalsQuery(me._id), 'shared.endsAt': { $gte: req.today } }).sort({ 'shared.endsAt': 1 }).lean();
+async function activeChallenge(me, today) {
+  const first = await Goal.findOne({ ...goalsQuery(me._id), 'shared.endsAt': { $gte: today } }).sort({ 'shared.endsAt': 1 }).lean();
   let challenge = null;
-  if (challenges.length) {
-    const v = await goalView(challenges[0], me, req.today);
+  if (first) {
+    const v = await goalView(first, me, today);
     challenge = { id: v.id, title: v.title, day: v.shared.day, totalDays: v.shared.totalDays, mode: v.shared.mode, color: v.color };
     if (v.shared.ranking) {
       const mine = v.shared.ranking.find((r) => r.me);
@@ -40,10 +53,8 @@ home.get('/', async (req, res) => {
       challenge.participantsCount = v.shared.participants.length;
     }
   }
-  const goals = await userGoals(me, req.today);
-  const dueToday = goals.filter((g) => g.status.activeToday && g.kind !== 'project' && !g.status.periodDone);
-  res.json({ ring, challenge, pendingToday: dueToday.length, goalsToday: goals.length });
-});
+  return challenge;
+}
 
 /**
  * "Primeiros passos" de quem chegou: objetivo, primeiro registro, seguir gente, entrar num clube, chamar um amigo.
@@ -101,118 +112,126 @@ home.get('/notifications', async (req, res) => {
   const items = [];
   const since = new Date(Date.now() - 14 * 86400000);
 
-  const requests = await Follow.find({ followeeId: me._id, status: 'pending' }).lean();
-  const reqUsers = await User.find({ _id: { $in: requests.map((r) => r.followerId) } }).lean();
-  const ru = new Map(reqUsers.map((u) => [String(u._id), u]));
-  for (const r of requests) {
-    const u = ru.get(String(r.followerId));
-    if (u) items.push({ id: `follow:${r._id}`, type: 'follow-request', at: r.createdAt, user: publicUser(u), requestId: String(r._id) });
-  }
-
-  // Convites de sequência a dois (aparecem sempre)
-  const pairInvites = await Pair.find({ users: me._id, status: 'pending', invitedBy: { $ne: me._id } }).lean();
-  const pu2 = new Map((await User.find({ _id: { $in: pairInvites.map((p) => p.invitedBy) } }).lean()).map((u) => [String(u._id), u]));
-  for (const p of pairInvites) {
-    const by = pu2.get(String(p.invitedBy));
-    if (by) items.push({ id: `pair:${p._id}`, type: 'pair-invite', at: p.createdAt, user: publicUser(by), pairId: String(p._id) });
-  }
-
-  // Convites de leitura em dupla
-  const bookInvites = await Book.find({ userId: me._id, status: 'invited' }).lean();
-  const bu = new Map((await User.find({ _id: { $in: bookInvites.map((b) => b.invitedBy) } }).lean()).map((u) => [String(u._id), u]));
-  for (const b of bookInvites) {
-    const by = bu.get(String(b.invitedBy));
-    if (by) items.push({ id: `book:${b._id}`, type: 'book-invite', at: b.createdAt, user: publicUser(by), book: { id: String(b._id), title: b.title } });
-  }
-
-  // Convites para grupos privados: aparecem sempre, como pedidos para seguir
-  const groupInvites = await Membership.find({ userId: me._id, status: 'invited' }).lean();
-  if (groupInvites.length) {
-    const [gClubs, gUsers] = await Promise.all([
-      Club.find({ _id: { $in: groupInvites.map((m) => m.clubId) } }).lean(),
-      User.find({ _id: { $in: groupInvites.map((m) => m.invitedBy).filter(Boolean) } }).lean(),
-    ]);
-    const gc = new Map(gClubs.map((c) => [String(c._id), c]));
-    const gu = new Map(gUsers.map((u) => [String(u._id), u]));
-    for (const m of groupInvites) {
-      const c = gc.get(String(m.clubId));
-      if (!c) continue;
-      const by = gu.get(String(m.invitedBy));
-      items.push({ id: `group:${m._id}`, type: 'group-invite', at: m.joinedAt, user: by ? publicUser(by) : null, club: { slug: c.slug, name: c.name, category: c.category } });
-    }
-  }
-
-  if (me.prefs.notify.challenges) {
-    // Cutucadas de hoje e ontem (as de dias passados perdem o sentido)
-    const nudges = await Nudge.find({ toId: me._id, date: { $gte: addDays(req.today, -1) } }).sort({ createdAt: -1 }).limit(20).lean();
-    const [nUsers, nGoals] = await Promise.all([
-      User.find({ _id: { $in: nudges.map((n) => n.fromId) } }).lean(),
-      Goal.find({ _id: { $in: nudges.map((n) => n.goalId) } }, { title: 1, shared: 1 }).lean(),
-    ]);
-    const nu = new Map(nUsers.map((u) => [String(u._id), u]));
-    const ng = new Map(nGoals.map((x) => [String(x._id), x]));
-    for (const n of nudges) {
-      const by = nu.get(String(n.fromId));
-      if (by && n.pairId) { items.push({ id: `nudge:${n._id}`, type: 'pair-nudge', at: n.createdAt, user: publicUser(by) }); continue; }
-      const goal = ng.get(String(n.goalId));
-      if (!by || !goal) continue;
-      items.push({ id: `nudge:${n._id}`, type: 'nudge', at: n.createdAt, user: publicUser(by), goal: { id: String(goal._id), title: goal.title, challenge: Boolean(goal.shared?.endsAt) } });
-    }
-
-    const invites = await Goal.find({ 'shared.invited': me._id, archivedAt: null }).lean();
-    const owners = await User.find({ _id: { $in: invites.map((g) => g.ownerId) } }).lean();
-    const ow = new Map(owners.map((u) => [String(u._id), u]));
-    for (const g of invites) {
-      items.push({ id: `invite:${g._id}`, type: 'invite', at: g.updatedAt, user: publicUser(ow.get(String(g.ownerId))), goal: { id: String(g._id), title: g.title, mode: g.shared.mode } });
-    }
-  }
-
-  if (me.prefs.notify.social) {
-    const mine = await Post.find({ userId: me._id, updatedAt: { $gte: since } }).lean();
-    const reactorIds = mine.flatMap((p) => p.reactions.filter((r) => String(r.userId) !== String(me._id) && r.at >= since).map((r) => r.userId));
-    const comments = await Comment.find({ postId: { $in: mine.map((p) => p._id) }, userId: { $ne: me._id }, createdAt: { $gte: since } }).lean();
-    const people = await User.find({ _id: { $in: [...reactorIds, ...comments.map((c) => c.userId)] } }).lean();
-    const pu = new Map(people.map((u) => [String(u._id), u]));
-    for (const p of mine) {
-      for (const r of p.reactions) {
-        if (String(r.userId) === String(me._id) || !(r.at >= since) || !pu.get(String(r.userId))) continue;
-        items.push({ id: `boa:${p._id}:${r.userId}`, type: 'reaction', at: r.at, user: publicUser(pu.get(String(r.userId))), post: { id: String(p._id), title: p.title } });
+  // Cada tipo de aviso é independente: buscam todos ao mesmo tempo
+  await Promise.all([
+    (async () => {
+      const requests = await Follow.find({ followeeId: me._id, status: 'pending' }).lean();
+      const reqUsers = await User.find({ _id: { $in: requests.map((r) => r.followerId) } }).lean();
+      const ru = new Map(reqUsers.map((u) => [String(u._id), u]));
+      for (const r of requests) {
+        const u = ru.get(String(r.followerId));
+        if (u) items.push({ id: `follow:${r._id}`, type: 'follow-request', at: r.createdAt, user: publicUser(u), requestId: String(r._id) });
       }
-    }
-    for (const c of comments) {
-      if (!pu.get(String(c.userId))) continue;
-      items.push({ id: `comment:${c._id}`, type: 'comment', at: c.createdAt, user: publicUser(pu.get(String(c.userId))), text: c.text, post: { id: String(c.postId) } });
-    }
-
-    // Marcações em posts ("treinei com @fulano")
-    const taggedIn = await Post.find({ tags: me._id, userId: { $ne: me._id }, createdAt: { $gte: since } }).sort({ createdAt: -1 }).limit(20).lean();
-    const tUsers = new Map((await User.find({ _id: { $in: taggedIn.map((p) => p.userId) } }).lean()).map((u) => [String(u._id), u]));
-    for (const p of taggedIn) {
-      const by = tUsers.get(String(p.userId));
-      if (by) items.push({ id: `tag:${p._id}`, type: 'tag', at: p.createdAt, user: publicUser(by), text: p.text, post: { id: String(p._id) } });
-    }
-
-    // Menções em comentários de posts de outras pessoas (no próprio post já chega como "comentou")
-    const mentions = await Comment.find({ mentions: me._id, userId: { $ne: me._id }, createdAt: { $gte: since } }).sort({ createdAt: -1 }).limit(30).lean();
-    const mPosts = new Map((await Post.find({ _id: { $in: mentions.map((c) => c.postId) } }, { userId: 1 }).lean()).map((p) => [String(p._id), p]));
-    const mUsers = new Map((await User.find({ _id: { $in: [...mentions.map((c) => c.userId), ...[...mPosts.values()].map((p) => p.userId)] } }).lean()).map((u) => [String(u._id), u]));
-    for (const c of mentions) {
-      const p = mPosts.get(String(c.postId));
-      const by = mUsers.get(String(c.userId));
-      if (!p || !by || String(p.userId) === String(me._id)) continue;
-      items.push({ id: `mention:${c._id}`, type: 'mention', at: c.createdAt, user: publicUser(by), text: c.text, post: { id: String(c.postId), author: mUsers.get(String(p.userId))?.username || null } });
-    }
-  }
-
-  if (me.prefs.notify.checkin && req.localTime && req.localTime >= me.prefs.reminderTime) {
-    const goals = await userGoals(me, req.today);
-    const left = goals.filter((g) => g.status.activeToday && g.kind !== 'project' && !g.status.periodDone);
-    if (left.length) {
-      const [h, m] = me.prefs.reminderTime.split(':').map(Number);
-      const at = new Date(`${req.today}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
-      items.push({ id: `reminder:${req.today}`, type: 'reminder', at, count: left.length, titles: left.slice(0, 3).map((g) => g.title) });
-    }
-  }
+    })(),
+    (async () => {
+      // Convites de sequência a dois (aparecem sempre)
+      const pairInvites = await Pair.find({ users: me._id, status: 'pending', invitedBy: { $ne: me._id } }).lean();
+      const pu2 = new Map((await User.find({ _id: { $in: pairInvites.map((p) => p.invitedBy) } }).lean()).map((u) => [String(u._id), u]));
+      for (const p of pairInvites) {
+        const by = pu2.get(String(p.invitedBy));
+        if (by) items.push({ id: `pair:${p._id}`, type: 'pair-invite', at: p.createdAt, user: publicUser(by), pairId: String(p._id) });
+      }
+    })(),
+    (async () => {
+      // Convites de leitura em dupla
+      const bookInvites = await Book.find({ userId: me._id, status: 'invited' }).lean();
+      const bu = new Map((await User.find({ _id: { $in: bookInvites.map((b) => b.invitedBy) } }).lean()).map((u) => [String(u._id), u]));
+      for (const b of bookInvites) {
+        const by = bu.get(String(b.invitedBy));
+        if (by) items.push({ id: `book:${b._id}`, type: 'book-invite', at: b.createdAt, user: publicUser(by), book: { id: String(b._id), title: b.title } });
+      }
+    })(),
+    (async () => {
+      // Convites para grupos privados: aparecem sempre, como pedidos para seguir
+      const groupInvites = await Membership.find({ userId: me._id, status: 'invited' }).lean();
+      if (groupInvites.length) {
+        const [gClubs, gUsers] = await Promise.all([
+          Club.find({ _id: { $in: groupInvites.map((m) => m.clubId) } }).lean(),
+          User.find({ _id: { $in: groupInvites.map((m) => m.invitedBy).filter(Boolean) } }).lean(),
+        ]);
+        const gc = new Map(gClubs.map((c) => [String(c._id), c]));
+        const gu = new Map(gUsers.map((u) => [String(u._id), u]));
+        for (const m of groupInvites) {
+          const c = gc.get(String(m.clubId));
+          if (!c) continue;
+          const by = gu.get(String(m.invitedBy));
+          items.push({ id: `group:${m._id}`, type: 'group-invite', at: m.joinedAt, user: by ? publicUser(by) : null, club: { slug: c.slug, name: c.name, category: c.category } });
+        }
+      }
+    })(),
+    me.prefs.notify.challenges && (async () => {
+      // Cutucadas de hoje e ontem (as de dias passados perdem o sentido)
+      const nudges = await Nudge.find({ toId: me._id, date: { $gte: addDays(req.today, -1) } }).sort({ createdAt: -1 }).limit(20).lean();
+      const [nUsers, nGoals] = await Promise.all([
+        User.find({ _id: { $in: nudges.map((n) => n.fromId) } }).lean(),
+        Goal.find({ _id: { $in: nudges.map((n) => n.goalId) } }, { title: 1, shared: 1 }).lean(),
+      ]);
+      const nu = new Map(nUsers.map((u) => [String(u._id), u]));
+      const ng = new Map(nGoals.map((x) => [String(x._id), x]));
+      for (const n of nudges) {
+        const by = nu.get(String(n.fromId));
+        if (by && n.pairId) { items.push({ id: `nudge:${n._id}`, type: 'pair-nudge', at: n.createdAt, user: publicUser(by) }); continue; }
+        const goal = ng.get(String(n.goalId));
+        if (!by || !goal) continue;
+        items.push({ id: `nudge:${n._id}`, type: 'nudge', at: n.createdAt, user: publicUser(by), goal: { id: String(goal._id), title: goal.title, challenge: Boolean(goal.shared?.endsAt) } });
+      }
+    })(),
+    me.prefs.notify.challenges && (async () => {
+      const invites = await Goal.find({ 'shared.invited': me._id, archivedAt: null }).lean();
+      const owners = await User.find({ _id: { $in: invites.map((g) => g.ownerId) } }).lean();
+      const ow = new Map(owners.map((u) => [String(u._id), u]));
+      for (const g of invites) {
+        items.push({ id: `invite:${g._id}`, type: 'invite', at: g.updatedAt, user: publicUser(ow.get(String(g.ownerId))), goal: { id: String(g._id), title: g.title, mode: g.shared.mode } });
+      }
+    })(),
+    me.prefs.notify.social && (async () => {
+      const mine = await Post.find({ userId: me._id, updatedAt: { $gte: since } }).lean();
+      const reactorIds = mine.flatMap((p) => p.reactions.filter((r) => String(r.userId) !== String(me._id) && r.at >= since).map((r) => r.userId));
+      const comments = await Comment.find({ postId: { $in: mine.map((p) => p._id) }, userId: { $ne: me._id }, createdAt: { $gte: since } }).lean();
+      const people = await User.find({ _id: { $in: [...reactorIds, ...comments.map((c) => c.userId)] } }).lean();
+      const pu = new Map(people.map((u) => [String(u._id), u]));
+      for (const p of mine) {
+        for (const r of p.reactions) {
+          if (String(r.userId) === String(me._id) || !(r.at >= since) || !pu.get(String(r.userId))) continue;
+          items.push({ id: `boa:${p._id}:${r.userId}`, type: 'reaction', at: r.at, user: publicUser(pu.get(String(r.userId))), post: { id: String(p._id), title: p.title } });
+        }
+      }
+      for (const c of comments) {
+        if (!pu.get(String(c.userId))) continue;
+        items.push({ id: `comment:${c._id}`, type: 'comment', at: c.createdAt, user: publicUser(pu.get(String(c.userId))), text: c.text, post: { id: String(c.postId) } });
+      }
+    })(),
+    me.prefs.notify.social && (async () => {
+      // Marcações em posts ("treinei com @fulano")
+      const taggedIn = await Post.find({ tags: me._id, userId: { $ne: me._id }, createdAt: { $gte: since } }).sort({ createdAt: -1 }).limit(20).lean();
+      const tUsers = new Map((await User.find({ _id: { $in: taggedIn.map((p) => p.userId) } }).lean()).map((u) => [String(u._id), u]));
+      for (const p of taggedIn) {
+        const by = tUsers.get(String(p.userId));
+        if (by) items.push({ id: `tag:${p._id}`, type: 'tag', at: p.createdAt, user: publicUser(by), text: p.text, post: { id: String(p._id) } });
+      }
+    })(),
+    me.prefs.notify.social && (async () => {
+      // Menções em comentários de posts de outras pessoas (no próprio post já chega como "comentou")
+      const mentions = await Comment.find({ mentions: me._id, userId: { $ne: me._id }, createdAt: { $gte: since } }).sort({ createdAt: -1 }).limit(30).lean();
+      const mPosts = new Map((await Post.find({ _id: { $in: mentions.map((c) => c.postId) } }, { userId: 1 }).lean()).map((p) => [String(p._id), p]));
+      const mUsers = new Map((await User.find({ _id: { $in: [...mentions.map((c) => c.userId), ...[...mPosts.values()].map((p) => p.userId)] } }).lean()).map((u) => [String(u._id), u]));
+      for (const c of mentions) {
+        const p = mPosts.get(String(c.postId));
+        const by = mUsers.get(String(c.userId));
+        if (!p || !by || String(p.userId) === String(me._id)) continue;
+        items.push({ id: `mention:${c._id}`, type: 'mention', at: c.createdAt, user: publicUser(by), text: c.text, post: { id: String(c.postId), author: mUsers.get(String(p.userId))?.username || null } });
+      }
+    })(),
+    me.prefs.notify.checkin && req.localTime && req.localTime >= me.prefs.reminderTime && (async () => {
+      const goals = await userGoals(me, req.today);
+      const left = goals.filter((g) => g.status.activeToday && g.kind !== 'project' && !g.status.periodDone);
+      if (left.length) {
+        const [h, m] = me.prefs.reminderTime.split(':').map(Number);
+        const at = new Date(`${req.today}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
+        items.push({ id: `reminder:${req.today}`, type: 'reminder', at, count: left.length, titles: left.slice(0, 3).map((g) => g.title) });
+      }
+    })(),
+  ]);
 
   items.sort((a, b) => new Date(b.at) - new Date(a.at));
   const unread = items.filter((i) => i.type === 'reminder' ? me.notificationsSeenAt.toISOString().slice(0, 10) < req.today : new Date(i.at) > me.notificationsSeenAt).length;

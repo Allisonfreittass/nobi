@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useNavigate } from 'react-router-dom';
 import { isGolden, preloadBroto, stageFromLevel } from '../components/Broto.jsx';
 import { api, getToken, setToken } from './api.js';
-import { clearLoadCache } from './useLoad.js';
+import { clearLoadCache, prefetchLoad } from './useLoad.js';
 import { refreshStatusBar } from './statusBar.js';
 
 const SessionCtx = createContext(null);
@@ -25,6 +25,10 @@ export function SessionProvider({ children }) {
   const refresh = useCallback(async () => {
     if (!getToken()) return setMe(null);
     setBootError(null);
+    // Os dados da tela de abertura saem junto com o /me, em vez de esperar por ele
+    const path = window.location.pathname;
+    const first = path === '/' ? ['/home', '/feed', '/goals'] : path === '/metas' ? ['/metas?view=hoje', '/goals', '/treinos'] : path.startsWith('/treinos') && !path.includes('/', 9) ? ['/treinos'] : [];
+    prefetchLoad(...first);
     try { setMe(await api('/me')); } catch (e) {
       if (e.status === 401) { setToken(null); setMe(null); } else setBootError(e);
     }

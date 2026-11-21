@@ -76,16 +76,18 @@ async function findUser(param) {
 }
 
 users.get('/:username', async (req, res) => {
-  const u = await findUser(req.params.username);
-  if ((await blockedIds(req.user._id)).includes(String(u._id))) throw notFound('Perfil não encontrado.');
+  const [u, blocked] = await Promise.all([findUser(req.params.username), blockedIds(req.user._id)]);
+  if (blocked.includes(String(u._id))) throw notFound('Perfil não encontrado.');
   const rel = await relation(req.user._id, u._id);
   const canProfile = allowed(rel, u.privacy.profile);
   const canStats = canProfile && allowed(rel, u.privacy.stats);
-  const [summary, season, followers, following] = await Promise.all([
+  const [summary, season, followers, following, stats, achievements] = await Promise.all([
     streakSummary(u, req.today),
     currentSeason(req.today),
     Follow.countDocuments({ followeeId: u._id, status: 'accepted' }),
     Follow.countDocuments({ followerId: u._id, status: 'accepted' }),
+    canStats ? profileStats(u, req.today) : null,
+    canStats ? achievementsView(u._id) : null,
   ]);
   const out = {
     ...publicUser(u),
@@ -103,8 +105,8 @@ users.get('/:username', async (req, res) => {
     season: seasonInfo(season, req.today),
   };
   if (canStats) {
-    out.stats = await profileStats(u, req.today);
-    out.achievements = await achievementsView(u._id);
+    out.stats = stats;
+    out.achievements = achievements;
   }
   res.json(out);
 });
